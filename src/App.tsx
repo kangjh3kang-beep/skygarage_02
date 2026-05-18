@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { AuthProvider, useAuth } from './admin/contexts/AuthContext';
+import { ParkingAuthProvider, useParkingAuth } from './parking/contexts/ParkingAuthContext';
 import { TenantProvider } from './admin/contexts/TenantContext';
 import { ToastProvider } from './admin/contexts/ToastContext';
 import { AdminThemeProvider, useAdminTheme } from './admin/contexts/ThemeContext';
@@ -70,6 +71,25 @@ const FullMapPage = lazy(() => import('./tracking/pages/user/FullMapPage'));
 const FleetManagement = lazy(() => import('./tracking/pages/admin/FleetManagement'));
 const NotFoundPage = lazy(() => import('./tracking/pages/NotFoundPage'));
 
+// Parking App (Resident)
+const ParkingLayout = lazy(() => import('./parking/ParkingLayout'));
+const ParkingLoginPage = lazy(() => import('./parking/pages/LoginPage'));
+const ResidentDashboard = lazy(() => import('./parking/pages/resident/Dashboard'));
+const ParkingManagement = lazy(() => import('./parking/pages/resident/ParkingManagement'));
+const ParkingMap = lazy(() => import('./parking/pages/resident/ParkingMap'));
+const VisitorManagement = lazy(() => import('./parking/pages/resident/VisitorManagement'));
+const EvCharging = lazy(() => import('./parking/pages/resident/EvCharging'));
+const BillingPage = lazy(() => import('./parking/pages/resident/BillingPage'));
+const ParkingNotifications = lazy(() => import('./parking/pages/resident/NotificationsPage'));
+const ParkingSettings = lazy(() => import('./parking/pages/resident/SettingsPage'));
+
+// Parking App (Visitor)
+const VisitorHome = lazy(() => import('./parking/pages/visitor/VisitorHome'));
+const VisitorEntry = lazy(() => import('./parking/pages/visitor/VisitorEntry'));
+const VisitorStatus = lazy(() => import('./parking/pages/visitor/VisitorStatus'));
+const VisitorEvCharging = lazy(() => import('./parking/pages/visitor/VisitorEvCharging'));
+const VisitorCheckout = lazy(() => import('./parking/pages/visitor/VisitorCheckout'));
+
 interface ColorModeContextType {
   mode: 'light' | 'dark';
   toggleMode: () => void;
@@ -112,6 +132,44 @@ function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onTo
           <Route path="fleet" element={<FleetManagement />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
+      </Routes>
+    </Suspense>
+  );
+}
+
+function ParkingAppGuard() {
+  const { user, loading } = useParkingAuth();
+  const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
+  if (loading) return fallback;
+  if (!user) return <Suspense fallback={fallback}><ParkingLoginPage /></Suspense>;
+  return (
+    <Suspense fallback={fallback}>
+      <Routes>
+        <Route element={<ParkingLayout />}>
+          <Route index element={<ResidentDashboard />} />
+          <Route path="parking" element={<ParkingManagement />} />
+          <Route path="parking/map" element={<ParkingMap />} />
+          <Route path="visitors" element={<VisitorManagement />} />
+          <Route path="ev" element={<EvCharging />} />
+          <Route path="billing" element={<BillingPage />} />
+          <Route path="notifications" element={<ParkingNotifications />} />
+          <Route path="settings" element={<ParkingSettings />} />
+        </Route>
+      </Routes>
+    </Suspense>
+  );
+}
+
+function VisitorRoutes() {
+  const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
+  return (
+    <Suspense fallback={fallback}>
+      <Routes>
+        <Route index element={<VisitorHome />} />
+        <Route path="entry" element={<VisitorEntry />} />
+        <Route path="status" element={<VisitorStatus />} />
+        <Route path="ev" element={<VisitorEvCharging />} />
+        <Route path="checkout" element={<VisitorCheckout />} />
       </Routes>
     </Suspense>
   );
@@ -224,6 +282,20 @@ export default function App() {
     <BrowserRouter>
       <ColorModeContext.Provider value={colorModeValue}>
         <Routes>
+          <Route path="/app/*" element={
+            <ParkingAuthProvider>
+              <ThemeProvider theme={publicTheme}>
+                <CssBaseline />
+                <ParkingAppGuard />
+              </ThemeProvider>
+            </ParkingAuthProvider>
+          } />
+          <Route path="/visitor/*" element={
+            <ThemeProvider theme={publicTheme}>
+              <CssBaseline />
+              <VisitorRoutes />
+            </ThemeProvider>
+          } />
           <Route path="/tracking/*" element={
             <AuthProvider>
               <ThemeProvider theme={publicTheme}>
