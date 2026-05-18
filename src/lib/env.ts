@@ -3,27 +3,28 @@ interface AppEnv {
   SUPABASE_ANON_KEY: string;
 }
 
-function sanitizeSupabaseUrl(raw: string | undefined): string {
-  if (!raw) return '';
+const FALLBACK_URL = 'https://ykmeconwqbathcdejalr.supabase.co';
+const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrbWVjb253cWJhdGhjZGVqYWxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MTQ5OTIsImV4cCI6MjA5NDM5MDk5Mn0.zLr_1dxkyJURP87fBxnXtyEuPckzWLGVRo4wuGWvARI';
+
+function resolveSupabaseUrl(raw: string | undefined): string {
+  if (!raw) return FALLBACK_URL;
   let cleaned = raw.trim();
-  // Remove any trailing path segments that shouldn't be part of the base URL
   cleaned = cleaned.replace(/\/rest\/v1\/?$/, '');
   cleaned = cleaned.replace(/\/+$/, '');
+  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+    return FALLBACK_URL;
+  }
   return cleaned;
 }
 
-const url = sanitizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL);
-const key = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
-
-if (!url || !key) {
-  console.warn(
-    '[env] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is missing. ' +
-    'Supabase features (images, media, forms) will not work. ' +
-    'Set these in your deployment environment variables.',
-  );
+function resolveSupabaseKey(raw: string | undefined): string {
+  if (!raw) return FALLBACK_KEY;
+  const cleaned = raw.trim();
+  if (!cleaned || cleaned.length < 20) return FALLBACK_KEY;
+  return cleaned;
 }
 
 export const env: AppEnv = {
-  SUPABASE_URL: url,
-  SUPABASE_ANON_KEY: key,
+  SUPABASE_URL: resolveSupabaseUrl(import.meta.env.VITE_SUPABASE_URL),
+  SUPABASE_ANON_KEY: resolveSupabaseKey(import.meta.env.VITE_SUPABASE_ANON_KEY),
 };
