@@ -30,9 +30,15 @@ export function useBilling() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setRecords([]);
+      setPaymentMethods([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([fetchRecords(), fetchPaymentMethods()]).then(() => setLoading(false));
-  }, [fetchRecords, fetchPaymentMethods]);
+  }, [user, fetchRecords, fetchPaymentMethods]);
 
   const addPaymentMethod = async (method: Partial<PaymentMethod>) => {
     if (!user) return null;

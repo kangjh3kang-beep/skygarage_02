@@ -10,7 +10,12 @@ export function useHousehold() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setHousehold(null);
+      setSpots([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data: hh } = await supabase
       .from('households')

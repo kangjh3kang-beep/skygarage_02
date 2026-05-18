@@ -9,7 +9,11 @@ export function useEvCharging() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!household) return;
+    if (!household) {
+      setSessions([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data } = await supabase
       .from('ev_charging_sessions')

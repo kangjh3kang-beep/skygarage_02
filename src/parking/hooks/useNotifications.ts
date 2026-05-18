@@ -9,7 +9,11 @@ export function useParkingNotifications() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const { data } = await supabase
       .from('user_notifications')

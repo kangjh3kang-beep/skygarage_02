@@ -38,33 +38,44 @@ export default function ParkingManagement() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 2 }}>
-        {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={120} sx={{ mb: 2, borderRadius: 3 }} />)}
+      <Box sx={{ p: 2.5 }}>
+        {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={100} sx={{ mb: 1.5, borderRadius: 2 }} />)}
+      </Box>
+    );
+  }
+
+  if (!household) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center', mt: 4 }}>
+        <LocalParkingIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+        <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+          세대 등록 후 주차 관리 기능을 이용할 수 있습니다.
+        </Typography>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 2, maxWidth: 600, mx: 'auto' }}>
+    <Box sx={{ p: 2.5, maxWidth: 520, mx: 'auto' }}>
       {/* Direct Entry Toggle */}
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
+      <Card sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider' }}>
+        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>세대직입 허용</Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              <Typography variant="body1" sx={{ fontWeight: 700 }}>세대직입 허용</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.3, display: 'block', mt: 0.3 }}>
                 방문 차량의 세대 내 직접 입차를 허용합니다
               </Typography>
             </Box>
             <Switch
-              checked={household?.direct_entry_enabled ?? false}
+              checked={household.direct_entry_enabled}
               onChange={(_, checked) => handleDirectEntryToggle(checked)}
-              disabled={toggling || !household?.is_sky_garage_unit}
+              disabled={toggling || !household.is_sky_garage_unit}
               color="success"
             />
           </Box>
-          {!household?.is_sky_garage_unit && (
-            <Alert severity="info" sx={{ mt: 1.5, fontSize: '0.75rem' }}>
+          {!household.is_sky_garage_unit && (
+            <Alert severity="info" sx={{ mt: 1.5, fontSize: '0.75rem', py: 0 }}>
               스카이가라지 세대만 세대직입 설정이 가능합니다.
             </Alert>
           )}
@@ -72,31 +83,34 @@ export default function ParkingManagement() {
       </Card>
 
       {/* Parking Spot Status */}
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
+      <Card sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider' }}>
+        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>내 지정 주차 현황</Typography>
+            <Typography variant="body1" sx={{ fontWeight: 700 }}>내 지정 주차 현황</Typography>
             <Chip
               label={`${availableSpots}면 비어있음`}
               size="small"
               color={availableSpots > 0 ? 'success' : 'error'}
+              sx={{ fontWeight: 600 }}
             />
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 1 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: 1 }}>
             {spots.map(spot => (
               <Box
                 key={spot.id}
                 sx={{
-                  p: 1.5, borderRadius: 2, textAlign: 'center',
-                  bgcolor: spot.is_occupied ? 'error.main' : 'success.main',
-                  color: '#fff', opacity: spot.is_occupied ? 0.8 : 1,
+                  p: 1.2, borderRadius: 1.5, textAlign: 'center',
+                  bgcolor: spot.is_occupied ? 'error.dark' : 'success.dark',
+                  color: '#fff',
+                  border: '1px solid',
+                  borderColor: spot.is_occupied ? 'error.main' : 'success.main',
                 }}
               >
-                <LocalParkingIcon sx={{ fontSize: 20, mb: 0.5 }} />
-                <Typography variant="caption" sx={{ display: 'block', fontWeight: 700 }}>
+                <LocalParkingIcon sx={{ fontSize: 18, mb: 0.3 }} />
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, fontSize: '0.7rem' }}>
                   {spot.spot_number}
                 </Typography>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>
+                <Typography variant="caption" sx={{ fontSize: '0.6rem', opacity: 0.8 }}>
                   {spot.is_occupied ? '사용 중' : '비어있음'}
                 </Typography>
               </Box>
@@ -111,9 +125,9 @@ export default function ParkingManagement() {
       </Card>
 
       {/* My Vehicles Currently Parked */}
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>현재 주차 중인 내 차량</Typography>
+      <Card sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider' }}>
+        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+          <Typography variant="body1" sx={{ fontWeight: 700, mb: 1.5 }}>현재 주차 중인 내 차량</Typography>
           {myVehicleSessions.length === 0 ? (
             <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 2 }}>
               현재 주차 중인 차량이 없습니다.
@@ -126,15 +140,20 @@ export default function ParkingManagement() {
                   <Box key={session.id}>
                     {idx > 0 && <Divider />}
                     <ListItem disablePadding sx={{ py: 1 }}>
-                      <ListItemIcon sx={{ minWidth: 40 }}>
-                        <DirectionsCarIcon color="primary" />
+                      <ListItemIcon sx={{ minWidth: 36 }}>
+                        <DirectionsCarIcon sx={{ fontSize: 20, color: 'primary.main' }} />
                       </ListItemIcon>
                       <ListItemText
                         primary={session.vehicle_plate}
                         secondary={`${vehicle?.brand ?? ''} ${vehicle?.model ?? ''} | 입차: ${new Date(session.entry_time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`}
-                        slotProps={{ primary: { sx: { fontWeight: 700, fontSize: '0.9rem' } }, secondary: { sx: { fontSize: '0.75rem' } } }}
+                        slotProps={{ primary: { sx: { fontWeight: 700, fontSize: '0.875rem' } }, secondary: { sx: { fontSize: '0.7rem' } } }}
                       />
-                      <Chip label={session.status === 'parked' ? '주차 중' : '이동 중'} size="small" />
+                      <Chip
+                        label={session.status === 'parked' ? '주차 중' : '이동 중'}
+                        size="small"
+                        color={session.status === 'parked' ? 'success' : 'warning'}
+                        sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                      />
                     </ListItem>
                   </Box>
                 );
@@ -150,7 +169,7 @@ export default function ParkingManagement() {
         variant="outlined"
         startIcon={<MapIcon />}
         onClick={() => navigate('/app/parking/map')}
-        sx={{ py: 1.5 }}
+        sx={{ mt: 1, py: 1.2, fontWeight: 600, borderColor: 'divider', color: 'text.primary' }}
       >
         실시간 주차 지도 보기
       </Button>

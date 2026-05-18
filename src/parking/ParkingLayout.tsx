@@ -18,6 +18,7 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import LanguageIcon from '@mui/icons-material/Language';
 import { useParkingNotifications } from './hooks/useNotifications';
 
 const NAV_ITEMS = [
@@ -47,7 +48,7 @@ export default function ParkingLayout() {
   const [navValue, setNavValue] = useState(getActiveIdx());
   useEffect(() => { setNavValue(getActiveIdx()); }, [location.pathname]);
 
-  const isSubpage = location.pathname.split('/').length > 3;
+  const isSubpage = location.pathname !== '/app' && NAV_ITEMS.every(item => item.path !== location.pathname);
 
   const pageTitle = (() => {
     if (location.pathname === '/app') return 'SkyGarage';
@@ -62,28 +63,44 @@ export default function ParkingLayout() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
-        <Toolbar sx={{ minHeight: { xs: 56 } }}>
-          {isSubpage && (
-            <IconButton onClick={() => navigate(-1)} sx={{ mr: 1, color: 'text.primary' }}>
-              <ArrowBackIcon />
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          bgcolor: 'background.paper',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <Toolbar sx={{ minHeight: { xs: 56 }, px: { xs: 1.5, sm: 2 } }}>
+          {isSubpage ? (
+            <IconButton onClick={() => navigate(-1)} sx={{ mr: 0.5, color: 'text.primary' }} size="small">
+              <ArrowBackIcon fontSize="small" />
+            </IconButton>
+          ) : (
+            <IconButton onClick={() => navigate('/')} sx={{ mr: 0.5, color: 'text.secondary' }} size="small" title="메인 사이트">
+              <LanguageIcon fontSize="small" />
             </IconButton>
           )}
-          <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, color: 'text.primary', fontSize: '1.1rem' }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 800, flex: 1, color: 'text.primary', fontSize: '1rem', letterSpacing: -0.3 }}
+          >
             {pageTitle}
           </Typography>
-          <IconButton onClick={() => navigate('/app/notifications')} sx={{ mr: 0.5, color: 'text.secondary' }}>
-            <Badge badgeContent={unreadCount} color="error">
-              <NotificationsIcon />
+          <IconButton onClick={() => navigate('/app/notifications')} sx={{ color: 'text.secondary' }} size="small">
+            <Badge badgeContent={unreadCount} color="error" max={9}>
+              <NotificationsIcon fontSize="small" />
             </Badge>
           </IconButton>
-          <IconButton onClick={() => navigate('/app/settings')} sx={{ color: 'text.secondary' }}>
-            <SettingsIcon />
+          <IconButton onClick={() => navigate('/app/settings')} sx={{ color: 'text.secondary', ml: 0.5 }} size="small">
+            <SettingsIcon fontSize="small" />
           </IconButton>
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ flex: 1, pb: isMobile ? 8 : 0, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, pb: isMobile ? '72px' : 0, overflow: 'auto' }}>
         <Outlet />
       </Box>
 
@@ -94,8 +111,21 @@ export default function ParkingLayout() {
           showLabels
           sx={{
             position: 'fixed', bottom: 0, left: 0, right: 0,
-            borderTop: 1, borderColor: 'divider', zIndex: 1100,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            zIndex: 1100,
             bgcolor: 'background.paper',
+            height: 64,
+            '& .MuiBottomNavigationAction-root': {
+              minWidth: 0,
+              py: 1,
+              '&.Mui-selected': { color: 'primary.main' },
+            },
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.65rem',
+              mt: 0.3,
+              '&.Mui-selected': { fontSize: '0.65rem', fontWeight: 700 },
+            },
           }}
         >
           {NAV_ITEMS.map(item => (

@@ -65,32 +65,32 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 2 }}>
-        {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={80} sx={{ mb: 2, borderRadius: 3 }} />)}
+      <Box sx={{ p: 2.5 }}>
+        {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={72} sx={{ mb: 1.5, borderRadius: 2 }} />)}
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 2, maxWidth: 600, mx: 'auto' }}>
+    <Box sx={{ p: 2.5, maxWidth: 520, mx: 'auto' }}>
       {/* Summary */}
-      <Card sx={{ mb: 2, bgcolor: pendingAmount > 0 ? 'error.dark' : 'success.dark' }}>
-        <CardContent sx={{ textAlign: 'center' }}>
-          <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 0.5 }}>미결제 금액</Typography>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff' }}>
+      <Card sx={{ mb: 2, bgcolor: pendingAmount > 0 ? 'error.dark' : 'success.dark', border: 'none' }}>
+        <CardContent sx={{ textAlign: 'center', py: 2.5, '&:last-child': { pb: 2.5 } }}>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', letterSpacing: 0.5 }}>미결제 금액</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff', my: 0.5 }}>
             {pendingAmount.toLocaleString()}원
           </Typography>
           {pendingAmount > 0 && (
-            <Button variant="contained" size="small" sx={{ mt: 1.5 }}>
+            <Button variant="contained" size="small" sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}>
               결제하기
             </Button>
           )}
         </CardContent>
       </Card>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-        <Tab label="이용 내역" icon={<ReceiptIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
-        <Tab label="결제 수단" icon={<CreditCardIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, minHeight: 36, '& .MuiTab-root': { minHeight: 36, py: 0.5, fontSize: '0.8rem' } }}>
+        <Tab label="이용 내역" icon={<ReceiptIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
+        <Tab label="결제 수단" icon={<CreditCardIcon sx={{ fontSize: 16 }} />} iconPosition="start" />
       </Tabs>
 
       {/* Billing Records */}
@@ -107,15 +107,20 @@ export default function BillingPage() {
                 <ListItem disablePadding sx={{ py: 1.5 }}>
                   <ListItemText
                     primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{r.description || typeLabel(r.record_type)}</Typography>
-                        <Chip label={r.status === 'paid' ? '결제완료' : r.status === 'overdue' ? '연체' : '미결제'} size="small" color={statusColor(r.status)} />
+                        <Chip
+                          label={r.status === 'paid' ? '결제완료' : r.status === 'overdue' ? '연체' : '미결제'}
+                          size="small"
+                          color={statusColor(r.status)}
+                          sx={{ fontSize: '0.65rem', height: 20 }}
+                        />
                       </Box>
                     }
                     secondary={new Date(r.billing_date).toLocaleDateString('ko-KR')}
-                    slotProps={{ secondary: { sx: { fontSize: '0.75rem' } } }}
+                    slotProps={{ secondary: { sx: { fontSize: '0.7rem' } } }}
                   />
-                  <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {r.amount.toLocaleString()}원
                   </Typography>
                 </ListItem>
@@ -128,8 +133,8 @@ export default function BillingPage() {
       {/* Payment Methods */}
       {tab === 1 && (
         <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-            <Button size="small" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1.5 }}>
+            <Button size="small" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} sx={{ fontSize: '0.75rem' }}>
               추가
             </Button>
           </Box>
@@ -148,30 +153,30 @@ export default function BillingPage() {
                     secondaryAction={
                       <Box>
                         {!m.is_default && (
-                          <IconButton size="small" onClick={() => setDefaultMethod(m.id)}>
+                          <IconButton size="small" onClick={() => setDefaultMethod(m.id)} title="기본 설정">
                             <StarIcon fontSize="small" />
                           </IconButton>
                         )}
-                        <IconButton size="small" onClick={() => deletePaymentMethod(m.id)}>
+                        <IconButton size="small" onClick={() => deletePaymentMethod(m.id)} title="삭제">
                           <DeleteIcon fontSize="small" color="error" />
                         </IconButton>
                       </Box>
                     }
                   >
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      <CreditCardIcon />
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <CreditCardIcon fontSize="small" />
                     </ListItemIcon>
                     <ListItemText
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                           <Typography variant="body2" sx={{ fontWeight: 700 }}>
                             {m.card_brand} **** {m.card_last_four}
                           </Typography>
-                          {m.is_default && <Chip label="기본" size="small" color="primary" />}
+                          {m.is_default && <Chip label="기본" size="small" color="primary" sx={{ fontSize: '0.65rem', height: 20 }} />}
                         </Box>
                       }
                       secondary={m.is_auto_pay ? '자동 결제 설정됨' : '수동 결제'}
-                      slotProps={{ secondary: { sx: { fontSize: '0.75rem' } } }}
+                      slotProps={{ secondary: { sx: { fontSize: '0.7rem' } } }}
                     />
                   </ListItem>
                 </Box>
@@ -183,9 +188,9 @@ export default function BillingPage() {
 
       {/* Add Payment Method Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 700 }}>결제 수단 추가</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1rem' }}>결제 수단 추가</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
-          <FormControl fullWidth>
+          <FormControl fullWidth size="small">
             <InputLabel>결제 유형</InputLabel>
             <Select
               value={form.method_type}
@@ -201,6 +206,7 @@ export default function BillingPage() {
             value={form.card_brand}
             onChange={e => setForm(prev => ({ ...prev, card_brand: e.target.value }))}
             fullWidth
+            size="small"
           />
           <TextField
             label="끝 4자리"
@@ -208,11 +214,12 @@ export default function BillingPage() {
             onChange={e => setForm(prev => ({ ...prev, card_last_four: e.target.value }))}
             slotProps={{ htmlInput: { maxLength: 4 } }}
             fullWidth
+            size="small"
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDialogOpen(false)}>취소</Button>
-          <Button variant="contained" onClick={handleAddMethod} disabled={!form.card_last_four || submitting}>
+          <Button onClick={() => setDialogOpen(false)} size="small">취소</Button>
+          <Button variant="contained" onClick={handleAddMethod} disabled={!form.card_last_four || submitting} size="small">
             추가
           </Button>
         </DialogActions>

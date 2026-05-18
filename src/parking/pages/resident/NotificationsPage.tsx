@@ -17,11 +17,11 @@ import { useParkingNotifications } from '../../hooks/useNotifications';
 
 const typeIcon = (type: string) => {
   switch (type) {
-    case 'parking': return <DirectionsCarIcon color="primary" />;
-    case 'ev_charging': return <EvStationIcon color="warning" />;
-    case 'billing': return <PaymentIcon color="error" />;
-    case 'visitor': return <PeopleAltIcon color="info" />;
-    default: return <InfoIcon />;
+    case 'parking': return <DirectionsCarIcon sx={{ fontSize: 20, color: 'primary.main' }} />;
+    case 'ev_charging': return <EvStationIcon sx={{ fontSize: 20, color: 'warning.main' }} />;
+    case 'billing': return <PaymentIcon sx={{ fontSize: 20, color: 'error.main' }} />;
+    case 'visitor': return <PeopleAltIcon sx={{ fontSize: 20, color: 'info.main' }} />;
+    default: return <InfoIcon sx={{ fontSize: 20 }} />;
   }
 };
 
@@ -30,17 +30,17 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 2 }}>
-        {[1, 2, 3, 4].map(i => <Skeleton key={i} variant="rounded" height={60} sx={{ mb: 1, borderRadius: 2 }} />)}
+      <Box sx={{ p: 2.5 }}>
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} variant="rounded" height={56} sx={{ mb: 1, borderRadius: 2 }} />)}
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 2, maxWidth: 600, mx: 'auto' }}>
+    <Box sx={{ p: 2.5, maxWidth: 520, mx: 'auto' }}>
       {unreadCount > 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-          <Button size="small" startIcon={<DoneAllIcon />} onClick={markAllRead}>
+          <Button size="small" startIcon={<DoneAllIcon />} onClick={markAllRead} sx={{ fontSize: '0.75rem' }}>
             모두 읽음
           </Button>
         </Box>
@@ -57,23 +57,23 @@ export default function NotificationsPage() {
               {idx > 0 && <Divider />}
               <ListItemButton
                 onClick={() => !n.is_read && markAsRead(n.id)}
-                sx={{ borderRadius: 2, bgcolor: n.is_read ? 'transparent' : 'action.hover', py: 1.5 }}
+                sx={{ borderRadius: 1.5, bgcolor: n.is_read ? 'transparent' : 'action.hover', py: 1.5, px: 1.5 }}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>{typeIcon(n.notification_type)}</ListItemIcon>
+                <ListItemIcon sx={{ minWidth: 32 }}>{typeIcon(n.notification_type)}</ListItemIcon>
                 <ListItemText
                   primary={n.title}
                   secondary={
                     <Box>
-                      <Typography variant="caption" component="span" sx={{ display: 'block' }}>{n.message}</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      <Typography variant="caption" component="span" sx={{ display: 'block', color: 'text.secondary', lineHeight: 1.4 }}>{n.message}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
                         {new Date(n.created_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </Typography>
                     </Box>
                   }
-                  slotProps={{ primary: { sx: { fontWeight: n.is_read ? 400 : 700, fontSize: '0.875rem' } } }}
+                  slotProps={{ primary: { sx: { fontWeight: n.is_read ? 400 : 700, fontSize: '0.8rem' } } }}
                 />
                 {!n.is_read && (
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main', ml: 1 }} />
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: 'primary.main', ml: 1, flexShrink: 0 }} />
                 )}
               </ListItemButton>
             </Box>

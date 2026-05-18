@@ -53,23 +53,23 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 2 }}>
-        {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={80} sx={{ mb: 2, borderRadius: 3 }} />)}
+      <Box sx={{ p: 2.5 }}>
+        {[1, 2, 3].map(i => <Skeleton key={i} variant="rounded" height={72} sx={{ mb: 1.5, borderRadius: 2 }} />)}
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 2, maxWidth: 600, mx: 'auto' }}>
+    <Box sx={{ p: 2.5, maxWidth: 520, mx: 'auto' }}>
       {/* Account Info */}
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-            <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <PersonIcon sx={{ color: '#000' }} />
+      <Card sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider' }}>
+        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ width: 44, height: 44, borderRadius: '50%', bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <PersonIcon sx={{ color: '#000', fontSize: 22 }} />
             </Box>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{user?.email}</Typography>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body1" sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 {household ? `${household.building}동 ${household.unit_number}호` : '세대 미등록'}
               </Typography>
@@ -79,18 +79,23 @@ export default function SettingsPage() {
       </Card>
 
       {/* Vehicle Management */}
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
+      <Card sx={{ mb: 1.5, border: '1px solid', borderColor: 'divider' }}>
+        <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>등록 차량</Typography>
-            <Button size="small" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+            <Typography variant="body1" sx={{ fontWeight: 700 }}>등록 차량</Typography>
+            <Button size="small" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} sx={{ fontSize: '0.75rem' }}>
               추가
             </Button>
           </Box>
           {vehicles.length === 0 ? (
-            <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 3 }}>
-              등록된 차량이 없습니다.
-            </Typography>
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                등록된 차량이 없습니다.
+              </Typography>
+              <Button size="small" variant="outlined" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+                차량 등록하기
+              </Button>
+            </Box>
           ) : (
             <List disablePadding>
               {vehicles.map((v, idx) => (
@@ -100,24 +105,24 @@ export default function SettingsPage() {
                     disablePadding
                     sx={{ py: 1 }}
                     secondaryAction={
-                      <IconButton size="small" onClick={() => deleteVehicle(v.id)}>
+                      <IconButton size="small" onClick={() => deleteVehicle(v.id)} title="삭제">
                         <DeleteIcon fontSize="small" color="error" />
                       </IconButton>
                     }
                   >
-                    <ListItemIcon sx={{ minWidth: 36 }}>
-                      {v.is_ev ? <ElectricCarIcon color="warning" /> : <DirectionsCarIcon color="primary" />}
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      {v.is_ev ? <ElectricCarIcon sx={{ fontSize: 20, color: 'warning.main' }} /> : <DirectionsCarIcon sx={{ fontSize: 20, color: 'primary.main' }} />}
                     </ListItemIcon>
                     <ListItemText
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                           <Typography variant="body2" sx={{ fontWeight: 700 }}>{v.plate_number}</Typography>
-                          {v.is_ev && <Chip label="EV" size="small" color="warning" />}
-                          {v.is_primary && <Chip label="대표" size="small" color="primary" />}
+                          {v.is_ev && <Chip label="EV" size="small" sx={{ fontSize: '0.6rem', height: 18 }} color="warning" />}
+                          {v.is_primary && <Chip label="대표" size="small" sx={{ fontSize: '0.6rem', height: 18 }} color="primary" />}
                         </Box>
                       }
                       secondary={`${v.brand} ${v.model} ${v.color}`}
-                      slotProps={{ secondary: { sx: { fontSize: '0.75rem' } } }}
+                      slotProps={{ secondary: { sx: { fontSize: '0.7rem' } } }}
                     />
                   </ListItem>
                 </Box>
@@ -134,14 +139,14 @@ export default function SettingsPage() {
         color="error"
         startIcon={<LogoutIcon />}
         onClick={signOut}
-        sx={{ mt: 2 }}
+        sx={{ mt: 2, py: 1.2, fontWeight: 600 }}
       >
         로그아웃
       </Button>
 
       {/* Add Vehicle Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 700 }}>차량 등록</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1rem' }}>차량 등록</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
           <TextField
             label="차량 번호"
@@ -150,6 +155,7 @@ export default function SettingsPage() {
             onChange={e => setForm(prev => ({ ...prev, plate_number: e.target.value }))}
             fullWidth
             required
+            size="small"
           />
           <TextField
             label="제조사"
@@ -157,6 +163,7 @@ export default function SettingsPage() {
             value={form.brand}
             onChange={e => setForm(prev => ({ ...prev, brand: e.target.value }))}
             fullWidth
+            size="small"
           />
           <TextField
             label="모델명"
@@ -164,21 +171,23 @@ export default function SettingsPage() {
             value={form.model}
             onChange={e => setForm(prev => ({ ...prev, model: e.target.value }))}
             fullWidth
+            size="small"
           />
           <TextField
             label="색상"
             value={form.color}
             onChange={e => setForm(prev => ({ ...prev, color: e.target.value }))}
             fullWidth
+            size="small"
           />
           <FormControlLabel
-            control={<Switch checked={form.is_ev} onChange={(_, c) => setForm(prev => ({ ...prev, is_ev: c }))} />}
-            label="전기차 여부"
+            control={<Switch checked={form.is_ev} onChange={(_, c) => setForm(prev => ({ ...prev, is_ev: c }))} size="small" />}
+            label={<Typography variant="body2">전기차 여부</Typography>}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDialogOpen(false)}>취소</Button>
-          <Button variant="contained" onClick={handleAdd} disabled={!form.plate_number || submitting}>
+          <Button onClick={() => setDialogOpen(false)} size="small">취소</Button>
+          <Button variant="contained" onClick={handleAdd} disabled={!form.plate_number || submitting} size="small">
             등록
           </Button>
         </DialogActions>
