@@ -22,6 +22,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Skeleton from '@mui/material/Skeleton';
+import InputAdornment from '@mui/material/InputAdornment';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -30,6 +31,8 @@ import LocalTaxiIcon from '@mui/icons-material/LocalTaxi';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import FastForwardIcon from '@mui/icons-material/FastForward';
+import SearchIcon from '@mui/icons-material/Search';
+import { useToast } from '../../components/common/ToastProvider';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import { useBooking } from '../../hooks/useBooking';
 import { vehicleService, bookingService } from '../../services/trackingService';
@@ -108,28 +111,58 @@ export default function FleetManagement() {
     refresh();
   }, [refresh]);
 
+  const { showToast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
   const openAdd = () => { setEditingVehicle(null); setForm({ driver_name: '', plate_number: '', phone: '', vehicle_model: '', status: 'available' }); setVehicleDialog(true); };
   const openEdit = (v: Vehicle) => { setEditingVehicle(v); setForm({ driver_name: v.driver_name, plate_number: v.plate_number, phone: v.phone, vehicle_model: v.vehicle_model, status: v.status }); setVehicleDialog(true); };
 
   const handleSave = useCallback(async () => {
-    if (editingVehicle) {
-      await vehicleService.updateStatus(editingVehicle.id, form.status as Vehicle['status']);
-    } else {
-      await vehicleService.create(form as Partial<Vehicle>);
+    try {
+      if (editingVehicle) {
+        await vehicleService.updateStatus(editingVehicle.id, form.status as Vehicle['status']);
+        showToast('차량 정보가 수정되었습니다.', 'success');
+      } else {
+        await vehicleService.create(form as Partial<Vehicle>);
+        showToast('차량이 등록되었습니다.', 'success');
+      }
+      setVehicleDialog(false);
+      refresh();
+    } catch {
+      showToast('저장 중 오류가 발생했습니다.', 'error');
     }
-    setVehicleDialog(false);
-    refresh();
-  }, [editingVehicle, form, refresh]);
+  }, [editingVehicle, form, refresh, showToast]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    await vehicleService.delete(id);
-    refresh();
-  }, [refresh]);
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteConfirmId) return;
+    try {
+      await vehicleService.delete(deleteConfirmId);
+      showToast('차량이 삭제되었습니다.', 'success');
+      refresh();
+    } catch {
+      showToast('삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setDeleteConfirmId(null);
+    }
+  }, [deleteConfirmId, refresh, showToast]);
 
   const handleBookingStatus = useCallback(async (id: string, status: string) => {
-    await bookingService.updateStatus(id, status as 'confirmed' | 'in_progress' | 'completed' | 'cancelled');
-    refreshBookings();
-  }, [refreshBookings]);
+    try {
+      await bookingService.updateStatus(id, status as 'confirmed' | 'in_progress' | 'completed' | 'cancelled');
+      showToast('예약 상태가 변경되었습니다.', 'success');
+      refreshBookings();
+    } catch {
+      showToast('상태 변경 중 오류가 발생했습니다.', 'error');
+    }
+  }, [refreshBookings, showToast]);
+
+  const filteredVehicles = vehicles.filter(v =>
+    !searchQuery ||
+    v.driver_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    v.plate_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    v.vehicle_model.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -222,10 +255,22 @@ export default function FleetManagement() {
       </Card>
 
       {/* Tabs: Vehicles / Bookings */}
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-        <Tab icon={<LocalTaxiIcon />} iconPosition="start" label={`차량 (${vehicles.length})`} />
-        <Tab icon={<GpsFixedIcon />} iconPosition="start" label={`예약 (${bookings.length})`} />
-      </Tabs>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ flex: 1 }}>
+          <Tab icon={<LocalTaxiIcon />} iconPosition="start" label={`차량 (${filteredVehicles.length})`} />
+          <Tab icon={<GpsFixedIcon />} iconPosition="start" label={`예약 (${bookings.length})`} />
+        </Tabs>
+        {tab === 0 && (
+          <TextField
+            size="small"
+            placeholder="검색 (이름, 차량번호, 차종)"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            sx={{ width: 240 }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18 }} /></InputAdornment> } }}
+          />
+        )}
+      </Box>
 
       {tab === 0 && (
         <Card>
@@ -240,7 +285,9 @@ export default function FleetManagement() {
                 <TableCell align="right">관리</TableCell>
               </TableRow></TableHead>
               <TableBody>
-                {vehicles.map(v => (
+                {filteredVehicles.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}><Typography variant="body2" color="text.secondary">검색 결과가 없습니다.</Typography></TableCell></TableRow>
+                ) : filteredVehicles.map(v => (
                   <TableRow key={v.id} hover selected={v.id === selectedVehicleId} onClick={() => setSelectedVehicleId(v.id)} sx={{ cursor: 'pointer' }}>
                     <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{v.driver_name}</Typography></TableCell>
                     <TableCell><Typography variant="caption">{v.plate_number}</Typography></TableCell>
@@ -252,7 +299,7 @@ export default function FleetManagement() {
                         <Button size="small" variant="text" sx={{ mr: 0.5, minWidth: 0, fontSize: '0.7rem' }} onClick={e => { e.stopPropagation(); startRoute(v.id); }}>출발</Button>
                       )}
                       <IconButton size="small" onClick={e => { e.stopPropagation(); openEdit(v); }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
-                      <IconButton size="small" onClick={e => { e.stopPropagation(); handleDelete(v.id); }} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
+                      <IconButton size="small" onClick={e => { e.stopPropagation(); setDeleteConfirmId(v.id); }} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -319,6 +366,20 @@ export default function FleetManagement() {
         <DialogActions>
           <Button onClick={() => setVehicleDialog(false)}>취소</Button>
           <Button variant="contained" onClick={handleSave}>저장</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)}>
+        <DialogTitle>차량 삭제 확인</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            이 차량을 삭제하시겠습니까? 관련된 경로 및 예약 데이터에 영향을 줄 수 있습니다.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmId(null)}>취소</Button>
+          <Button variant="contained" color="error" onClick={handleDeleteConfirm}>삭제</Button>
         </DialogActions>
       </Dialog>
     </Box>

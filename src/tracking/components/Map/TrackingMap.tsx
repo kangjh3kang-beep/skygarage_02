@@ -57,6 +57,7 @@ export default function TrackingMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const polylineRef = useRef<L.Polyline | null>(null);
+  const iconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -78,6 +79,7 @@ export default function TrackingMap({
     const currentIds = new Set(vehicles.map(v => v.id));
     markersRef.current.forEach((marker, id) => {
       if (!currentIds.has(id)) {
+        marker.off('click');
         marker.remove();
         markersRef.current.delete(id);
       }
@@ -85,7 +87,11 @@ export default function TrackingMap({
 
     vehicles.forEach(vehicle => {
       const isSelected = vehicle.id === selectedVehicleId;
-      const icon = createVehicleIcon(vehicle.status, isSelected);
+      const cacheKey = `${vehicle.status}-${isSelected}`;
+      if (!iconCacheRef.current.has(cacheKey)) {
+        iconCacheRef.current.set(cacheKey, createVehicleIcon(vehicle.status, isSelected));
+      }
+      const icon = iconCacheRef.current.get(cacheKey)!;
       const existing = markersRef.current.get(vehicle.id);
 
       if (existing) {

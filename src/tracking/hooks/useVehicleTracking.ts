@@ -43,7 +43,7 @@ export function useVehicleTracking(vehicleId?: string) {
 
   useEffect(() => {
     const channel = supabase
-      .channel('vehicle-tracking-rt')
+      .channel(`vehicle-tracking-${vehicleId || 'all'}`)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
@@ -57,7 +57,10 @@ export function useVehicleTracking(vehicleId?: string) {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      channel.unsubscribe();
+      supabase.removeChannel(channel);
+    };
   }, [vehicleId]);
 
   return { vehicles, selectedVehicle, locationHistory, loading, error, refresh: loadVehicles };

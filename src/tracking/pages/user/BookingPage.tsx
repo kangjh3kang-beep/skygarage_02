@@ -13,10 +13,12 @@ import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Rating from '@mui/material/Rating';
+import CircularProgress from '@mui/material/CircularProgress';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { useNavigate } from 'react-router-dom';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import { useBooking } from '../../hooks/useBooking';
+import { useToast } from '../../components/common/ToastProvider';
 import type { Vehicle } from '../../types';
 
 const STEPS = ['출발/도착지', '차량 선택', '확인'];
@@ -36,11 +38,13 @@ export default function BookingPage() {
   const navigate = useNavigate();
   const { vehicles } = useVehicleTracking();
   const { createBooking } = useBooking();
+  const { showToast } = useToast();
   const [step, setStep] = useState(0);
   const [pickup, setPickup] = useState('');
   const [dropoff, setDropoff] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const availableVehicles = vehicles.filter(v => v.status === 'available');
   const pickupLoc = LOCATIONS.find(l => l.name === pickup);
@@ -54,18 +58,26 @@ export default function BookingPage() {
 
   const handleConfirm = async () => {
     if (!pickupLoc || !dropoffLoc || !selectedVehicle) return;
-    await createBooking({
-      vehicle_id: selectedVehicle.id,
-      pickup_name: pickup,
-      pickup_lat: pickupLoc.lat,
-      pickup_lng: pickupLoc.lng,
-      dropoff_name: dropoff,
-      dropoff_lat: dropoffLoc.lat,
-      dropoff_lng: dropoffLoc.lng,
-      status: 'confirmed',
-      scheduled_at: new Date().toISOString(),
-    });
-    setSuccess(true);
+    setSubmitting(true);
+    try {
+      await createBooking({
+        vehicle_id: selectedVehicle.id,
+        pickup_name: pickup,
+        pickup_lat: pickupLoc.lat,
+        pickup_lng: pickupLoc.lng,
+        dropoff_name: dropoff,
+        dropoff_lat: dropoffLoc.lat,
+        dropoff_lng: dropoffLoc.lng,
+        status: 'confirmed',
+        scheduled_at: new Date().toISOString(),
+      });
+      setSuccess(true);
+      showToast('예약이 완료되었습니다!', 'success');
+    } catch {
+      showToast('예약 처리 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (success) {
@@ -183,11 +195,19 @@ export default function BookingPage() {
 
       {/* Navigation */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
-        <Button disabled={step === 0} onClick={() => setStep(s => s - 1)}>이전</Button>
+        <Button disabled={step === 0 || submitting} onClick={() => setStep(s => s - 1)}>이전</Button>
         {step < 2 ? (
           <Button variant="contained" disabled={!canProceed()} onClick={() => setStep(s => s + 1)}>다음</Button>
         ) : (
-          <Button variant="contained" color="primary" onClick={handleConfirm}>예약 확정</Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleConfirm}
+            disabled={submitting}
+            endIcon={submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
+          >
+            {submitting ? '처리중...' : '예약 확정'}
+          </Button>
         )}
       </Box>
     </Box>

@@ -22,6 +22,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import { useNotifications } from './hooks/useNotifications';
 import TrackingErrorBoundary from './components/common/ErrorBoundary';
 import ConnectionStatus from './components/common/ConnectionStatus';
+import ToastProvider from './components/common/ToastProvider';
 
 interface TrackingLayoutProps {
   darkMode: boolean;
@@ -50,6 +51,7 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
 
   return (
     <TrackingErrorBoundary>
+      <ToastProvider>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <ConnectionStatus />
         <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
@@ -88,6 +90,7 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
           </BottomNavigation>
         )}
       </Box>
+      </ToastProvider>
     </TrackingErrorBoundary>
   );
 }

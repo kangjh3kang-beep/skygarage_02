@@ -26,14 +26,27 @@ export function useBooking() {
     const channel = supabase
       .channel('bookings-rt')
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'tracking_bookings',
-      }, () => { loadBookings(); })
+      }, (payload) => {
+        setBookings(prev => [payload.new as Booking, ...prev]);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tracking_bookings',
+      }, (payload) => {
+        const updated = payload.new as Booking;
+        setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
+      })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [loadBookings]);
+    return () => {
+      channel.unsubscribe();
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const createBooking = useCallback(async (booking: Partial<Booking>) => {
     return bookingService.create(booking);
