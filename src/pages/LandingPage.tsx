@@ -16,9 +16,11 @@ import ContactSection from '../components/ContactSection';
 import SectionMediaStrip from '../components/SectionMediaStrip';
 import Footer from '../components/Footer';
 import LoadingScreen from '../components/LoadingScreen';
+import { SiteImagesContext, useSiteImagesProvider } from '../hooks/useSiteImages';
 
 export default function LandingPage() {
   const [loading, setLoading] = useState(true);
+  const siteImages = useSiteImagesProvider();
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2000);
@@ -28,32 +30,34 @@ export default function LandingPage() {
   if (loading) return <LoadingScreen onComplete={() => setLoading(false)} />;
 
   return (
-    <Box sx={{ overflowX: 'hidden' }}>
-      <Navbar />
-      <HeroSection />
-      <SectionMediaStrip position="after_hero" />
-      <BrandStorySection />
-      <SectionMediaStrip position="after_brand_story" />
-      <PainPointSection />
-      <SectionMediaStrip position="after_pain_point" />
-      <SolutionSection />
-      <SectionMediaStrip position="after_solution" />
-      <ATRSection />
-      <SectionMediaStrip position="after_atr" />
-      <ThreeModesSection />
-      <SectionMediaStrip position="after_three_modes" />
-      <ProcessSection />
-      <SectionMediaStrip position="after_process" />
-      <ComparisonSection />
-      <SectionMediaStrip position="after_comparison" />
-      <BenefitsSection />
-      <SectionMediaStrip position="after_benefits" />
-      <TrustSection />
-      <SectionMediaStrip position="after_trust" />
-      <MarketSection />
-      <SectionMediaStrip position="after_market" />
-      <ContactSection />
-      <Footer />
-    </Box>
+    <SiteImagesContext.Provider value={siteImages}>
+      <Box sx={{ overflowX: 'hidden' }}>
+        <Navbar />
+        <HeroSection />
+        <SectionMediaStrip position="after_hero" />
+        <BrandStorySection />
+        <SectionMediaStrip position="after_brand_story" />
+        <PainPointSection />
+        <SectionMediaStrip position="after_pain_point" />
+        <SolutionSection />
+        <SectionMediaStrip position="after_solution" />
+        <ATRSection />
+        <SectionMediaStrip position="after_atr" />
+        <ThreeModesSection />
+        <SectionMediaStrip position="after_three_modes" />
+        <ProcessSection />
+        <SectionMediaStrip position="after_process" />
+        <ComparisonSection />
+        <SectionMediaStrip position="after_comparison" />
+        <BenefitsSection />
+        <SectionMediaStrip position="after_benefits" />
+        <TrustSection />
+        <SectionMediaStrip position="after_trust" />
+        <MarketSection />
+        <SectionMediaStrip position="after_market" />
+        <ContactSection />
+        <Footer />
+      </Box>
+    </SiteImagesContext.Provider>
   );
 }
