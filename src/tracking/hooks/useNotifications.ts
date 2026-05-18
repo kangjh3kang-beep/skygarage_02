@@ -52,5 +52,11 @@ export function useNotifications() {
     setUnreadCount(prev => Math.max(0, prev - 1));
   }, []);
 
-  return { notifications, unreadCount, loading, markAsRead, refresh: loadNotifications };
+  const markAllAsRead = useCallback(async () => {
+    await notificationService.markAllAsRead();
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  }, []);
+
+  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, refresh: loadNotifications };
 }

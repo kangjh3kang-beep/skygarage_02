@@ -4,12 +4,15 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Skeleton from '@mui/material/Skeleton';
 import PersonIcon from '@mui/icons-material/Person';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../../hooks/useBooking';
 
 const STATUS_LABELS: Record<string, { label: string; color: 'default' | 'success' | 'info' | 'warning' | 'error' }> = {
@@ -21,6 +24,7 @@ const STATUS_LABELS: Record<string, { label: string; color: 'default' | 'success
 };
 
 export default function MyPage() {
+  const navigate = useNavigate();
   const { bookings, loading } = useBooking();
 
   if (loading) {
@@ -63,15 +67,27 @@ export default function MyPage() {
       {/* Booking History */}
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>예약 이력</Typography>
       {bookings.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">예약 이력이 없습니다.</Typography>
+        <Card sx={{ border: '1px dashed', borderColor: 'divider' }}>
+          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <AddCircleIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              아직 예약 이력이 없습니다.
+            </Typography>
+            <Button variant="outlined" size="small" onClick={() => navigate('/tracking/booking')}>
+              첫 예약 만들기
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <List disablePadding>
           {bookings.map(b => {
             const statusInfo = STATUS_LABELS[b.status] || STATUS_LABELS.pending;
+            const isTrackable = b.status === 'in_progress' && b.vehicle_id;
             return (
               <ListItemButton
                 key={b.id}
                 sx={{ borderRadius: 2, mb: 1, border: 1, borderColor: 'divider' }}
+                onClick={() => { if (isTrackable) navigate(`/tracking/track/${b.vehicle_id}`); }}
               >
                 <ListItemText
                   primary={`${b.pickup_name} → ${b.dropoff_name}`}

@@ -100,9 +100,9 @@ export default function TrackingDashboard() {
       </Card>
 
       {/* Active Bookings */}
-      {activeBookings.length > 0 && (
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>진행중인 예약</Typography>
+      <Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>진행중인 예약</Typography>
+        {activeBookings.length > 0 ? (
           <Grid container spacing={2}>
             {activeBookings.map(b => (
               <Grid size={{ xs: 12, md: 6 }} key={b.id}>
@@ -123,7 +123,39 @@ export default function TrackingDashboard() {
               </Grid>
             ))}
           </Grid>
-        </Box>
+        ) : (
+          <Card sx={{ border: '1px dashed', borderColor: 'divider' }}>
+            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+              <BookmarkIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                현재 진행중인 예약이 없습니다.
+              </Typography>
+              <Button variant="outlined" size="small" onClick={() => navigate('/tracking/booking')}>
+                새 예약 만들기
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </Box>
+
+      {/* Empty Vehicle State */}
+      {vehicles.length === 0 && (
+        <Card sx={{ mt: 3, border: '1px dashed', borderColor: 'divider' }}>
+          <CardContent sx={{ textAlign: 'center', py: 4 }}>
+            <LocalTaxiIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              등록된 차량이 없습니다.
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              관리 화면에서 차량을 추가하거나 데모 모드를 실행하세요.
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Button variant="outlined" size="small" onClick={() => navigate('/tracking/fleet')}>
+                차량 관리
+              </Button>
+            </Box>
+          </CardContent>
+        </Card>
       )}
     </Box>
   );

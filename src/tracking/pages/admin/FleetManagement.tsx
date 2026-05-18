@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -32,7 +33,56 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import FastForwardIcon from '@mui/icons-material/FastForward';
 import SearchIcon from '@mui/icons-material/Search';
+import LockIcon from '@mui/icons-material/Lock';
 import { useToast } from '../../components/common/ToastProvider';
+
+const ADMIN_PIN = '1234';
+
+function AdminGate({ children }: { children: React.ReactNode }) {
+  const [authorized, setAuthorized] = useState(() => sessionStorage.getItem('fleet_auth') === 'true');
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState(false);
+
+  if (authorized) return <>{children}</>;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin === ADMIN_PIN) {
+      sessionStorage.setItem('fleet_auth', 'true');
+      setAuthorized(true);
+    } else {
+      setError(true);
+      setPin('');
+    }
+  };
+
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', p: 3 }}>
+      <Paper sx={{ p: 4, textAlign: 'center', maxWidth: 360, width: '100%' }}>
+        <LockIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>관리자 인증</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          차량 관제 페이지에 접근하려면 관리자 PIN을 입력하세요.
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            size="small"
+            type="password"
+            label="PIN 입력"
+            value={pin}
+            onChange={e => { setPin(e.target.value); setError(false); }}
+            error={error}
+            helperText={error ? 'PIN이 올바르지 않습니다.' : ' '}
+            autoFocus
+            sx={{ mb: 2 }}
+          />
+          <Button variant="contained" fullWidth type="submit" disabled={!pin}>확인</Button>
+        </form>
+      </Paper>
+    </Box>
+  );
+}
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import { useBooking } from '../../hooks/useBooking';
 import { vehicleService, bookingService } from '../../services/trackingService';
@@ -177,11 +227,36 @@ export default function FleetManagement() {
   const transitCount = vehicles.filter(v => v.status === 'in_transit').length;
   const offlineCount = vehicles.filter(v => v.status === 'offline').length;
 
+  const seedDemoData = useCallback(async () => {
+    try {
+      const demoVehicles = [
+        { driver_name: '김민수', plate_number: '서울 12가 3456', phone: '010-1234-5678', vehicle_model: 'Genesis G80', current_lat: 37.4979, current_lng: 127.0276 },
+        { driver_name: '이영진', plate_number: '서울 34나 7890', phone: '010-2345-6789', vehicle_model: 'Mercedes S-Class', current_lat: 37.5252, current_lng: 126.9258 },
+        { driver_name: '박서준', plate_number: '경기 56다 1234', phone: '010-3456-7890', vehicle_model: 'BMW 7 Series', current_lat: 37.5547, current_lng: 126.9707 },
+        { driver_name: '최하나', plate_number: '서울 78라 5678', phone: '010-4567-8901', vehicle_model: 'Audi A8', current_lat: 37.5126, current_lng: 127.1026 },
+        { driver_name: '정우성', plate_number: '경기 90마 9012', phone: '010-5678-9012', vehicle_model: 'Tesla Model S', current_lat: 37.3947, current_lng: 127.1113 },
+      ];
+      for (const v of demoVehicles) {
+        await vehicleService.create({ ...v, status: 'available' });
+      }
+      showToast(`${demoVehicles.length}대 데모 차량이 추가되었습니다.`, 'success');
+      refresh();
+    } catch {
+      showToast('데모 데이터 생성 중 오류가 발생했습니다.', 'error');
+    }
+  }, [refresh, showToast]);
+
   return (
+    <AdminGate>
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 800 }}>차량 관제</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd} size="small">차량 등록</Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {vehicles.length === 0 && (
+            <Button variant="outlined" size="small" onClick={seedDemoData}>데모 데이터 생성</Button>
+          )}
+          <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd} size="small">차량 등록</Button>
+        </Box>
       </Box>
 
       {/* Simulator Panel */}
@@ -383,5 +458,6 @@ export default function FleetManagement() {
         </DialogActions>
       </Dialog>
     </Box>
+    </AdminGate>
   );
 }

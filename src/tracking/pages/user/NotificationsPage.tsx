@@ -1,16 +1,18 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Chip from '@mui/material/Chip';
-import Alert from '@mui/material/Alert';
 import Skeleton from '@mui/material/Skeleton';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
 import { useNotifications } from '../../hooks/useNotifications';
 
 const TYPE_CONFIG: Record<string, { icon: React.ReactElement; color: string }> = {
@@ -21,7 +23,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactElement; color: string }> =
 };
 
 export default function NotificationsPage() {
-  const { notifications, loading, markAsRead } = useNotifications();
+  const { notifications, loading, markAsRead, markAllAsRead, unreadCount } = useNotifications();
 
   if (loading) {
     return (
@@ -34,10 +36,25 @@ export default function NotificationsPage() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Typography variant="h5" sx={{ fontWeight: 800, mb: 3 }}>알림 센터</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800 }}>알림 센터</Typography>
+        {unreadCount > 0 && (
+          <Button size="small" startIcon={<DoneAllIcon />} onClick={markAllAsRead}>
+            모두 읽음
+          </Button>
+        )}
+      </Box>
 
       {notifications.length === 0 ? (
-        <Alert severity="info">알림이 없습니다.</Alert>
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <NotificationsOffIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1.5 }} />
+          <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 600 }}>
+            알림이 없습니다.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            차량 접근, 도착 예정 변경 등의 알림이 여기에 표시됩니다.
+          </Typography>
+        </Box>
       ) : (
         <List disablePadding>
           {notifications.map(n => {
