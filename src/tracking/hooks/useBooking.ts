@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Booking } from '../types';
 import { bookingService } from '../services/trackingService';
 
@@ -7,6 +6,7 @@ export function useBooking() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadBookings = useCallback(async () => {
     try {
@@ -20,33 +20,13 @@ export function useBooking() {
     }
   }, []);
 
-  useEffect(() => { loadBookings(); }, [loadBookings]);
-
   useEffect(() => {
-    const channel = supabase
-      .channel('bookings-rt')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'tracking_bookings',
-      }, (payload) => {
-        setBookings(prev => [payload.new as Booking, ...prev]);
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tracking_bookings',
-      }, (payload) => {
-        const updated = payload.new as Booking;
-        setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
-      })
-      .subscribe();
-
+    loadBookings();
+    intervalRef.current = setInterval(loadBookings, 10000);
     return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [loadBookings]);
 
   const createBooking = useCallback(async (booking: Partial<Booking>) => {
     return bookingService.create(booking);
