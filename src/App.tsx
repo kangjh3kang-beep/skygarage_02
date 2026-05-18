@@ -94,6 +94,29 @@ function AdminThemeWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onToggleDarkMode: () => void }) {
+  const { user, loading } = useAuth();
+  const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
+  if (loading) return fallback;
+  if (!user) return <Suspense fallback={fallback}><Login /></Suspense>;
+  return (
+    <Suspense fallback={fallback}>
+      <Routes>
+        <Route element={<TrackingLayout darkMode={darkMode} onToggleDarkMode={onToggleDarkMode} />}>
+          <Route index element={<TrackingDashboard />} />
+          <Route path="map" element={<FullMapPage />} />
+          <Route path="track/:vehicleId" element={<VehicleTrackingPage />} />
+          <Route path="booking" element={<BookingPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="mypage" element={<TrackingMyPage />} />
+          <Route path="fleet" element={<FleetManagement />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
+  );
+}
+
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
 
@@ -202,23 +225,12 @@ export default function App() {
       <ColorModeContext.Provider value={colorModeValue}>
         <Routes>
           <Route path="/tracking/*" element={
-            <ThemeProvider theme={publicTheme}>
-              <CssBaseline />
-              <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>}>
-                <Routes>
-                  <Route element={<TrackingLayout darkMode={mode === 'dark'} onToggleDarkMode={toggleMode} />}>
-                    <Route index element={<TrackingDashboard />} />
-                    <Route path="map" element={<FullMapPage />} />
-                    <Route path="track/:vehicleId" element={<VehicleTrackingPage />} />
-                    <Route path="booking" element={<BookingPage />} />
-                    <Route path="notifications" element={<NotificationsPage />} />
-                    <Route path="mypage" element={<TrackingMyPage />} />
-                    <Route path="fleet" element={<FleetManagement />} />
-                    <Route path="*" element={<NotFoundPage />} />
-                  </Route>
-                </Routes>
-              </Suspense>
-            </ThemeProvider>
+            <AuthProvider>
+              <ThemeProvider theme={publicTheme}>
+                <CssBaseline />
+                <TrackingGuard darkMode={mode === 'dark'} onToggleDarkMode={toggleMode} />
+              </ThemeProvider>
+            </AuthProvider>
           } />
           <Route path="/admin/*" element={
             <AuthProvider>

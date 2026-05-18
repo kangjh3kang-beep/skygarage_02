@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import Typography from '@mui/material/Typography';
@@ -11,38 +11,50 @@ import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
 import Skeleton from '@mui/material/Skeleton';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from 'react-router-dom';
-import { useVehicleTracking } from '../../hooks/useVehicleTracking';
-import TrackingMap from '../../components/Map/TrackingMap';
-import type { Vehicle } from '../../types';
-
-const STATUS_MAP: Record<string, { label: string; color: 'success' | 'info' | 'default' | 'warning' }> = {
-  available: { label: '대기', color: 'success' },
-  in_transit: { label: '운행', color: 'info' },
-  offline: { label: '오프', color: 'default' },
-  maintenance: { label: '정비', color: 'warning' },
-};
+import { valetVehicleService, atrService } from '../../services/trackingService';
+import { ValetFloorMap } from '../../components/Valet';
+import { TrackingStageIndicator } from '../../components/Valet';
+import type { ValetVehicle, AtrUnit } from '../../types';
+import { STAGE_CONFIG } from '../../types';
 
 export default function FullMapPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { vehicles, loading } = useVehicleTracking();
-  const [selected, setSelected] = useState<Vehicle | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [vehicles, setVehicles] = useState<ValetVehicle[]>([]);
+  const [atrUnits, setAtrUnits] = useState<AtrUnit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<ValetVehicle | null>(null);
+  const [floor, setFloor] = useState(1);
 
-  const filteredVehicles = statusFilter
-    ? vehicles.filter(v => v.status === statusFilter)
-    : vehicles;
+  const loadData = useCallback(async () => {
+    try {
+      const [vData, aData] = await Promise.all([
+        valetVehicleService.getAll(),
+        atrService.getAll(),
+      ]);
+      setVehicles(vData);
+      setAtrUnits(aData);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleVehicleClick = (v: Vehicle) => {
-    setSelected(prev => prev?.id === v.id ? null : v);
-  };
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 8000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  const activeVehicles = vehicles.filter(v => v.current_stage !== 'exit');
 
   if (loading) {
     return (
@@ -64,30 +76,21 @@ export default function FullMapPage() {
       {!isMobile && (
         <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider', overflow: 'auto' }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>차량 목록 ({filteredVehicles.length})</Typography>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              <Chip
-                label="전체"
-                size="small"
-                variant={statusFilter === null ? 'filled' : 'outlined'}
-                onClick={() => setStatusFilter(null)}
-                sx={{ height: 24 }}
-              />
-              {Object.entries(STATUS_MAP).map(([key, { label, color }]) => (
-                <Chip
-                  key={key}
-                  label={`${label} ${vehicles.filter(v => v.status === key).length}`}
-                  size="small"
-                  color={color}
-                  variant={statusFilter === key ? 'filled' : 'outlined'}
-                  onClick={() => setStatusFilter(statusFilter === key ? null : key)}
-                  sx={{ height: 24 }}
-                />
-              ))}
-            </Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>차량 현황 ({activeVehicles.length})</Typography>
+            <ToggleButtonGroup
+              value={floor}
+              exclusive
+              onChange={(_, v) => { if (v !== null) setFloor(v); }}
+              size="small"
+              sx={{ mb: 1 }}
+            >
+              <ToggleButton value={-1}>B1</ToggleButton>
+              <ToggleButton value={1}>1F</ToggleButton>
+              <ToggleButton value={2}>2F</ToggleButton>
+            </ToggleButtonGroup>
           </Box>
           <List disablePadding dense>
-            {filteredVehicles.map(v => (
+            {activeVehicles.map(v => (
               <ListItemButton
                 key={v.id}
                 selected={selected?.id === v.id}
@@ -95,64 +98,76 @@ export default function FullMapPage() {
                 onDoubleClick={() => navigate(`/tracking/track/${v.id}`)}
               >
                 <ListItemAvatar>
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: v.status === 'in_transit' ? 'info.main' : v.status === 'available' ? 'success.main' : 'grey.500' }}>
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: v.current_stage === 'in_transit' ? 'info.main' : v.current_stage === 'stored' ? 'success.main' : 'warning.main' }}>
                     <DirectionsCarIcon sx={{ fontSize: 18 }} />
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={v.driver_name}
-                  secondary={`${v.plate_number} | ${v.speed.toFixed(0)} km/h`}
+                  primary={v.plate_number}
+                  secondary={`${v.vehicle_model} | ${v.current_floor}F`}
                   slotProps={{ primary: { sx: { fontSize: '0.8rem', fontWeight: 600 } }, secondary: { sx: { fontSize: '0.7rem' } } }}
                 />
-                <Chip label={STATUS_MAP[v.status]?.label} size="small" color={STATUS_MAP[v.status]?.color} sx={{ height: 20, fontSize: '0.6rem' }} />
+                <Chip
+                  label={STAGE_CONFIG[v.current_stage]?.label}
+                  size="small"
+                  color={STAGE_CONFIG[v.current_stage]?.color}
+                  sx={{ height: 20, fontSize: '0.6rem' }}
+                />
               </ListItemButton>
             ))}
           </List>
         </Box>
       )}
 
-      {/* Map */}
-      <Box sx={{ flex: 1 }}>
-        <TrackingMap
-          vehicles={vehicles}
+      {/* Floor Map */}
+      <Box sx={{ flex: 1, p: 2, overflow: 'auto' }}>
+        <ValetFloorMap
+          vehicles={activeVehicles}
+          atrUnits={atrUnits}
           selectedVehicleId={selected?.id}
-          onVehicleClick={handleVehicleClick}
-          height="100%"
+          onVehicleClick={(v) => setSelected(prev => prev?.id === v.id ? null : v)}
+          floor={floor}
         />
       </Box>
 
-      {/* Mobile bottom sheet for selected vehicle */}
-      {isMobile && (
-        <Drawer
-          anchor="bottom"
-          open={!!selected}
-          onClose={() => setSelected(null)}
-          sx={{ '& .MuiDrawer-paper': { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '35vh' } }}
-        >
-          {selected && (
-            <Box sx={{ p: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selected.driver_name}</Typography>
-                <IconButton size="small" onClick={() => setSelected(null)}><CloseIcon /></IconButton>
-              </Box>
-              <Typography variant="body2" color="text.secondary">{selected.plate_number} | {selected.vehicle_model}</Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 1.5, alignItems: 'center' }}>
-                <Chip label={STATUS_MAP[selected.status]?.label} size="small" color={STATUS_MAP[selected.status]?.color} />
-                <Chip label={`${selected.speed.toFixed(0)} km/h`} size="small" variant="outlined" />
-                <Box sx={{ flex: 1 }} />
-                <Button
-                  size="small"
-                  variant="contained"
-                  endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-                  onClick={() => navigate(`/tracking/track/${selected.id}`)}
-                >
-                  추적
-                </Button>
-              </Box>
+      {/* Mobile/Desktop detail drawer */}
+      <Drawer
+        anchor={isMobile ? 'bottom' : 'right'}
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        sx={{
+          '& .MuiDrawer-paper': isMobile
+            ? { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '40vh' }
+            : { width: 320 },
+        }}
+      >
+        {selected && (
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selected.plate_number}</Typography>
+              <IconButton size="small" onClick={() => setSelected(null)}><CloseIcon /></IconButton>
             </Box>
-          )}
-        </Drawer>
-      )}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              {selected.vehicle_model} {selected.vehicle_color && `/ ${selected.vehicle_color}`}
+            </Typography>
+            <TrackingStageIndicator currentStage={selected.current_stage} />
+            <Box sx={{ display: 'flex', gap: 1, mt: 2, alignItems: 'center' }}>
+              <Chip label={STAGE_CONFIG[selected.current_stage]?.label} size="small" color={STAGE_CONFIG[selected.current_stage]?.color} />
+              <Chip label={`${selected.current_floor}F`} size="small" variant="outlined" />
+              {selected.storage_zone && <Chip label={`${selected.storage_zone}구역`} size="small" variant="outlined" />}
+              <Box sx={{ flex: 1 }} />
+              <Button
+                size="small"
+                variant="contained"
+                endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+                onClick={() => navigate(`/tracking/track/${selected.id}`)}
+              >
+                상세
+              </Button>
+            </Box>
+          </Box>
+        )}
+      </Drawer>
     </Box>
   );
 }

@@ -71,7 +71,7 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
               </IconButton>
             )}
             <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, color: 'text.primary', fontSize: '1.1rem' }}>
-              SkyGarage Ride
+              SkyGarage Valet
             </Typography>
             <IconButton onClick={onToggleDarkMode} sx={{ mr: 0.5 }}>
               {darkMode ? <LightModeIcon /> : <DarkModeIcon />}

@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase';
-import type { Vehicle, Route, Booking, LocationHistory, TrackingNotification } from '../types';
+import type { Vehicle, Route, Booking, LocationHistory, TrackingNotification, ValetVehicle, AtrUnit, TrackingEvent } from '../types';
 
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.978 };
 
@@ -9,7 +9,7 @@ export const vehicleService = {
       .from('tracking_vehicles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -19,7 +19,7 @@ export const vehicleService = {
       .select('*')
       .eq('id', id)
       .maybeSingle();
-    if (error) throw error;
+    if (error) { console.warn(error.message); return null; }
     return data;
   },
 
@@ -83,7 +83,7 @@ export const routeService = {
       .select('*')
       .eq('vehicle_id', vehicleId)
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -93,7 +93,7 @@ export const routeService = {
       .select('*')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -129,7 +129,7 @@ export const bookingService = {
       .from('tracking_bookings')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -139,7 +139,7 @@ export const bookingService = {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -204,7 +204,7 @@ export const locationService = {
       .eq('vehicle_id', vehicleId)
       .order('recorded_at', { ascending: false })
       .limit(limit);
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -228,7 +228,7 @@ export const notificationService = {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50);
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -238,7 +238,7 @@ export const notificationService = {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(50);
-    if (error) throw error;
+    if (error) { console.warn(error.message); return []; }
     return data || [];
   },
 
@@ -247,7 +247,7 @@ export const notificationService = {
       .from('tracking_notifications')
       .update({ read: true })
       .eq('id', id);
-    if (error) throw error;
+    if (error) console.warn(error.message);
   },
 
   async markAllAsRead() {
@@ -255,7 +255,7 @@ export const notificationService = {
       .from('tracking_notifications')
       .update({ read: true })
       .eq('read', false);
-    if (error) throw error;
+    if (error) console.warn(error.message);
   },
 
   async create(notification: { type: string; title: string; message: string; booking_id?: string }) {
@@ -264,7 +264,99 @@ export const notificationService = {
       .insert({ ...notification, read: false })
       .select()
       .maybeSingle();
+    if (error) { console.warn(error.message); return null; }
+    return data;
+  },
+};
+
+// ===== 발레파킹 5단계 추적 서비스 =====
+
+export const valetVehicleService = {
+  async getAll(): Promise<ValetVehicle[]> {
+    const { data, error } = await supabase
+      .from('valet_vehicles')
+      .select('*')
+      .order('entry_time', { ascending: false });
+    if (error) { console.warn('valetVehicleService.getAll:', error.message); return []; }
+    return data || [];
+  },
+
+  async getById(id: string): Promise<ValetVehicle | null> {
+    const { data, error } = await supabase
+      .from('valet_vehicles')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) { console.warn('valetVehicleService.getById:', error.message); return null; }
+    return data;
+  },
+
+  async updateStage(id: string, stage: ValetVehicle['current_stage'], atrId?: string) {
+    const update: Partial<ValetVehicle> = { current_stage: stage, last_updated: new Date().toISOString() };
+    if (atrId) update.assigned_atr_id = atrId;
+    if (stage === 'exit') update.exit_time = new Date().toISOString();
+    const { error } = await supabase.from('valet_vehicles').update(update).eq('id', id);
     if (error) throw error;
+  },
+
+  async create(vehicle: Partial<ValetVehicle>): Promise<ValetVehicle | null> {
+    const { data, error } = await supabase
+      .from('valet_vehicles')
+      .insert({
+        plate_number: vehicle.plate_number || '',
+        vehicle_model: vehicle.vehicle_model || '',
+        vehicle_color: vehicle.vehicle_color || '',
+        owner_id: vehicle.owner_id || null,
+        complex_id: vehicle.complex_id || null,
+        current_stage: 'entry',
+        entry_time: new Date().toISOString(),
+      })
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+};
+
+export const atrService = {
+  async getAll(): Promise<AtrUnit[]> {
+    const { data, error } = await supabase
+      .from('valet_atr_units')
+      .select('*')
+      .order('unit_code');
+    if (error) { console.warn('atrService.getAll:', error.message); return []; }
+    return data || [];
+  },
+
+  async getById(id: string): Promise<AtrUnit | null> {
+    const { data, error } = await supabase
+      .from('valet_atr_units')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) { console.warn('atrService.getById:', error.message); return null; }
+    return data;
+  },
+};
+
+export const trackingEventService = {
+  async getByVehicle(vehicleId: string): Promise<TrackingEvent[]> {
+    const { data, error } = await supabase
+      .from('valet_tracking_events')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .order('created_at', { ascending: true });
+    if (error) { console.warn('trackingEventService.getByVehicle:', error.message); return []; }
+    return data || [];
+  },
+
+  async create(event: Partial<TrackingEvent>): Promise<TrackingEvent | null> {
+    const { data, error } = await supabase
+      .from('valet_tracking_events')
+      .insert(event)
+      .select()
+      .maybeSingle();
+    if (error) { console.warn('trackingEventService.create:', error.message); return null; }
     return data;
   },
 };
