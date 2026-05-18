@@ -6,11 +6,15 @@ import { bookingService } from '../services/trackingService';
 export function useBooking() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadBookings = useCallback(async () => {
     try {
+      setError(null);
       const data = await bookingService.getAll();
       setBookings(data);
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -40,5 +44,5 @@ export function useBooking() {
     loadBookings();
   }, [loadBookings]);
 
-  return { bookings, loading, createBooking, updateStatus, refresh: loadBookings };
+  return { bookings, loading, error, createBooking, updateStatus, refresh: loadBookings };
 }

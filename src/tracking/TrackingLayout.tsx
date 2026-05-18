@@ -20,6 +20,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import { useNotifications } from './hooks/useNotifications';
+import TrackingErrorBoundary from './components/common/ErrorBoundary';
+import ConnectionStatus from './components/common/ConnectionStatus';
 
 interface TrackingLayoutProps {
   darkMode: boolean;
@@ -47,42 +49,45 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
   const isSubpage = location.pathname.includes('/track/') || location.pathname.includes('/fleet');
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
-        <Toolbar sx={{ minHeight: { xs: 56 } }}>
-          {isSubpage && (
-            <IconButton onClick={() => navigate(-1)} sx={{ mr: 1 }}>
-              <ArrowBackIcon />
+    <TrackingErrorBoundary>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <ConnectionStatus />
+        <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
+          <Toolbar sx={{ minHeight: { xs: 56 } }}>
+            {isSubpage && (
+              <IconButton onClick={() => navigate(-1)} sx={{ mr: 1 }}>
+                <ArrowBackIcon />
+              </IconButton>
+            )}
+            <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, color: 'text.primary', fontSize: '1.1rem' }}>
+              SkyGarage Ride
+            </Typography>
+            <IconButton onClick={onToggleDarkMode} sx={{ mr: 0.5 }}>
+              {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
-          )}
-          <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, color: 'text.primary', fontSize: '1.1rem' }}>
-            SkyGarage Ride
-          </Typography>
-          <IconButton onClick={onToggleDarkMode} sx={{ mr: 0.5 }}>
-            {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
-          </IconButton>
-          <IconButton onClick={() => navigate('/tracking/fleet')} sx={{ color: 'text.secondary' }}>
-            <AdminPanelSettingsIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
+            <IconButton onClick={() => navigate('/tracking/fleet')} sx={{ color: 'text.secondary' }}>
+              <AdminPanelSettingsIcon />
+            </IconButton>
+          </Toolbar>
+        </AppBar>
 
-      <Box sx={{ flex: 1, pb: isMobile ? 8 : 0, overflow: 'auto' }}>
-        <Outlet />
+        <Box sx={{ flex: 1, pb: isMobile ? 8 : 0, overflow: 'auto' }}>
+          <Outlet />
+        </Box>
+
+        {isMobile && (
+          <BottomNavigation
+            value={navValue}
+            onChange={(_, val) => { setNavValue(val); navigate(navItems[val].path); }}
+            showLabels
+            sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, borderTop: 1, borderColor: 'divider', zIndex: 1100 }}
+          >
+            {navItems.map(item => (
+              <BottomNavigationAction key={item.path} label={item.label} icon={item.icon} />
+            ))}
+          </BottomNavigation>
+        )}
       </Box>
-
-      {isMobile && (
-        <BottomNavigation
-          value={navValue}
-          onChange={(_, val) => { setNavValue(val); navigate(navItems[val].path); }}
-          showLabels
-          sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, borderTop: 1, borderColor: 'divider', zIndex: 1100 }}
-        >
-          {navItems.map(item => (
-            <BottomNavigationAction key={item.path} label={item.label} icon={item.icon} />
-          ))}
-        </BottomNavigation>
-      )}
-    </Box>
+    </TrackingErrorBoundary>
   );
 }

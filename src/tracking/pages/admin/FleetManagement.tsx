@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
@@ -27,6 +27,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import LocalTaxiIcon from '@mui/icons-material/LocalTaxi';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
+import FastForwardIcon from '@mui/icons-material/FastForward';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import { useBooking } from '../../hooks/useBooking';
 import { vehicleService, bookingService } from '../../services/trackingService';
@@ -56,6 +59,54 @@ export default function FleetManagement() {
   const [vehicleDialog, setVehicleDialog] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [form, setForm] = useState({ driver_name: '', plate_number: '', phone: '', vehicle_model: '', status: 'available' });
+
+  const [simRunning, setSimRunning] = useState(false);
+  const [simLog, setSimLog] = useState('');
+  const simInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const simulateStep = useCallback(async () => {
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vehicle-simulator`;
+    try {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'simulate_step', steps: 1 }),
+      });
+      const data = await res.json();
+      setSimLog(`${data.updated}대 이동 완료 (${new Date().toLocaleTimeString('ko-KR')})`);
+      refresh();
+    } catch {
+      setSimLog('시뮬레이션 오류');
+    }
+  }, [refresh]);
+
+  const toggleSimulation = useCallback(() => {
+    if (simRunning) {
+      if (simInterval.current) clearInterval(simInterval.current);
+      simInterval.current = null;
+      setSimRunning(false);
+      setSimLog('시뮬레이션 중지됨');
+    } else {
+      setSimRunning(true);
+      setSimLog('시뮬레이션 시작...');
+      simulateStep();
+      simInterval.current = setInterval(simulateStep, 3000);
+    }
+  }, [simRunning, simulateStep]);
+
+  useEffect(() => {
+    return () => { if (simInterval.current) clearInterval(simInterval.current); };
+  }, []);
+
+  const startRoute = useCallback(async (vehicleId: string) => {
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vehicle-simulator`;
+    await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ action: 'start_route', vehicle_id: vehicleId }),
+    });
+    refresh();
+  }, [refresh]);
 
   const openAdd = () => { setEditingVehicle(null); setForm({ driver_name: '', plate_number: '', phone: '', vehicle_model: '', status: 'available' }); setVehicleDialog(true); };
   const openEdit = (v: Vehicle) => { setEditingVehicle(v); setForm({ driver_name: v.driver_name, plate_number: v.plate_number, phone: v.phone, vehicle_model: v.vehicle_model, status: v.status }); setVehicleDialog(true); };
@@ -99,6 +150,42 @@ export default function FleetManagement() {
         <Typography variant="h5" sx={{ fontWeight: 800 }}>차량 관제</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd} size="small">차량 등록</Button>
       </Box>
+
+      {/* Simulator Panel */}
+      <Card sx={{ mb: 3, border: 1, borderColor: simRunning ? 'success.main' : 'divider' }}>
+        <CardContent sx={{ py: 1.5, px: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={simRunning ? '실행중' : '정지'}
+              size="small"
+              color={simRunning ? 'success' : 'default'}
+              sx={{ animation: simRunning ? 'pulse 2s infinite' : 'none', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.6 } } }}
+            />
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>차량 시뮬레이터</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant={simRunning ? 'outlined' : 'contained'}
+              size="small"
+              color={simRunning ? 'error' : 'success'}
+              startIcon={simRunning ? <StopIcon /> : <PlayArrowIcon />}
+              onClick={toggleSimulation}
+            >
+              {simRunning ? '중지' : '시작'}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FastForwardIcon />}
+              onClick={simulateStep}
+              disabled={simRunning}
+            >
+              1회 실행
+            </Button>
+          </Box>
+          {simLog && <Typography variant="caption" color="text.secondary">{simLog}</Typography>}
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -161,6 +248,9 @@ export default function FleetManagement() {
                     <TableCell><Chip label={STATUS_LABELS[v.status]?.label} size="small" color={STATUS_LABELS[v.status]?.color} sx={{ height: 22 }} /></TableCell>
                     <TableCell><Typography variant="caption">{v.speed.toFixed(0)} km/h</Typography></TableCell>
                     <TableCell align="right">
+                      {v.status === 'available' && (
+                        <Button size="small" variant="text" sx={{ mr: 0.5, minWidth: 0, fontSize: '0.7rem' }} onClick={e => { e.stopPropagation(); startRoute(v.id); }}>출발</Button>
+                      )}
                       <IconButton size="small" onClick={e => { e.stopPropagation(); openEdit(v); }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
                       <IconButton size="small" onClick={e => { e.stopPropagation(); handleDelete(v.id); }} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
                     </TableCell>

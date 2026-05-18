@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -31,7 +31,7 @@ export default function VehicleTrackingPage() {
   const eta = useETA(selectedVehicle, activeRoute);
 
   const [etaNotified, setEtaNotified] = useState(false);
-  const prevEtaMinRef = useState<number>(0);
+  const prevEtaMinRef = useRef(0);
 
   useEffect(() => {
     if (!selectedVehicle || !activeRoute) return;
@@ -50,16 +50,16 @@ export default function VehicleTrackingPage() {
   useEffect(() => {
     if (!eta.estimatedArrival || etaNotified) return;
     const currentMin = Math.round(eta.remainingMinutes);
-    if (prevEtaMinRef[0] > 0 && Math.abs(currentMin - prevEtaMinRef[0]) >= 5) {
+    if (prevEtaMinRef.current > 0 && Math.abs(currentMin - prevEtaMinRef.current) >= 5) {
       setEtaNotified(true);
       notificationService.create({
         type: 'eta_change',
         title: '도착 예상 시간 변경',
-        message: `도착 예상 시간이 ${Math.abs(currentMin - prevEtaMinRef[0])}분 ${currentMin > prevEtaMinRef[0] ? '지연' : '단축'}되었습니다.`,
+        message: `도착 예상 시간이 ${Math.abs(currentMin - prevEtaMinRef.current)}분 ${currentMin > prevEtaMinRef.current ? '지연' : '단축'}되었습니다.`,
       });
     }
-    prevEtaMinRef[0] = currentMin;
-  }, [eta.remainingMinutes, eta.estimatedArrival, etaNotified, prevEtaMinRef]);
+    prevEtaMinRef.current = currentMin;
+  }, [eta.remainingMinutes, eta.estimatedArrival, etaNotified]);
 
   if (loading) {
     return (

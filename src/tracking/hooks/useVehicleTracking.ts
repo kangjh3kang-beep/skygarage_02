@@ -8,15 +8,19 @@ export function useVehicleTracking(vehicleId?: string) {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [locationHistory, setLocationHistory] = useState<LocationHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadVehicles = useCallback(async () => {
     try {
+      setError(null);
       const data = await vehicleService.getAll();
       setVehicles(data);
       if (vehicleId) {
         const v = data.find(d => d.id === vehicleId) || null;
         setSelectedVehicle(v);
       }
+    } catch (err) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -24,8 +28,12 @@ export function useVehicleTracking(vehicleId?: string) {
 
   const loadHistory = useCallback(async () => {
     if (!vehicleId) return;
-    const data = await locationService.getHistory(vehicleId, 50);
-    setLocationHistory(data);
+    try {
+      const data = await locationService.getHistory(vehicleId, 50);
+      setLocationHistory(data);
+    } catch {
+      // history load failure is non-critical
+    }
   }, [vehicleId]);
 
   useEffect(() => {
@@ -52,5 +60,5 @@ export function useVehicleTracking(vehicleId?: string) {
     return () => { supabase.removeChannel(channel); };
   }, [vehicleId]);
 
-  return { vehicles, selectedVehicle, locationHistory, loading, refresh: loadVehicles };
+  return { vehicles, selectedVehicle, locationHistory, loading, error, refresh: loadVehicles };
 }

@@ -3,6 +3,8 @@ import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
@@ -11,6 +13,8 @@ import Avatar from '@mui/material/Avatar';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import CloseIcon from '@mui/icons-material/Close';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useNavigate } from 'react-router-dom';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import TrackingMap from '../../components/Map/TrackingMap';
@@ -83,15 +87,27 @@ export default function FullMapPage() {
           anchor="bottom"
           open={!!selected}
           onClose={() => setSelected(null)}
-          sx={{ '& .MuiDrawer-paper': { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '30vh' } }}
+          sx={{ '& .MuiDrawer-paper': { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '35vh' } }}
         >
           {selected && (
             <Box sx={{ p: 2 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selected.driver_name}</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{selected.driver_name}</Typography>
+                <IconButton size="small" onClick={() => setSelected(null)}><CloseIcon /></IconButton>
+              </Box>
               <Typography variant="body2" color="text.secondary">{selected.plate_number} | {selected.vehicle_model}</Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1.5, alignItems: 'center' }}>
                 <Chip label={STATUS_MAP[selected.status]?.label} size="small" color={STATUS_MAP[selected.status]?.color} />
                 <Chip label={`${selected.speed.toFixed(0)} km/h`} size="small" variant="outlined" />
+                <Box sx={{ flex: 1 }} />
+                <Button
+                  size="small"
+                  variant="contained"
+                  endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => navigate(`/tracking/track/${selected.id}`)}
+                >
+                  추적
+                </Button>
               </Box>
             </Box>
           )}
