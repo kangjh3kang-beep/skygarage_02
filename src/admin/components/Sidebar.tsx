@@ -48,6 +48,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import SpeedIcon from '@mui/icons-material/Speed';
+import AccessibleIcon from '@mui/icons-material/Accessible';
 import ShieldIcon from '@mui/icons-material/Shield';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import HubIcon from '@mui/icons-material/Hub';
@@ -72,6 +73,7 @@ const menuGroups: MenuGroup[] = [
       { label: '단지 관리', icon: <ApartmentIcon />, path: '/admin/complexes' },
       { label: '입주민', icon: <PeopleIcon />, path: '/admin/residents' },
       { label: '주차 운영', icon: <LocalParkingIcon />, path: '/admin/parking' },
+      { label: '우선배차', icon: <AccessibleIcon />, path: '/admin/priority-dispatch' },
       { label: 'ATR 로봇', icon: <PrecisionManufacturingIcon />, path: '/admin/atr' },
       { label: '엘리베이터', icon: <ElevatorIcon />, path: '/admin/elevators' },
       { label: '에너지/V2G', icon: <BoltIcon />, path: '/admin/energy' },
