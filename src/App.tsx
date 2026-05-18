@@ -153,6 +153,7 @@ function ProtectedRoutes() {
             <Route path="patents" element={<PatentManagement />} />
             <Route path="licenses" element={<LicenseManagement />} />
             <Route path="priority-dispatch" element={<PriorityDispatch />} />
+            <Route path="fleet" element={<FleetManagement />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>

@@ -42,8 +42,10 @@ export function useVehicleTracking(vehicleId?: string) {
   }, [loadVehicles, loadHistory]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`vehicle-tracking-${vehicleId || 'all'}`)
+    const channelName = `vehicle-tracking-${vehicleId || 'all'}-${Date.now()}`;
+    const channel = supabase.channel(channelName);
+
+    channel
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
@@ -73,13 +75,11 @@ export function useVehicleTracking(vehicleId?: string) {
         if (vehicleId && deletedId === vehicleId) {
           setSelectedVehicle(null);
         }
-      })
-      .subscribe();
+      });
 
-    return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
+    channel.subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [vehicleId]);
 
   return { vehicles, selectedVehicle, locationHistory, loading, error, refresh: loadVehicles };

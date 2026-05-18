@@ -75,7 +75,7 @@ const menuGroups: MenuGroup[] = [
       { label: '입주민', icon: <PeopleIcon />, path: '/admin/residents' },
       { label: '주차 운영', icon: <LocalParkingIcon />, path: '/admin/parking' },
       { label: '우선배차', icon: <AccessibleIcon />, path: '/admin/priority-dispatch' },
-      { label: '차량 추적', icon: <GpsFixedIcon />, path: '/tracking/fleet' },
+      { label: '차량 추적', icon: <GpsFixedIcon />, path: '/admin/fleet' },
       { label: 'ATR 로봇', icon: <PrecisionManufacturingIcon />, path: '/admin/atr' },
       { label: '엘리베이터', icon: <ElevatorIcon />, path: '/admin/elevators' },
       { label: '에너지/V2G', icon: <BoltIcon />, path: '/admin/energy' },

@@ -21,8 +21,10 @@ export function useNotifications() {
   useEffect(() => { loadNotifications(); }, [loadNotifications]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel('notifications-rt')
+    const channelName = `notifications-rt-${Date.now()}`;
+    const channel = supabase.channel(channelName);
+
+    channel
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -40,8 +42,9 @@ export function useNotifications() {
           title: alert.title,
           message: alert.message,
         });
-      })
-      .subscribe();
+      });
+
+    channel.subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [loadNotifications]);
