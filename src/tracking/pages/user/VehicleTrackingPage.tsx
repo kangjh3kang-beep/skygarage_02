@@ -7,7 +7,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import { useETA } from '../../hooks/useETA';
-import { routeService } from '../../services/trackingService';
+import { routeService, notificationService } from '../../services/trackingService';
 import TrackingMap from '../../components/Map/TrackingMap';
 import DriverCard from '../../components/Vehicle/DriverCard';
 import ETAPanel from '../../components/Vehicle/ETAPanel';
@@ -30,14 +30,36 @@ export default function VehicleTrackingPage() {
 
   const eta = useETA(selectedVehicle, activeRoute);
 
+  const [etaNotified, setEtaNotified] = useState(false);
+  const prevEtaMinRef = useState<number>(0);
+
   useEffect(() => {
     if (!selectedVehicle || !activeRoute) return;
     const pickup: LatLng = { lat: activeRoute.dest_lat, lng: activeRoute.dest_lng };
     const current: LatLng = { lat: selectedVehicle.current_lat, lng: selectedVehicle.current_lng };
-    if (isWithinRadius(current, pickup, 0.5)) {
+    if (isWithinRadius(current, pickup, 0.5) && !nearbyAlert) {
       setNearbyAlert(true);
+      notificationService.create({
+        type: 'vehicle_nearby',
+        title: '차량 접근 알림',
+        message: `${selectedVehicle.driver_name} 기사님의 차량이 목적지 500m 이내에 도착했습니다.`,
+      });
     }
-  }, [selectedVehicle, activeRoute]);
+  }, [selectedVehicle, activeRoute, nearbyAlert]);
+
+  useEffect(() => {
+    if (!eta.estimatedArrival || etaNotified) return;
+    const currentMin = Math.round(eta.remainingMinutes);
+    if (prevEtaMinRef[0] > 0 && Math.abs(currentMin - prevEtaMinRef[0]) >= 5) {
+      setEtaNotified(true);
+      notificationService.create({
+        type: 'eta_change',
+        title: '도착 예상 시간 변경',
+        message: `도착 예상 시간이 ${Math.abs(currentMin - prevEtaMinRef[0])}분 ${currentMin > prevEtaMinRef[0] ? '지연' : '단축'}되었습니다.`,
+      });
+    }
+    prevEtaMinRef[0] = currentMin;
+  }, [eta.remainingMinutes, eta.estimatedArrival, etaNotified, prevEtaMinRef]);
 
   if (loading) {
     return (

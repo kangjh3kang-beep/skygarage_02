@@ -28,6 +28,19 @@ export function useNotifications() {
         schema: 'public',
         table: 'tracking_notifications',
       }, () => { loadNotifications(); })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'system_alerts',
+        filter: 'type=eq.priority_dispatch_sla',
+      }, (payload) => {
+        const alert = payload.new as { title: string; message: string };
+        notificationService.create({
+          type: 'delay',
+          title: alert.title,
+          message: alert.message,
+        });
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
