@@ -76,18 +76,13 @@ export function useSiteImagesProvider(): SiteImagesContextValue {
 
 export function useSiteImages(): SiteImagesContextValue {
   const ctx = useContext(SiteImagesContext);
-  if (ctx) return ctx;
 
-  // Standalone fallback (for usage outside provider, e.g. admin pages)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return useSiteImagesStandalone();
-}
-
-function useSiteImagesStandalone(): SiteImagesContextValue {
   const [images, setImages] = useState<SiteImage[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasContext = !!ctx;
 
   const fetchImages = useCallback(async () => {
+    if (hasContext) return;
     const { data, error } = await supabase
       .from('site_images')
       .select('id, slot, url, alt, focal_point')
@@ -97,36 +92,45 @@ function useSiteImagesStandalone(): SiteImagesContextValue {
     }
     setImages(data ?? []);
     setLoading(false);
-  }, []);
+  }, [hasContext]);
 
   useEffect(() => {
-    fetchImages();
-  }, [fetchImages]);
+    if (!hasContext) {
+      fetchImages();
+    }
+  }, [hasContext, fetchImages]);
 
   const getImageUrl = useCallback(
     (slot: string, fallback: string): string => {
-      const match = images.find((img) => img.slot === slot);
+      const source = hasContext ? ctx!.images : images;
+      const match = source.find((img) => img.slot === slot);
       return match?.url ?? fallback;
     },
-    [images],
+    [hasContext, ctx, images],
   );
 
   const getObjectPosition = useCallback(
     (slot: string): string => {
-      const match = images.find((img) => img.slot === slot);
+      const source = hasContext ? ctx!.images : images;
+      const match = source.find((img) => img.slot === slot);
       if (match?.focal_point) return `${match.focal_point.x}% ${match.focal_point.y}%`;
       return '50% 50%';
     },
-    [images],
+    [hasContext, ctx, images],
   );
 
   const getImageScale = useCallback(
     (slot: string): number => {
-      const match = images.find((img) => img.slot === slot);
+      const source = hasContext ? ctx!.images : images;
+      const match = source.find((img) => img.slot === slot);
       return match?.focal_point?.scale ?? 100;
     },
-    [images],
+    [hasContext, ctx, images],
   );
+
+  if (hasContext) {
+    return ctx!;
+  }
 
   return { images, loading, getImageUrl, getObjectPosition, getImageScale, refetch: fetchImages };
 }

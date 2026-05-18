@@ -113,10 +113,9 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const validItems = items.filter((item) => item.url || item.video_url);
-  if (validItems.length === 0) return null;
 
-  const currentItem = validItems[currentIndex];
-  const currentUrl = currentItem.video_url || currentItem.url;
+  const currentItem = validItems[currentIndex] || null;
+  const currentUrl = currentItem ? (currentItem.video_url || currentItem.url) : '';
   const isEmbed = currentUrl.includes('youtube.com') || currentUrl.includes('youtu.be') || currentUrl.includes('vimeo.com');
 
   useEffect(() => {
@@ -139,7 +138,7 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
       video.pause();
       setIsPlaying(false);
     }
-  }, [isVisible, settings.autoplay]);
+  }, [isVisible, settings.autoplay, isEmbed, isPlaying]);
 
   const handleEnded = () => {
     if (settings.play_mode === 'sequential') {
@@ -233,13 +232,15 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
         setIsPlaying(true);
       }
     }
-  }, [currentIndex]);
+  }, [currentIndex, isEmbed, isMuted, isPlaying, settings.autoplay, isVisible]);
 
   useEffect(() => {
     return () => {
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     };
   }, []);
+
+  if (validItems.length === 0) return null;
 
   if (isEmbed) {
     return <EmbedPlaylist items={validItems} isDark={isDark} settings={settings} />;
