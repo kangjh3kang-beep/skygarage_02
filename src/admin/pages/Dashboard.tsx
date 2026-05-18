@@ -32,6 +32,7 @@ import EnergySavingsLeafIcon from '@mui/icons-material/EnergySavingsLeaf';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import ElevatorIcon from '@mui/icons-material/Elevator';
 import StorageIcon from '@mui/icons-material/Storage';
+import AccessibleIcon from '@mui/icons-material/Accessible';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useTenant } from '../contexts/TenantContext';
@@ -81,6 +82,7 @@ export default function Dashboard() {
   const [sparkData, setSparkData] = useState<Record<string, number[]>>({});
   const [aiRecommendations, setAiRecommendations] = useState<{ id: string; title: string; priority: string; type: string; status: string }[]>([]);
   const [atrModes, setAtrModes] = useState<{ autonomous: number; semi_autonomous: number; manual: number }>({ autonomous: 0, semi_autonomous: 0, manual: 0 });
+  const [priorityDispatch, setPriorityDispatch] = useState({ activePriority: 0, totalProfiles: 0, verified: 0, avgWait: 0 });
 
   const loadData = useCallback(async () => {
     const [cRes, rRes, sRes, eRes, alertRes, ticketRes, atrRes, elevRes, complexSlotsRes, dqRes] = await Promise.all([
@@ -163,6 +165,18 @@ export default function Dashboard() {
       .order('created_at', { ascending: false })
       .limit(5);
     if (aiRecs) setAiRecommendations(aiRecs);
+
+    const [prioritySessionsRes, profilesRes] = await Promise.all([
+      supabase.from('parking_sessions').select('id', { count: 'exact', head: true }).eq('is_priority_dispatch', true).is('exit_at', null),
+      supabase.from('resident_accessibility_profiles').select('id, verified, active').eq('active', true),
+    ]);
+    const profs = profilesRes.data || [];
+    setPriorityDispatch({
+      activePriority: prioritySessionsRes.count || 0,
+      totalProfiles: profs.length,
+      verified: profs.filter(p => p.verified).length,
+      avgWait: 0,
+    });
 
     setLoading(false);
   }, [tenantComplex]);
@@ -569,6 +583,54 @@ export default function Dashboard() {
         </Grid>
       )}
 
+      {/* Priority Dispatch Widget */}
+      <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card
+            sx={{ cursor: 'pointer', transition: 'border-color 0.2s', '&:hover': { borderColor: 'warning.main' } }}
+            onClick={() => navigate('/admin/priority-dispatch')}
+          >
+            <CardContent sx={{ p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccessibleIcon sx={{ fontSize: 18, color: 'warning.main' }} />
+                  <Typography variant="subtitle2">교통약자 우선배차</Typography>
+                </Box>
+                <Button variant="text" size="small" onClick={(e) => { e.stopPropagation(); navigate('/admin/priority-dispatch'); }}>관리</Button>
+              </Box>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
+                    <Typography variant="caption" color="text.secondary">배차 대기</Typography>
+                    <Typography variant="h2" color="warning.main">{priorityDispatch.activePriority}</Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
+                    <Typography variant="caption" color="text.secondary">등록 프로필</Typography>
+                    <Typography variant="h2">{priorityDispatch.totalProfiles}</Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
+                    <Typography variant="caption" color="text.secondary">인증 완료</Typography>
+                    <Typography variant="h2" color="success.main">{priorityDispatch.verified}</Typography>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
+                    <Typography variant="caption" color="text.secondary">인증율</Typography>
+                    <Typography variant="h2">
+                      {priorityDispatch.totalProfiles > 0 ? Math.round((priorityDispatch.verified / priorityDispatch.totalProfiles) * 100) : 0}%
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
       {/* Quick Navigation */}
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid size={{ xs: 12 }}>
@@ -588,6 +650,7 @@ export default function Dashboard() {
                   { label: '파트너', path: '/admin/partners', icon: <HandshakeIcon sx={{ fontSize: 18 }} /> },
                   { label: 'ESG 인증', path: '/admin/esg', icon: <EnergySavingsLeafIcon sx={{ fontSize: 18 }} /> },
                   { label: '알림 센터', path: '/admin/alerts', icon: <WarningAmberIcon sx={{ fontSize: 18 }} /> },
+                  { label: '우선배차', path: '/admin/priority-dispatch', icon: <AccessibleIcon sx={{ fontSize: 18 }} /> },
                   { label: '분석', path: '/admin/analytics', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
                 ].map(item => (
                   <Grid size={{ xs: 6, sm: 3 }} key={item.path}>

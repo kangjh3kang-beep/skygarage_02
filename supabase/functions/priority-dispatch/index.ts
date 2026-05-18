@@ -13,7 +13,8 @@ interface DispatchRequest {
     | "calculate_priority"
     | "get_queue"
     | "assign_slot"
-    | "get_stats";
+    | "get_stats"
+    | "check_sla_breaches";
   complex_id?: string;
   resident_id?: string;
   session_id?: string;
@@ -77,6 +78,10 @@ Deno.serve(async (req: Request) => {
       }
       case "get_stats": {
         result = await getDispatchStats(supabase, body.complex_id!);
+        break;
+      }
+      case "check_sla_breaches": {
+        result = await checkSlaBreaches(supabase, body.complex_id!);
         break;
       }
       default:
@@ -289,4 +294,72 @@ async function getDispatchStats(
           )
         : 0,
   };
+}
+
+async function checkSlaBreaches(
+  supabase: ReturnType<typeof createClient>,
+  complexId: string
+) {
+  const { data: rules } = await supabase
+    .from("priority_dispatch_rules")
+    .select("*")
+    .eq("complex_id", complexId)
+    .eq("enabled", true);
+
+  if (!rules || rules.length === 0) return { breaches: [], escalated: 0 };
+
+  const { data: sessions } = await supabase
+    .from("parking_sessions")
+    .select("id, vehicle_number, entry_at, priority_score, complex_id")
+    .eq("complex_id", complexId)
+    .eq("is_priority_dispatch", true)
+    .is("exit_at", null)
+    .in("status", ["in_progress", "retrieving"]);
+
+  if (!sessions || sessions.length === 0) return { breaches: [], escalated: 0 };
+
+  const now = new Date();
+  const breaches: {
+    session_id: string;
+    vehicle_number: string;
+    wait_seconds: number;
+    max_wait_seconds: number;
+    escalation_applied: boolean;
+  }[] = [];
+
+  const minMaxWait = Math.min(...rules.map((r) => r.max_wait_seconds));
+
+  for (const session of sessions) {
+    const waitSeconds = Math.floor(
+      (now.getTime() - new Date(session.entry_at).getTime()) / 1000
+    );
+
+    if (waitSeconds > minMaxWait) {
+      const boostedScore = session.priority_score + Math.floor(waitSeconds / 60) * 2;
+
+      await supabase
+        .from("parking_sessions")
+        .update({ priority_score: boostedScore })
+        .eq("id", session.id);
+
+      await supabase.from("system_alerts").insert({
+        complex_id: complexId,
+        title: `우선배차 SLA 위반: ${session.vehicle_number}`,
+        message: `교통약자 차량 ${session.vehicle_number}이 최대 대기시간(${minMaxWait}초)을 초과하여 ${waitSeconds}초 대기 중입니다. 우선순위가 자동 상향되었습니다.`,
+        severity: waitSeconds > minMaxWait * 2 ? "critical" : "warning",
+        type: "priority_dispatch_sla",
+        status: "active",
+      });
+
+      breaches.push({
+        session_id: session.id,
+        vehicle_number: session.vehicle_number,
+        wait_seconds: waitSeconds,
+        max_wait_seconds: minMaxWait,
+        escalation_applied: true,
+      });
+    }
+  }
+
+  return { breaches, escalated: breaches.length };
 }

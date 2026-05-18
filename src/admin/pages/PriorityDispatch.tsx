@@ -160,6 +160,33 @@ export default function PriorityDispatch() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Real-time subscription for live queue updates
+  const [liveQueue, setLiveQueue] = useState<{ id: string; vehicle_number: string; priority_score: number; entry_at: string; status: string }[]>([]);
+
+  useEffect(() => {
+    const loadQueue = async () => {
+      const { data } = await supabase
+        .from('parking_sessions')
+        .select('id, vehicle_number, priority_score, entry_at, status')
+        .eq('is_priority_dispatch', true)
+        .is('exit_at', null)
+        .order('priority_score', { ascending: false });
+      setLiveQueue(data || []);
+    };
+    loadQueue();
+
+    const channel = supabase.channel('priority-queue-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parking_sessions', filter: 'is_priority_dispatch=eq.true' }, () => {
+        loadQueue();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'priority_dispatch_log' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchData]);
+
   const handleToggleRule = async (rule: DispatchRule) => {
     await supabase
       .from('priority_dispatch_rules')
@@ -288,6 +315,57 @@ export default function PriorityDispatch() {
           ))}
         </Box>
       </Paper>
+
+      {/* Live Priority Queue */}
+      {liveQueue.length > 0 && (
+        <Paper sx={{ p: 2, mb: 3, border: 2, borderColor: 'warning.main' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+            <Chip label="LIVE" size="small" color="error" sx={{ animation: 'pulse 2s infinite', '@keyframes pulse': { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.5 } } }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>실시간 우선배차 대기열</Typography>
+            <Typography variant="caption" color="text.secondary">({liveQueue.length}건 대기중)</Typography>
+          </Box>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>순위</TableCell>
+                  <TableCell>차량번호</TableCell>
+                  <TableCell>우선점수</TableCell>
+                  <TableCell>대기시간</TableCell>
+                  <TableCell>상태</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {liveQueue.map((item, idx) => {
+                  const waitSec = Math.floor((Date.now() - new Date(item.entry_at).getTime()) / 1000);
+                  const waitMin = Math.floor(waitSec / 60);
+                  return (
+                    <TableRow key={item.id} sx={idx === 0 ? { bgcolor: 'rgba(237, 108, 2, 0.08)' } : undefined}>
+                      <TableCell>
+                        <Chip label={`#${idx + 1}`} size="small" color={idx === 0 ? 'warning' : 'default'} sx={{ height: 22, fontWeight: 700 }} />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.vehicle_number}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={item.priority_score} size="small" color="warning" sx={{ height: 22 }} />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color={waitMin > 2 ? 'error.main' : 'text.primary'}>
+                          {waitMin > 0 ? `${waitMin}분 ${waitSec % 60}초` : `${waitSec}초`}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={item.status === 'retrieving' ? '출차중' : '입차중'} size="small" color={item.status === 'retrieving' ? 'success' : 'info'} variant="outlined" sx={{ height: 22 }} />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
 
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>

@@ -18,6 +18,8 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
+import Tooltip from '@mui/material/Tooltip';
+import AccessibleIcon from '@mui/icons-material/Accessible';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -37,6 +39,8 @@ interface ParkingSession {
   floor: number;
   is_ev: boolean;
   operating_mode?: string;
+  priority_score?: number;
+  is_priority_dispatch?: boolean;
 }
 
 interface ModeDistribution {
@@ -102,6 +106,7 @@ export default function ParkingOperations() {
 
   const active = sessions.filter(s => !s.exit_at);
   const completed = sessions.filter(s => !!s.exit_at);
+  const prioritySessions = active.filter(s => s.is_priority_dispatch);
   const displayed = tab === 0 ? active : completed;
   const totalModes = modeDistribution.direct + modeDistribution.valet + modeDistribution.tower + modeDistribution.hybrid;
 
@@ -131,6 +136,7 @@ export default function ParkingOperations() {
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>입주민</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/energy')}>에너지</Button>
+          <Button variant="contained" size="small" color="warning" startIcon={<AccessibleIcon />} onClick={() => navigate('/admin/priority-dispatch')}>우선배차</Button>
         </Box>
       </Box>
 
@@ -154,10 +160,12 @@ export default function ParkingOperations() {
           </CardContent></Card>
         </Grid>
         <Grid size={{ xs: 6, md: 3 }}>
-          <Card><CardContent sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">전체 세션</Typography>
-            <Typography variant="h2">{sessions.length}</Typography>
-          </CardContent></Card>
+          <Card sx={{ border: prioritySessions.length > 0 ? 2 : 0, borderColor: 'warning.main' }}>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">우선배차 대기</Typography>
+              <Typography variant="h2" color="warning.main">{prioritySessions.length}</Typography>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
 
@@ -216,6 +224,7 @@ export default function ParkingOperations() {
           <Table size="small">
             <TableHead><TableRow>
               <TableCell>차량번호</TableCell>
+              <TableCell>우선</TableCell>
               <TableCell>운영 모드</TableCell>
               <TableCell>주차면</TableCell>
               <TableCell>입차시간</TableCell>
@@ -229,8 +238,15 @@ export default function ParkingOperations() {
                 const mode = s.operating_mode || 'direct';
                 const modeConfig = MODE_LABELS[mode] || MODE_LABELS.direct;
                 return (
-                  <TableRow key={s.id} hover>
+                  <TableRow key={s.id} hover sx={s.is_priority_dispatch ? { bgcolor: 'rgba(237, 108, 2, 0.04)' } : undefined}>
                     <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{s.vehicle_number}</Typography></TableCell>
+                    <TableCell>
+                      {s.is_priority_dispatch ? (
+                        <Tooltip title={`우선점수: ${s.priority_score}`}>
+                          <Chip icon={<AccessibleIcon />} label={s.priority_score} size="small" color="warning" sx={{ height: 22 }} />
+                        </Tooltip>
+                      ) : '-'}
+                    </TableCell>
                     <TableCell><Chip label={modeConfig.label} size="small" color={modeConfig.color} variant="outlined" /></TableCell>
                     <TableCell>{s.slot_id || '-'}</TableCell>
                     <TableCell><Typography variant="caption">{s.entry_at ? new Date(s.entry_at).toLocaleString('ko-KR') : '-'}</Typography></TableCell>
@@ -246,7 +262,7 @@ export default function ParkingOperations() {
                 );
               })}
               {displayed.length === 0 && (
-                <TableRow><TableCell colSpan={8} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>데이터가 없습니다.</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>데이터가 없습니다.</Typography></TableCell></TableRow>
               )}
             </TableBody>
           </Table>

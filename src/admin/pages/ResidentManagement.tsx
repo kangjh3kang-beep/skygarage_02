@@ -32,6 +32,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import AccessibleIcon from '@mui/icons-material/Accessible';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import { supabase } from '../../lib/supabase';
@@ -125,16 +126,23 @@ export default function ResidentManagement() {
   const [vehicleDialog, setVehicleDialog] = useState<Resident | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehicleForm, setVehicleForm] = useState({ plate_number: '', vehicle_type: '', is_ev: false });
+  const [accessibilityMap, setAccessibilityMap] = useState<Record<string, string>>({});
 
   const completeness = useMemo(() => calcCompleteness(form), [form]);
 
   const loadData = useCallback(async () => {
-    const [rRes, cRes] = await Promise.all([
+    const [rRes, cRes, apRes] = await Promise.all([
       supabase.from('resident_accounts').select('*').order('name'),
       supabase.from('complexes').select('id, name, mdm_code'),
+      supabase.from('resident_accessibility_profiles').select('resident_id, category').eq('active', true),
     ]);
     if (rRes.data) setResidents(rRes.data);
     if (cRes.data) setComplexes(cRes.data);
+    if (apRes.data) {
+      const map: Record<string, string> = {};
+      apRes.data.forEach(p => { map[p.resident_id] = p.category; });
+      setAccessibilityMap(map);
+    }
     setLoading(false);
   }, []);
 
@@ -332,13 +340,14 @@ export default function ResidentManagement() {
               <TableCell>호수</TableCell>
               <TableCell>단지</TableCell>
               <TableCell>전화번호</TableCell>
+              <TableCell align="center">교통약자</TableCell>
               <TableCell align="center">완성도</TableCell>
               <TableCell>상태</TableCell>
               <TableCell align="center">관리</TableCell>
             </TableRow></TableHead>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>입주민 데이터가 없습니다</Typography></TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>입주민 데이터가 없습니다</Typography></TableCell></TableRow>
               ) : filtered.map(r => (
                 <TableRow key={r.id} hover>
                   <TableCell>
@@ -350,6 +359,18 @@ export default function ResidentManagement() {
                   <TableCell>{r.unit_number}</TableCell>
                   <TableCell><Typography variant="caption">{complexName(r.complex_id)}</Typography></TableCell>
                   <TableCell>{r.phone || '-'}</TableCell>
+                  <TableCell align="center">
+                    {accessibilityMap[r.id] ? (
+                      <Chip
+                        icon={<AccessibleIcon />}
+                        label={accessibilityMap[r.id] === 'elderly' ? '노약자' : accessibilityMap[r.id] === 'disabled' ? '장애인' : accessibilityMap[r.id] === 'pregnant' ? '임산부' : accessibilityMap[r.id] === 'child_companion' ? '영유아' : '부상'}
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                        sx={{ height: 22, fontSize: '0.65rem' }}
+                      />
+                    ) : '-'}
+                  </TableCell>
                   <TableCell align="center">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
                       {(r.completeness_score || 0) >= 80
