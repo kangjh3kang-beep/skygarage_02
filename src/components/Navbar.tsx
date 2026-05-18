@@ -251,10 +251,10 @@ export default function Navbar() {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => navigate('/tracking')}
+                onClick={() => navigate('/app')}
                 sx={{ ml: 1, py: 0.75, px: 1.5, fontSize: '0.8rem' }}
               >
-                차량 추적
+                SGP관리
               </Button>
               <Button
                 variant="contained"
