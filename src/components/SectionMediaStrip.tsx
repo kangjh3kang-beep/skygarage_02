@@ -8,6 +8,9 @@ import IconButton from '@mui/material/IconButton';
 import { useTheme } from '@mui/material/styles';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { supabase } from '../lib/supabase';
 import { LAYOUT_CONFIGS } from '../constants/imageLayout';
 import type { ColumnLayout } from '../constants/imageLayout';
@@ -110,7 +113,10 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
   const [isMuted, setIsMuted] = useState(settings.muted);
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPlayRef = useRef(false);
 
   const validItems = items.filter((item) => item.url || item.video_url);
 
@@ -118,48 +124,63 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
   const currentUrl = currentItem ? (currentItem.video_url || currentItem.url) : '';
   const isEmbed = currentUrl.includes('youtube.com') || currentUrl.includes('youtu.be') || currentUrl.includes('vimeo.com');
 
+  // Visibility detection for autoplay
   useEffect(() => {
-    if (!containerRef.current || !settings.autoplay) return;
+    if (!containerRef.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => { setIsVisible(entry.isIntersecting); },
       { threshold: 0.4 }
     );
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [settings.autoplay]);
+  }, []);
 
+  // Autoplay when visible, pause when hidden
   useEffect(() => {
     const video = videoRef.current;
     if (!video || isEmbed) return;
-    if (settings.autoplay && isVisible) {
+    if (settings.autoplay && isVisible && !isPlaying) {
       video.play().catch(() => {});
-      setIsPlaying(true);
     } else if (!isVisible && isPlaying) {
       video.pause();
-      setIsPlaying(false);
     }
-  }, [isVisible, settings.autoplay, isEmbed, isPlaying]);
+  }, [isVisible, settings.autoplay, isEmbed]);
+
+  // Load and play when currentIndex changes (sequential advance)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || isEmbed) return;
+    video.muted = isMuted;
+    video.load();
+    if (pendingPlayRef.current || (settings.autoplay && isVisible)) {
+      video.play().catch(() => {});
+      pendingPlayRef.current = false;
+    }
+  }, [currentIndex]);
+
+  // Sync muted state to video element
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) video.muted = isMuted;
+  }, [isMuted]);
 
   const handleEnded = () => {
     if (settings.play_mode === 'sequential') {
-      if (currentIndex < validItems.length - 1) {
-        if (settings.transition_delay > 0) {
+      const hasNext = currentIndex < validItems.length - 1;
+      const shouldLoop = settings.loop;
+
+      if (hasNext || shouldLoop) {
+        pendingPlayRef.current = true;
+        const nextIndex = hasNext ? currentIndex + 1 : 0;
+        const delay = settings.transition_delay > 0 ? settings.transition_delay * 1000 : 0;
+
+        if (delay > 0) {
           transitionTimerRef.current = setTimeout(() => {
-            setCurrentIndex((prev) => prev + 1);
+            setCurrentIndex(nextIndex);
             setProgress(0);
-          }, settings.transition_delay * 1000);
+          }, delay);
         } else {
-          setCurrentIndex((prev) => prev + 1);
-          setProgress(0);
-        }
-      } else if (settings.loop) {
-        if (settings.transition_delay > 0) {
-          transitionTimerRef.current = setTimeout(() => {
-            setCurrentIndex(0);
-            setProgress(0);
-          }, settings.transition_delay * 1000);
-        } else {
-          setCurrentIndex(0);
+          setCurrentIndex(nextIndex);
           setProgress(0);
         }
       } else {
@@ -190,18 +211,29 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play();
-      setIsPlaying(true);
+      video.play().catch(() => {});
     } else {
       video.pause();
-      setIsPlaying(false);
     }
-    setIsMuted(false);
-    video.muted = false;
+  };
+
+  const handleMuteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMuted(prev => !prev);
+  };
+
+  const handlePointerEnter = () => {
+    if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
+    setShowOverlay(true);
+  };
+
+  const handlePointerLeave = () => {
+    overlayTimerRef.current = setTimeout(() => setShowOverlay(false), 1500);
   };
 
   const goNext = () => {
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    pendingPlayRef.current = isPlaying;
     if (currentIndex < validItems.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setProgress(0);
@@ -213,6 +245,7 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
 
   const goPrev = () => {
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+    pendingPlayRef.current = isPlaying;
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
       setProgress(0);
@@ -223,20 +256,9 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
   };
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (video && !isEmbed) {
-      video.muted = isMuted;
-      video.load();
-      if (isPlaying || (settings.autoplay && isVisible)) {
-        video.play().catch(() => {});
-        setIsPlaying(true);
-      }
-    }
-  }, [currentIndex, isEmbed, isMuted, isPlaying, settings.autoplay, isVisible]);
-
-  useEffect(() => {
     return () => {
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
     };
   }, []);
 
@@ -250,6 +272,8 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
     <Box ref={containerRef}>
       <Box
         onClick={handleVideoClick}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
         sx={{
           position: 'relative',
           borderRadius: 1,
@@ -278,9 +302,62 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
             bgcolor: 'common.black',
           }}
         />
+
+        {/* Overlay controls */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 12,
+            right: 12,
+            display: 'flex',
+            gap: 0.5,
+            opacity: showOverlay || !isPlaying ? 1 : 0,
+            transition: 'opacity 0.3s',
+          }}
+        >
+          <IconButton
+            onClick={handleMuteToggle}
+            size="small"
+            sx={{
+              bgcolor: 'rgba(0,0,0,0.6)',
+              color: '#fff',
+              backdropFilter: 'blur(4px)',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+              width: 32,
+              height: 32,
+            }}
+          >
+            {isMuted
+              ? <VolumeOffIcon sx={{ fontSize: 16 }} />
+              : <VolumeUpIcon sx={{ fontSize: 16 }} />
+            }
+          </IconButton>
+        </Box>
+
+        {/* Play/Pause center indicator (brief flash) */}
+        {!isPlaying && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              bgcolor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            <PlayArrowIcon sx={{ fontSize: 32, color: '#fff' }} />
+          </Box>
+        )}
       </Box>
 
-      {/* Thin progress bar only */}
+      {/* Progress bar */}
       <LinearProgress
         variant="determinate"
         value={progress}
@@ -318,6 +395,7 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
               key={idx}
               onClick={() => {
                 if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+                pendingPlayRef.current = isPlaying;
                 setCurrentIndex(idx);
                 setProgress(0);
               }}
