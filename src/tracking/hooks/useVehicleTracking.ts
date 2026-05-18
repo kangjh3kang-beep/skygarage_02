@@ -29,7 +29,7 @@ export function useVehicleTracking(vehicleId?: string) {
   const loadHistory = useCallback(async () => {
     if (!vehicleId) return;
     try {
-      const data = await locationService.getHistory(vehicleId, 50);
+      const data = await locationService.getHistory(vehicleId, 200);
       setLocationHistory(data);
     } catch {
       // history load failure is non-critical
@@ -53,6 +53,25 @@ export function useVehicleTracking(vehicleId?: string) {
         setVehicles(prev => prev.map(v => v.id === updated.id ? updated : v));
         if (vehicleId && updated.id === vehicleId) {
           setSelectedVehicle(updated);
+        }
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'tracking_vehicles',
+      }, (payload) => {
+        const newVehicle = payload.new as Vehicle;
+        setVehicles(prev => [newVehicle, ...prev]);
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'tracking_vehicles',
+      }, (payload) => {
+        const deletedId = (payload.old as { id: string }).id;
+        setVehicles(prev => prev.filter(v => v.id !== deletedId));
+        if (vehicleId && deletedId === vehicleId) {
+          setSelectedVehicle(null);
         }
       })
       .subscribe();

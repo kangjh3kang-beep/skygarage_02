@@ -42,6 +42,7 @@ export interface Booking {
   dropoff_name: string;
   dropoff_lat: number;
   dropoff_lng: number;
+  notes: string | null;
   status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
   scheduled_at: string;
   completed_at: string | null;

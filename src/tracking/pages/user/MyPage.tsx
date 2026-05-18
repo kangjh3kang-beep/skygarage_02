@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -9,11 +10,19 @@ import Divider from '@mui/material/Divider';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import Skeleton from '@mui/material/Skeleton';
 import PersonIcon from '@mui/icons-material/Person';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { useNavigate } from 'react-router-dom';
 import { useBooking } from '../../hooks/useBooking';
+import { useToast } from '../../components/common/ToastProvider';
+import { bookingService } from '../../services/trackingService';
 
 const STATUS_LABELS: Record<string, { label: string; color: 'default' | 'success' | 'info' | 'warning' | 'error' }> = {
   pending: { label: '대기중', color: 'warning' },
@@ -25,7 +34,9 @@ const STATUS_LABELS: Record<string, { label: string; color: 'default' | 'success
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const { bookings, loading } = useBooking();
+  const { bookings, loading, refresh } = useBooking();
+  const { showToast } = useToast();
+  const [cancelId, setCancelId] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -83,6 +94,7 @@ export default function MyPage() {
           {bookings.map(b => {
             const statusInfo = STATUS_LABELS[b.status] || STATUS_LABELS.pending;
             const isTrackable = b.status === 'in_progress' && b.vehicle_id;
+            const isCancellable = b.status === 'pending' || b.status === 'confirmed';
             return (
               <ListItemButton
                 key={b.id}
@@ -97,12 +109,44 @@ export default function MyPage() {
                     secondary: { sx: { fontSize: '0.75rem' } },
                   }}
                 />
-                <Chip label={statusInfo.label} size="small" color={statusInfo.color} sx={{ height: 22 }} />
+                <Chip label={statusInfo.label} size="small" color={statusInfo.color} sx={{ height: 22, mr: isCancellable ? 1 : 0 }} />
+                {isCancellable && (
+                  <IconButton size="small" onClick={e => { e.stopPropagation(); setCancelId(b.id); }} sx={{ color: 'error.main' }}>
+                    <CancelIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                )}
               </ListItemButton>
             );
           })}
         </List>
       )}
+
+      <Dialog open={!!cancelId} onClose={() => setCancelId(null)}>
+        <DialogTitle>예약 취소</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">이 예약을 취소하시겠습니까?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelId(null)}>아니오</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={async () => {
+              if (!cancelId) return;
+              try {
+                await bookingService.updateStatus(cancelId, 'cancelled');
+                showToast('예약이 취소되었습니다.', 'info');
+                refresh();
+              } catch {
+                showToast('취소 처리 중 오류가 발생했습니다.', 'error');
+              }
+              setCancelId(null);
+            }}
+          >
+            취소하기
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

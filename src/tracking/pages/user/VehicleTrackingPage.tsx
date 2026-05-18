@@ -110,6 +110,7 @@ export default function VehicleTrackingPage() {
               eta={eta}
               originName={activeRoute?.origin_name}
               destinationName={activeRoute?.destination_name}
+              vehicleStatus={selectedVehicle.status}
             />
           </Box>
         </Grid>

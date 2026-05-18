@@ -33,6 +33,11 @@ export default function FullMapPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { vehicles } = useVehicleTracking();
   const [selected, setSelected] = useState<Vehicle | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+  const filteredVehicles = statusFilter
+    ? vehicles.filter(v => v.status === statusFilter)
+    : vehicles;
 
   const handleVehicleClick = (v: Vehicle) => {
     setSelected(v);
@@ -44,10 +49,30 @@ export default function FullMapPage() {
       {!isMobile && (
         <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider', overflow: 'auto' }}>
           <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>차량 목록 ({vehicles.length})</Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>차량 목록 ({filteredVehicles.length})</Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              <Chip
+                label="전체"
+                size="small"
+                variant={statusFilter === null ? 'filled' : 'outlined'}
+                onClick={() => setStatusFilter(null)}
+                sx={{ height: 24 }}
+              />
+              {Object.entries(STATUS_MAP).map(([key, { label, color }]) => (
+                <Chip
+                  key={key}
+                  label={`${label} ${vehicles.filter(v => v.status === key).length}`}
+                  size="small"
+                  color={color}
+                  variant={statusFilter === key ? 'filled' : 'outlined'}
+                  onClick={() => setStatusFilter(statusFilter === key ? null : key)}
+                  sx={{ height: 24 }}
+                />
+              ))}
+            </Box>
           </Box>
           <List disablePadding dense>
-            {vehicles.map(v => (
+            {filteredVehicles.map(v => (
               <ListItemButton
                 key={v.id}
                 selected={selected?.id === v.id}

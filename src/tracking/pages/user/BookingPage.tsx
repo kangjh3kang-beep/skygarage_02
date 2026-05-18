@@ -15,10 +15,12 @@ import Avatar from '@mui/material/Avatar';
 import Rating from '@mui/material/Rating';
 import CircularProgress from '@mui/material/CircularProgress';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { useNavigate } from 'react-router-dom';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import { useBooking } from '../../hooks/useBooking';
 import { useToast } from '../../components/common/ToastProvider';
+import { haversineDistance } from '../../utils/geo';
 import type { Vehicle } from '../../types';
 
 const STEPS = ['출발/도착지', '차량 선택', '확인'];
@@ -43,6 +45,7 @@ export default function BookingPage() {
   const [pickup, setPickup] = useState('');
   const [dropoff, setDropoff] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [notes, setNotes] = useState('');
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -68,6 +71,7 @@ export default function BookingPage() {
         dropoff_name: dropoff,
         dropoff_lat: dropoffLoc.lat,
         dropoff_lng: dropoffLoc.lng,
+        notes: notes.trim() || null,
         status: 'confirmed',
         scheduled_at: new Date().toISOString(),
       });
@@ -133,35 +137,50 @@ export default function BookingPage() {
             <Alert severity="info">현재 대기중인 차량이 없습니다.</Alert>
           ) : (
             <Grid container spacing={2}>
-              {availableVehicles.map(v => (
-                <Grid size={{ xs: 12, sm: 6 }} key={v.id}>
-                  <Card
-                    onClick={() => setSelectedVehicle(v)}
-                    sx={{
-                      cursor: 'pointer',
-                      border: 2,
-                      borderColor: selectedVehicle?.id === v.id ? 'primary.main' : 'transparent',
-                      transition: 'all 0.2s',
-                      '&:hover': { borderColor: 'primary.light' },
-                    }}
-                  >
-                    <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                      <Avatar sx={{ bgcolor: 'primary.main' }}>
-                        <DirectionsCarIcon />
-                      </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{v.driver_name}</Typography>
-                        <Typography variant="caption" color="text.secondary">{v.plate_number} | {v.vehicle_model}</Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                          <Rating value={v.rating} readOnly size="small" precision={0.1} />
-                          <Typography variant="caption">{v.rating.toFixed(1)}</Typography>
+              {availableVehicles.map(v => {
+                const distToPickup = pickupLoc ? haversineDistance(
+                  { lat: v.current_lat, lng: v.current_lng },
+                  { lat: pickupLoc.lat, lng: pickupLoc.lng }
+                ) : 0;
+                const etaMin = Math.round((distToPickup / 30) * 60);
+                return (
+                  <Grid size={{ xs: 12, sm: 6 }} key={v.id}>
+                    <Card
+                      onClick={() => setSelectedVehicle(v)}
+                      sx={{
+                        cursor: 'pointer',
+                        border: 2,
+                        borderColor: selectedVehicle?.id === v.id ? 'primary.main' : 'transparent',
+                        transition: 'all 0.2s',
+                        '&:hover': { borderColor: 'primary.light' },
+                      }}
+                    >
+                      <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          <DirectionsCarIcon />
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{v.driver_name}</Typography>
+                          <Typography variant="caption" color="text.secondary">{v.plate_number} | {v.vehicle_model}</Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                            <Rating value={v.rating} readOnly size="small" precision={0.1} />
+                            <Typography variant="caption">{v.rating.toFixed(1)}</Typography>
+                          </Box>
+                          {pickupLoc && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                              <AccessTimeIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                              <Typography variant="caption" color="text.secondary">
+                                도착까지 약 {etaMin}분 ({distToPickup.toFixed(1)}km)
+                              </Typography>
+                            </Box>
+                          )}
                         </Box>
-                      </Box>
-                      {selectedVehicle?.id === v.id && <Chip label="선택됨" color="primary" size="small" />}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+                        {selectedVehicle?.id === v.id && <Chip label="선택됨" color="primary" size="small" />}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
           )}
         </Box>
@@ -187,6 +206,19 @@ export default function BookingPage() {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" color="text.secondary">차량</Typography>
                 <Typography variant="body1" sx={{ fontWeight: 600 }}>{selectedVehicle?.plate_number}</Typography>
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  label="요청사항 (선택)"
+                  placeholder="예: 대형 캐리어 2개, 카시트 필요 등"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  multiline
+                  rows={2}
+                  fullWidth
+                  size="small"
+                  sx={{ mt: 1 }}
+                />
               </Grid>
             </Grid>
           </CardContent>

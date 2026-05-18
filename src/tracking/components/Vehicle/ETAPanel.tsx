@@ -13,17 +13,27 @@ interface ETAPanelProps {
   eta: ETAInfo;
   originName?: string;
   destinationName?: string;
+  vehicleStatus?: string;
 }
 
-export default function ETAPanel({ eta, originName, destinationName }: ETAPanelProps) {
-  const [countdown, setCountdown] = useState({ min: 0, sec: 0 });
+function formatCountdown(totalSec: number): string {
+  const hours = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  if (hours > 0) {
+    return `${hours}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+export default function ETAPanel({ eta, originName, destinationName, vehicleStatus }: ETAPanelProps) {
+  const [countdownSec, setCountdownSec] = useState(0);
 
   useEffect(() => {
     if (!eta.estimatedArrival) return;
     const update = () => {
       const diff = Math.max(0, eta.estimatedArrival!.getTime() - Date.now());
-      const totalSec = Math.floor(diff / 1000);
-      setCountdown({ min: Math.floor(totalSec / 60), sec: totalSec % 60 });
+      setCountdownSec(Math.floor(diff / 1000));
     };
     update();
     const interval = setInterval(update, 1000);
@@ -31,12 +41,19 @@ export default function ETAPanel({ eta, originName, destinationName }: ETAPanelP
   }, [eta.estimatedArrival]);
 
   if (!eta.estimatedArrival) {
+    const message = vehicleStatus === 'available'
+      ? '차량이 대기중입니다. 경로가 활성화되면 도착 시간이 표시됩니다.'
+      : vehicleStatus === 'offline'
+        ? '차량이 오프라인 상태입니다.'
+        : '경로 정보가 없습니다.';
     return (
       <Paper sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">경로 정보가 없습니다</Typography>
+        <Typography variant="body2" color="text.secondary">{message}</Typography>
       </Paper>
     );
   }
+
+  const progressClamped = Math.min(Math.max(eta.progressPercent, 0), 100);
 
   return (
     <Paper sx={{ p: 2 }}>
@@ -61,7 +78,7 @@ export default function ETAPanel({ eta, originName, destinationName }: ETAPanelP
             lineHeight: 1,
           }}
         >
-          {String(countdown.min).padStart(2, '0')}:{String(countdown.sec).padStart(2, '0')}
+          {formatCountdown(countdownSec)}
         </Typography>
         <Typography variant="caption" color="text.secondary">남은 시간</Typography>
       </Box>
@@ -74,12 +91,12 @@ export default function ETAPanel({ eta, originName, destinationName }: ETAPanelP
         </Box>
         <LinearProgress
           variant="determinate"
-          value={eta.progressPercent}
+          value={progressClamped}
           sx={{ height: 8, borderRadius: 4, bgcolor: 'action.hover' }}
           color={eta.isDelayed ? 'warning' : 'primary'}
         />
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-          <Typography variant="caption" color="text.secondary">{eta.progressPercent.toFixed(0)}% 완료</Typography>
+          <Typography variant="caption" color="text.secondary">{progressClamped.toFixed(0)}% 완료</Typography>
           <Typography variant="caption" color="text.secondary">{formatDistance(eta.distanceKm)} 남음</Typography>
         </Box>
       </Box>

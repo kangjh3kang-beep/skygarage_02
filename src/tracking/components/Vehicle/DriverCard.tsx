@@ -46,7 +46,13 @@ export default function DriverCard({ vehicle }: { vehicle: Vehicle }) {
         </Box>
         <Typography variant="caption" color="text.secondary">{vehicle.vehicle_model}</Typography>
       </Box>
-      <IconButton color="primary" href={`tel:${vehicle.phone}`}>
+      <IconButton
+        color="primary"
+        component="a"
+        {...(vehicle.phone ? { href: `tel:${vehicle.phone}` } : {})}
+        disabled={!vehicle.phone}
+        sx={{ opacity: vehicle.phone ? 1 : 0.4 }}
+      >
         <PhoneIcon />
       </IconButton>
     </Paper>
