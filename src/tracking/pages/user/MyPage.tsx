@@ -1,0 +1,92 @@
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import Avatar from '@mui/material/Avatar';
+import Divider from '@mui/material/Divider';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Skeleton from '@mui/material/Skeleton';
+import PersonIcon from '@mui/icons-material/Person';
+import { useBooking } from '../../hooks/useBooking';
+
+const STATUS_LABELS: Record<string, { label: string; color: 'default' | 'success' | 'info' | 'warning' | 'error' }> = {
+  pending: { label: '대기중', color: 'warning' },
+  confirmed: { label: '확정', color: 'info' },
+  in_progress: { label: '이동중', color: 'info' },
+  completed: { label: '완료', color: 'success' },
+  cancelled: { label: '취소', color: 'error' },
+};
+
+export default function MyPage() {
+  const { bookings, loading } = useBooking();
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Skeleton variant="circular" width={80} height={80} sx={{ mx: 'auto', mb: 2 }} />
+        <Skeleton variant="text" width={200} height={36} sx={{ mx: 'auto', mb: 3 }} />
+        {[1, 2, 3].map(i => <Skeleton key={i} variant="rectangular" height={72} sx={{ borderRadius: 1, mb: 1 }} />)}
+      </Box>
+    );
+  }
+
+  const completedCount = bookings.filter(b => b.status === 'completed').length;
+  const totalCount = bookings.length;
+
+  return (
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      {/* Profile */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent sx={{ textAlign: 'center', py: 4 }}>
+          <Avatar sx={{ width: 72, height: 72, mx: 'auto', mb: 2, bgcolor: 'primary.main' }}>
+            <PersonIcon sx={{ fontSize: 36 }} />
+          </Avatar>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>SkyGarage 이용자</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>프리미엄 회원</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3 }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>{totalCount}</Typography>
+              <Typography variant="caption" color="text.secondary">전체 예약</Typography>
+            </Box>
+            <Divider orientation="vertical" flexItem />
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>{completedCount}</Typography>
+              <Typography variant="caption" color="text.secondary">완료</Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Booking History */}
+      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>예약 이력</Typography>
+      {bookings.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">예약 이력이 없습니다.</Typography>
+      ) : (
+        <List disablePadding>
+          {bookings.map(b => {
+            const statusInfo = STATUS_LABELS[b.status] || STATUS_LABELS.pending;
+            return (
+              <ListItemButton
+                key={b.id}
+                sx={{ borderRadius: 2, mb: 1, border: 1, borderColor: 'divider' }}
+              >
+                <ListItemText
+                  primary={`${b.pickup_name} → ${b.dropoff_name}`}
+                  secondary={new Date(b.created_at).toLocaleString('ko-KR')}
+                  slotProps={{
+                    primary: { sx: { fontWeight: 600, fontSize: '0.875rem' } },
+                    secondary: { sx: { fontSize: '0.75rem' } },
+                  }}
+                />
+                <Chip label={statusInfo.label} size="small" color={statusInfo.color} sx={{ height: 22 }} />
+              </ListItemButton>
+            );
+          })}
+        </List>
+      )}
+    </Box>
+  );
+}

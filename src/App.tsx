@@ -60,6 +60,14 @@ const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
 const BrandGuidePage = lazy(() => import('./components/BrandGuidePage'));
 const SkyGarageValet = lazy(() => import('./components/SkyGarageValet'));
+const TrackingLayout = lazy(() => import('./tracking/TrackingLayout'));
+const TrackingDashboard = lazy(() => import('./tracking/pages/user/TrackingDashboard'));
+const VehicleTrackingPage = lazy(() => import('./tracking/pages/user/VehicleTrackingPage'));
+const BookingPage = lazy(() => import('./tracking/pages/user/BookingPage'));
+const NotificationsPage = lazy(() => import('./tracking/pages/user/NotificationsPage'));
+const TrackingMyPage = lazy(() => import('./tracking/pages/user/MyPage'));
+const FullMapPage = lazy(() => import('./tracking/pages/user/FullMapPage'));
+const FleetManagement = lazy(() => import('./tracking/pages/admin/FleetManagement'));
 
 interface ColorModeContextType {
   mode: 'light' | 'dark';
@@ -191,6 +199,24 @@ export default function App() {
     <BrowserRouter>
       <ColorModeContext.Provider value={colorModeValue}>
         <Routes>
+          <Route path="/tracking/*" element={
+            <ThemeProvider theme={publicTheme}>
+              <CssBaseline />
+              <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>}>
+                <Routes>
+                  <Route element={<TrackingLayout darkMode={mode === 'dark'} onToggleDarkMode={toggleMode} />}>
+                    <Route index element={<TrackingDashboard />} />
+                    <Route path="map" element={<FullMapPage />} />
+                    <Route path="track/:vehicleId" element={<VehicleTrackingPage />} />
+                    <Route path="booking" element={<BookingPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
+                    <Route path="mypage" element={<TrackingMyPage />} />
+                    <Route path="fleet" element={<FleetManagement />} />
+                  </Route>
+                </Routes>
+              </Suspense>
+            </ThemeProvider>
+          } />
           <Route path="/admin/*" element={
             <AuthProvider>
               <ProtectedRoutes />
