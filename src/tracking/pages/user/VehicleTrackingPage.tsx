@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Link from '@mui/material/Link';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
@@ -15,6 +17,7 @@ import type { Route, LatLng } from '../../types';
 import { isWithinRadius } from '../../utils/geo';
 
 export default function VehicleTrackingPage() {
+  const navigate = useNavigate();
   const { vehicleId } = useParams<{ vehicleId: string }>();
   const { selectedVehicle, locationHistory, loading } = useVehicleTracking(vehicleId);
   const [activeRoute, setActiveRoute] = useState<Route | null>(null);
@@ -30,14 +33,20 @@ export default function VehicleTrackingPage() {
 
   const eta = useETA(selectedVehicle, activeRoute);
 
-  const [etaNotified, setEtaNotified] = useState(false);
   const prevEtaMinRef = useRef(0);
+  const lastNotifiedAt = useRef(0);
+
+  useEffect(() => {
+    setNearbyAlert(false);
+    prevEtaMinRef.current = 0;
+    lastNotifiedAt.current = 0;
+  }, [activeRoute?.id]);
 
   useEffect(() => {
     if (!selectedVehicle || !activeRoute) return;
-    const pickup: LatLng = { lat: activeRoute.dest_lat, lng: activeRoute.dest_lng };
+    const destination: LatLng = { lat: activeRoute.dest_lat, lng: activeRoute.dest_lng };
     const current: LatLng = { lat: selectedVehicle.current_lat, lng: selectedVehicle.current_lng };
-    if (isWithinRadius(current, pickup, 0.5) && !nearbyAlert) {
+    if (isWithinRadius(current, destination, 0.5) && !nearbyAlert) {
       setNearbyAlert(true);
       notificationService.create({
         type: 'vehicle_nearby',
@@ -48,10 +57,12 @@ export default function VehicleTrackingPage() {
   }, [selectedVehicle, activeRoute, nearbyAlert]);
 
   useEffect(() => {
-    if (!eta.estimatedArrival || etaNotified) return;
+    if (!eta.estimatedArrival) return;
+    const now = Date.now();
+    if (now - lastNotifiedAt.current < 120000) return;
     const currentMin = Math.round(eta.remainingMinutes);
     if (prevEtaMinRef.current > 0 && Math.abs(currentMin - prevEtaMinRef.current) >= 5) {
-      setEtaNotified(true);
+      lastNotifiedAt.current = now;
       notificationService.create({
         type: 'eta_change',
         title: '도착 예상 시간 변경',
@@ -59,7 +70,7 @@ export default function VehicleTrackingPage() {
       });
     }
     prevEtaMinRef.current = currentMin;
-  }, [eta.remainingMinutes, eta.estimatedArrival, etaNotified]);
+  }, [eta.remainingMinutes, eta.estimatedArrival]);
 
   if (loading) {
     return (
@@ -86,6 +97,11 @@ export default function VehicleTrackingPage() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <Breadcrumbs sx={{ mb: 1 }}>
+        <Link underline="hover" color="inherit" sx={{ cursor: 'pointer' }} onClick={() => navigate('/tracking')}>대시보드</Link>
+        <Link underline="hover" color="inherit" sx={{ cursor: 'pointer' }} onClick={() => navigate('/tracking/map')}>지도</Link>
+        <Typography color="text.primary" variant="body2">{selectedVehicle.driver_name}</Typography>
+      </Breadcrumbs>
       <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>차량 실시간 추적</Typography>
 
       {nearbyAlert && (
@@ -100,6 +116,8 @@ export default function VehicleTrackingPage() {
             vehicles={[selectedVehicle]}
             selectedVehicleId={selectedVehicle.id}
             routePath={routePath}
+            origin={activeRoute ? { position: { lat: activeRoute.origin_lat, lng: activeRoute.origin_lng }, label: activeRoute.origin_name } : undefined}
+            destination={activeRoute ? { position: { lat: activeRoute.dest_lat, lng: activeRoute.dest_lng }, label: activeRoute.destination_name } : undefined}
             height={500}
           />
         </Grid>

@@ -71,7 +71,7 @@ export default function ETAPanel({ eta, originName, destinationName, vehicleStat
       <Box sx={{ textAlign: 'center', my: 2 }}>
         <Typography
           sx={{
-            fontSize: '2.5rem',
+            fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' },
             fontWeight: 800,
             fontFamily: 'monospace',
             color: eta.isDelayed ? 'warning.main' : 'primary.main',

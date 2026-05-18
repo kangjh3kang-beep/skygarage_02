@@ -10,6 +10,8 @@ interface TrackingMapProps {
   zoom?: number;
   selectedVehicleId?: string;
   routePath?: LatLng[];
+  origin?: { position: LatLng; label?: string };
+  destination?: { position: LatLng; label?: string };
   onVehicleClick?: (vehicle: Vehicle) => void;
   height?: string | number;
 }
@@ -50,6 +52,8 @@ export default function TrackingMap({
   zoom = 13,
   selectedVehicleId,
   routePath,
+  origin,
+  destination,
   onVehicleClick,
   height = 400,
 }: TrackingMapProps) {
@@ -57,6 +61,7 @@ export default function TrackingMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const polylineRef = useRef<L.Polyline | null>(null);
+  const endpointMarkersRef = useRef<L.CircleMarker[]>([]);
   const iconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
   useEffect(() => {
@@ -125,6 +130,29 @@ export default function TrackingMap({
       ).addTo(map);
     }
   }, [routePath]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    endpointMarkersRef.current.forEach(m => m.remove());
+    endpointMarkersRef.current = [];
+
+    if (origin) {
+      const m = L.circleMarker([origin.position.lat, origin.position.lng], {
+        radius: 8, fillColor: '#4caf50', color: '#fff', weight: 2, fillOpacity: 0.9,
+      }).addTo(map);
+      if (origin.label) m.bindTooltip(origin.label, { permanent: false, direction: 'top' });
+      endpointMarkersRef.current.push(m);
+    }
+    if (destination) {
+      const m = L.circleMarker([destination.position.lat, destination.position.lng], {
+        radius: 8, fillColor: '#f44336', color: '#fff', weight: 2, fillOpacity: 0.9,
+      }).addTo(map);
+      if (destination.label) m.bindTooltip(destination.label, { permanent: false, direction: 'top' });
+      endpointMarkersRef.current.push(m);
+    }
+  }, [origin, destination]);
 
   useEffect(() => {
     if (selectedVehicleId && mapRef.current) {

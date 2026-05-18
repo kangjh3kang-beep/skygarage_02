@@ -10,6 +10,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import Avatar from '@mui/material/Avatar';
+import Skeleton from '@mui/material/Skeleton';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -31,7 +32,7 @@ export default function FullMapPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { vehicles } = useVehicleTracking();
+  const { vehicles, loading } = useVehicleTracking();
   const [selected, setSelected] = useState<Vehicle | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
@@ -40,8 +41,22 @@ export default function FullMapPage() {
     : vehicles;
 
   const handleVehicleClick = (v: Vehicle) => {
-    setSelected(v);
+    setSelected(prev => prev?.id === v.id ? null : v);
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', height: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 64px)' }}>
+        {!isMobile && (
+          <Box sx={{ width: 300, p: 2, borderRight: 1, borderColor: 'divider' }}>
+            <Skeleton variant="text" width={120} height={28} sx={{ mb: 1 }} />
+            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} variant="rectangular" height={56} sx={{ borderRadius: 1, mb: 1 }} />)}
+          </Box>
+        )}
+        <Box sx={{ flex: 1 }}><Skeleton variant="rectangular" height="100%" /></Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', height: isMobile ? 'calc(100vh - 120px)' : 'calc(100vh - 64px)' }}>

@@ -68,6 +68,7 @@ const NotificationsPage = lazy(() => import('./tracking/pages/user/Notifications
 const TrackingMyPage = lazy(() => import('./tracking/pages/user/MyPage'));
 const FullMapPage = lazy(() => import('./tracking/pages/user/FullMapPage'));
 const FleetManagement = lazy(() => import('./tracking/pages/admin/FleetManagement'));
+const NotFoundPage = lazy(() => import('./tracking/pages/NotFoundPage'));
 
 interface ColorModeContextType {
   mode: 'light' | 'dark';
@@ -212,6 +213,7 @@ export default function App() {
                     <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="mypage" element={<TrackingMyPage />} />
                     <Route path="fleet" element={<FleetManagement />} />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Route>
                 </Routes>
               </Suspense>

@@ -14,6 +14,7 @@ import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Rating from '@mui/material/Rating';
 import CircularProgress from '@mui/material/CircularProgress';
+import Skeleton from '@mui/material/Skeleton';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +39,7 @@ const LOCATIONS = [
 
 export default function BookingPage() {
   const navigate = useNavigate();
-  const { vehicles } = useVehicleTracking();
+  const { vehicles, loading: vehiclesLoading } = useVehicleTracking();
   const { createBooking } = useBooking();
   const { showToast } = useToast();
   const [step, setStep] = useState(0);
@@ -133,7 +134,11 @@ export default function BookingPage() {
 
       {step === 1 && (
         <Box>
-          {availableVehicles.length === 0 ? (
+          {vehiclesLoading ? (
+            <Grid container spacing={2}>
+              {[1, 2, 3, 4].map(i => <Grid size={{ xs: 12, sm: 6 }} key={i}><Skeleton variant="rectangular" height={100} sx={{ borderRadius: 2 }} /></Grid>)}
+            </Grid>
+          ) : availableVehicles.length === 0 ? (
             <Alert severity="info">현재 대기중인 차량이 없습니다.</Alert>
           ) : (
             <Grid container spacing={2}>

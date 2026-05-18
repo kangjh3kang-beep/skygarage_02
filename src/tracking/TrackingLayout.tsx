@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
@@ -44,8 +44,17 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
     { label: '마이', icon: <PersonIcon />, path: '/tracking/mypage' },
   ];
 
-  const currentNavIdx = navItems.findIndex(item => location.pathname === item.path);
-  const [navValue, setNavValue] = useState(currentNavIdx >= 0 ? currentNavIdx : 0);
+  const getActiveNavIdx = () => {
+    const exact = navItems.findIndex(item => location.pathname === item.path);
+    if (exact >= 0) return exact;
+    if (location.pathname.startsWith('/tracking/track/')) return 1;
+    if (location.pathname.startsWith('/tracking/fleet')) return 0;
+    return 0;
+  };
+  const currentNavIdx = getActiveNavIdx();
+  const [navValue, setNavValue] = useState(currentNavIdx);
+
+  useEffect(() => { setNavValue(currentNavIdx); }, [currentNavIdx]);
 
   const isSubpage = location.pathname.includes('/track/') || location.pathname.includes('/fleet');
 
