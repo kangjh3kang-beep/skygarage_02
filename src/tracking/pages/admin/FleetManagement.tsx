@@ -35,6 +35,11 @@ import FastForwardIcon from '@mui/icons-material/FastForward';
 import SearchIcon from '@mui/icons-material/Search';
 import LockIcon from '@mui/icons-material/Lock';
 import { useToast } from '../../components/common/ToastProvider';
+import { useVehicleTracking } from '../../hooks/useVehicleTracking';
+import { useBooking } from '../../hooks/useBooking';
+import { vehicleService, bookingService } from '../../services/trackingService';
+import TrackingMap from '../../components/Map/TrackingMap';
+import type { Vehicle } from '../../types';
 
 const ADMIN_PIN = '1234';
 
@@ -83,11 +88,6 @@ function AdminGate({ children }: { children: React.ReactNode }) {
     </Box>
   );
 }
-import { useVehicleTracking } from '../../hooks/useVehicleTracking';
-import { useBooking } from '../../hooks/useBooking';
-import { vehicleService, bookingService } from '../../services/trackingService';
-import TrackingMap from '../../components/Map/TrackingMap';
-import type { Vehicle } from '../../types';
 
 const STATUS_LABELS: Record<string, { label: string; color: 'success' | 'info' | 'default' | 'warning' | 'error' }> = {
   available: { label: '대기', color: 'success' },
@@ -207,6 +207,25 @@ export default function FleetManagement() {
     }
   }, [refreshBookings, showToast]);
 
+  const seedDemoData = useCallback(async () => {
+    try {
+      const demoVehicles = [
+        { driver_name: '김민수', plate_number: '서울 12가 3456', phone: '010-1234-5678', vehicle_model: 'Genesis G80', current_lat: 37.4979, current_lng: 127.0276 },
+        { driver_name: '이영진', plate_number: '서울 34나 7890', phone: '010-2345-6789', vehicle_model: 'Mercedes S-Class', current_lat: 37.5252, current_lng: 126.9258 },
+        { driver_name: '박서준', plate_number: '경기 56다 1234', phone: '010-3456-7890', vehicle_model: 'BMW 7 Series', current_lat: 37.5547, current_lng: 126.9707 },
+        { driver_name: '최하나', plate_number: '서울 78라 5678', phone: '010-4567-8901', vehicle_model: 'Audi A8', current_lat: 37.5126, current_lng: 127.1026 },
+        { driver_name: '정우성', plate_number: '경기 90마 9012', phone: '010-5678-9012', vehicle_model: 'Tesla Model S', current_lat: 37.3947, current_lng: 127.1113 },
+      ];
+      for (const v of demoVehicles) {
+        await vehicleService.create({ ...v, status: 'available' });
+      }
+      showToast(`${demoVehicles.length}대 데모 차량이 추가되었습니다.`, 'success');
+      refresh();
+    } catch {
+      showToast('데모 데이터 생성 중 오류가 발생했습니다.', 'error');
+    }
+  }, [refresh, showToast]);
+
   const filteredVehicles = vehicles.filter(v =>
     !searchQuery ||
     v.driver_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -226,25 +245,6 @@ export default function FleetManagement() {
   const availableCount = vehicles.filter(v => v.status === 'available').length;
   const transitCount = vehicles.filter(v => v.status === 'in_transit').length;
   const offlineCount = vehicles.filter(v => v.status === 'offline').length;
-
-  const seedDemoData = useCallback(async () => {
-    try {
-      const demoVehicles = [
-        { driver_name: '김민수', plate_number: '서울 12가 3456', phone: '010-1234-5678', vehicle_model: 'Genesis G80', current_lat: 37.4979, current_lng: 127.0276 },
-        { driver_name: '이영진', plate_number: '서울 34나 7890', phone: '010-2345-6789', vehicle_model: 'Mercedes S-Class', current_lat: 37.5252, current_lng: 126.9258 },
-        { driver_name: '박서준', plate_number: '경기 56다 1234', phone: '010-3456-7890', vehicle_model: 'BMW 7 Series', current_lat: 37.5547, current_lng: 126.9707 },
-        { driver_name: '최하나', plate_number: '서울 78라 5678', phone: '010-4567-8901', vehicle_model: 'Audi A8', current_lat: 37.5126, current_lng: 127.1026 },
-        { driver_name: '정우성', plate_number: '경기 90마 9012', phone: '010-5678-9012', vehicle_model: 'Tesla Model S', current_lat: 37.3947, current_lng: 127.1113 },
-      ];
-      for (const v of demoVehicles) {
-        await vehicleService.create({ ...v, status: 'available' });
-      }
-      showToast(`${demoVehicles.length}대 데모 차량이 추가되었습니다.`, 'success');
-      refresh();
-    } catch {
-      showToast('데모 데이터 생성 중 오류가 발생했습니다.', 'error');
-    }
-  }, [refresh, showToast]);
 
   return (
     <AdminGate>
