@@ -17,6 +17,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import HomeIcon from '@mui/icons-material/Home';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import { useNotifications } from './hooks/useNotifications';
@@ -73,6 +74,9 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
             <Typography variant="h6" sx={{ fontWeight: 800, flex: 1, color: 'text.primary', fontSize: '1.1rem' }}>
               SkyGarage Valet
             </Typography>
+            <IconButton onClick={() => navigate('/')} sx={{ mr: 0.5, color: 'text.secondary' }}>
+              <HomeIcon />
+            </IconButton>
             <IconButton onClick={onToggleDarkMode} sx={{ mr: 0.5 }}>
               {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
