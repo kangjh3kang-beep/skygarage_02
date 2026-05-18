@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Vehicle, LocationHistory } from '../types';
 import { vehicleService, locationService } from '../services/trackingService';
@@ -9,6 +9,8 @@ export function useVehicleTracking(vehicleId?: string) {
   const [locationHistory, setLocationHistory] = useState<LocationHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const mountedRef = useRef(false);
 
   const loadVehicles = useCallback(async () => {
     try {
@@ -32,7 +34,7 @@ export function useVehicleTracking(vehicleId?: string) {
       const data = await locationService.getHistory(vehicleId, 200);
       setLocationHistory(data);
     } catch {
-      // history load failure is non-critical
+      // non-critical
     }
   }, [vehicleId]);
 
@@ -42,44 +44,48 @@ export function useVehicleTracking(vehicleId?: string) {
   }, [loadVehicles, loadHistory]);
 
   useEffect(() => {
-    const channelName = `vehicle-tracking-${vehicleId || 'all'}-${Date.now()}`;
-    const channel = supabase.channel(channelName);
+    if (mountedRef.current) return;
+    mountedRef.current = true;
 
-    channel
-      .on('postgres_changes', {
-        event: 'UPDATE',
+    try {
+      const channel = supabase.channel(`vehicle-rt-${crypto.randomUUID()}`);
+      channelRef.current = channel;
+
+      channel.on('postgres_changes', {
+        event: '*',
         schema: 'public',
         table: 'tracking_vehicles',
       }, (payload) => {
-        const updated = payload.new as Vehicle;
-        setVehicles(prev => prev.map(v => v.id === updated.id ? updated : v));
-        if (vehicleId && updated.id === vehicleId) {
-          setSelectedVehicle(updated);
-        }
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'tracking_vehicles',
-      }, (payload) => {
-        const newVehicle = payload.new as Vehicle;
-        setVehicles(prev => [newVehicle, ...prev]);
-      })
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'tracking_vehicles',
-      }, (payload) => {
-        const deletedId = (payload.old as { id: string }).id;
-        setVehicles(prev => prev.filter(v => v.id !== deletedId));
-        if (vehicleId && deletedId === vehicleId) {
-          setSelectedVehicle(null);
+        if (payload.eventType === 'UPDATE') {
+          const updated = payload.new as Vehicle;
+          setVehicles(prev => prev.map(v => v.id === updated.id ? updated : v));
+          if (vehicleId && updated.id === vehicleId) {
+            setSelectedVehicle(updated);
+          }
+        } else if (payload.eventType === 'INSERT') {
+          const newVehicle = payload.new as Vehicle;
+          setVehicles(prev => [newVehicle, ...prev]);
+        } else if (payload.eventType === 'DELETE') {
+          const deletedId = (payload.old as { id: string }).id;
+          setVehicles(prev => prev.filter(v => v.id !== deletedId));
+          if (vehicleId && deletedId === vehicleId) {
+            setSelectedVehicle(null);
+          }
         }
       });
 
-    channel.subscribe();
+      channel.subscribe();
+    } catch {
+      // Realtime subscription failed - data still loads via polling
+    }
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      mountedRef.current = false;
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [vehicleId]);
 
   return { vehicles, selectedVehicle, locationHistory, loading, error, refresh: loadVehicles };

@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { TrackingNotification } from '../types';
 import { notificationService } from '../services/trackingService';
 
@@ -7,6 +6,7 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<TrackingNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -18,35 +18,12 @@ export function useNotifications() {
     }
   }, []);
 
-  useEffect(() => { loadNotifications(); }, [loadNotifications]);
-
   useEffect(() => {
-    const channelName = `notifications-rt-${Date.now()}`;
-    const channel = supabase.channel(channelName);
-
-    channel
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'tracking_notifications',
-      }, () => { loadNotifications(); })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'system_alerts',
-        filter: 'type=eq.priority_dispatch_sla',
-      }, (payload) => {
-        const alert = payload.new as { title: string; message: string };
-        notificationService.create({
-          type: 'delay',
-          title: alert.title,
-          message: alert.message,
-        });
-      });
-
-    channel.subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    loadNotifications();
+    intervalRef.current = setInterval(loadNotifications, 10000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [loadNotifications]);
 
   const markAsRead = useCallback(async (id: string) => {
