@@ -138,10 +138,10 @@ function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onTo
 }
 
 function ParkingAppGuard() {
-  const { user, loading } = useParkingAuth();
+  const { user, complex, loading } = useParkingAuth();
   const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
   if (loading) return fallback;
-  if (!user) return <Suspense fallback={fallback}><ParkingLoginPage /></Suspense>;
+  if (!user || !complex) return <Suspense fallback={fallback}><ParkingLoginPage /></Suspense>;
   return (
     <Suspense fallback={fallback}>
       <Routes>

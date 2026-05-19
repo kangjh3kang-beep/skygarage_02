@@ -18,8 +18,9 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LanguageIcon from '@mui/icons-material/Language';
+import HomeWorkIcon from '@mui/icons-material/HomeWork';
 import { useParkingNotifications } from './hooks/useNotifications';
+import { useParkingAuth } from './contexts/ParkingAuthContext';
 
 const NAV_ITEMS = [
   { label: '홈', icon: <HomeIcon />, path: '/app' },
@@ -35,6 +36,7 @@ export default function ParkingLayout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { unreadCount } = useParkingNotifications();
+  const { complex } = useParkingAuth();
 
   const getActiveIdx = () => {
     const idx = NAV_ITEMS.findIndex(item => location.pathname === item.path);
@@ -79,16 +81,23 @@ export default function ParkingLayout() {
               <ArrowBackIcon fontSize="small" />
             </IconButton>
           ) : (
-            <IconButton onClick={() => navigate('/')} sx={{ mr: 0.5, color: 'text.secondary' }} size="small" title="메인 사이트">
-              <LanguageIcon fontSize="small" />
+            <IconButton onClick={() => navigate('/')} sx={{ mr: 0.5, color: 'text.secondary' }} size="small" title="메인 사이트로 이동">
+              <HomeWorkIcon fontSize="small" />
             </IconButton>
           )}
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 800, flex: 1, color: 'text.primary', fontSize: '1rem', letterSpacing: -0.3 }}
-          >
-            {pageTitle}
-          </Typography>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 800, color: 'text.primary', fontSize: '1rem', letterSpacing: -0.3, lineHeight: 1.2 }}
+            >
+              {pageTitle}
+            </Typography>
+            {complex && location.pathname === '/app' && (
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
+                {complex.name}
+              </Typography>
+            )}
+          </Box>
           <IconButton onClick={() => navigate('/app/notifications')} sx={{ color: 'text.secondary' }} size="small">
             <Badge badgeContent={unreadCount} color="error" max={9}>
               <NotificationsIcon fontSize="small" />

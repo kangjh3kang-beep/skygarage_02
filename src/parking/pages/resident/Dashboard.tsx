@@ -74,58 +74,52 @@ function DashboardCard({ icon, iconBg, title, value, subtitle, onClick, chip }: 
 }
 
 function OnboardingView() {
-  const { user } = useParkingAuth();
+  const { user, complex, signOut } = useParkingAuth();
   return (
     <Box sx={{ p: 3, maxWidth: 480, mx: 'auto', textAlign: 'center', mt: 4 }}>
       <Box sx={{
-        width: 80, height: 80, borderRadius: '50%', bgcolor: 'primary.main',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 3,
+        width: 72, height: 72, borderRadius: '50%', bgcolor: 'primary.main',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2.5,
       }}>
-        <ApartmentIcon sx={{ fontSize: 40, color: '#000' }} />
+        <ApartmentIcon sx={{ fontSize: 36, color: '#000' }} />
       </Box>
-      <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
-        환영합니다!
+      <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+        세대 등록 필요
       </Typography>
-      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6 }}>
-        SkyGarage 스마트 주차 서비스를 이용하려면<br />
-        세대 등록이 필요합니다.
+      {complex && (
+        <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600, mb: 1 }}>
+          {complex.name}
+        </Typography>
+      )}
+      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.6 }}>
+        해당 단지에 등록된 입주민 정보가 없습니다.<br />
+        관리실에 입주자 등록을 요청하세요.
       </Typography>
-      <Card sx={{ border: '1px solid', borderColor: 'divider', textAlign: 'left' }}>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: 'primary.main' }}>
-            등록 안내
+      <Card sx={{ border: '1px solid', borderColor: 'divider', textAlign: 'left', mb: 3 }}>
+        <CardContent sx={{ p: 2.5 }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, mb: 1.5, display: 'block', color: 'primary.main', letterSpacing: 0.3 }}>
+            등록 절차
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-              <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.2 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.65rem' }}>1</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+            {['관리실에 입주자 등록을 요청하세요', '세대 배정이 완료되면 자동으로 서비스가 활성화됩니다', '차량 등록 후 모든 주차 기능을 이용할 수 있습니다'].map((text, i) => (
+              <Box key={i} sx={{ display: 'flex', gap: 1.2, alignItems: 'flex-start' }}>
+                <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.2 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.6rem' }}>{i + 1}</Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5, fontSize: '0.8rem' }}>
+                  {text}
+                </Typography>
               </Box>
-              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-                관리실에 입주자 등록을 요청하세요
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-              <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.2 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.65rem' }}>2</Typography>
-              </Box>
-              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-                세대 배정이 완료되면 자동으로 서비스가 활성화됩니다
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-              <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.2 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.65rem' }}>3</Typography>
-              </Box>
-              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-                차량 등록 후 모든 주차 기능을 이용하실 수 있습니다
-              </Typography>
-            </Box>
+            ))}
           </Box>
         </CardContent>
       </Card>
-      <Typography variant="caption" sx={{ color: 'text.disabled', mt: 3, display: 'block' }}>
+      <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', mb: 2 }}>
         계정: {user?.email}
       </Typography>
+      <Button variant="outlined" size="small" onClick={signOut} sx={{ fontWeight: 600 }}>
+        로그아웃 / 단지 변경
+      </Button>
     </Box>
   );
 }
