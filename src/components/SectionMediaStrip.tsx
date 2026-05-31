@@ -294,8 +294,9 @@ function VideoPlaylist({ items, isDark, settings }: { items: MediaItem[]; isDark
           playsInline
           sx={{
             width: '100%',
-            height: { xs: 280, md: 480 },
-            objectFit: 'cover',
+            height: 'auto',
+            maxHeight: '80vh',
+            objectFit: 'contain',
             display: 'block',
             bgcolor: 'common.black',
           }}
