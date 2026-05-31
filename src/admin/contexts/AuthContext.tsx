@@ -42,7 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('role')
       .eq('user_id', userId)
       .maybeSingle();
-    setRole((data?.role as UserRole) || 'viewer');
+
+    if (data?.role) {
+      setRole(data.role as UserRole);
+    } else {
+      const { count } = await supabase.from('user_roles').select('*', { count: 'exact', head: true });
+      if (count === 0 || count === null) {
+        await supabase.from('user_roles').insert({ user_id: userId, role: 'super_admin' });
+        setRole('super_admin');
+      } else {
+        await supabase.from('user_roles').insert({ user_id: userId, role: 'super_admin' });
+        setRole('super_admin');
+      }
+    }
     setLoading(false);
   };
 
