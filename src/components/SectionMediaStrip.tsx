@@ -12,8 +12,6 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { supabase } from '../lib/supabase';
-import { LAYOUT_CONFIGS } from '../constants/imageLayout';
-import type { ColumnLayout } from '../constants/imageLayout';
 
 interface MediaItem {
   url: string;
@@ -554,8 +552,6 @@ function ImageGrid({ items, layout, isDark, focalPoints }: { items: MediaItem[];
 
   const gridSize = getGridSize();
   const visibleItems = items.slice(0, layout === '3col' ? 3 : layout === '2col' ? 2 : 1);
-  const layoutKey = (layout as ColumnLayout) || '1col';
-  const config = LAYOUT_CONFIGS[layoutKey] || LAYOUT_CONFIGS['1col'];
 
   return (
     <Grid container spacing={2}>
@@ -587,8 +583,9 @@ function ImageGrid({ items, layout, isDark, focalPoints }: { items: MediaItem[];
                 loading="lazy"
                 sx={{
                   width: '100%',
-                  height: { xs: config.height.xs, md: config.height.md },
-                  objectFit: 'cover',
+                  height: 'auto',
+                  maxHeight: '80vh',
+                  objectFit: 'contain',
                   objectPosition,
                   display: 'block',
                   transform: imgScale > 1 ? `scale(${imgScale})` : undefined,
