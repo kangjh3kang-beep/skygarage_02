@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -40,10 +40,6 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SettingsIcon from '@mui/icons-material/Settings';
 import InputAdornment from '@mui/material/InputAdornment';
 import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import Paper from '@mui/material/Paper';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -221,70 +217,25 @@ export default function ComplexManagement() {
 
   // Address search state
   const [addrQuery, setAddrQuery] = useState('');
-  const [addrResults, setAddrResults] = useState<Array<{ roadAddr: string; jibunAddr: string; zipNo: string; bdNm: string; siNm: string; sggNm: string; emdNm: string; admCd: string }>>([]);
-  const [addrSearching, setAddrSearching] = useState(false);
-  const [addrDropdownOpen, setAddrDropdownOpen] = useState(false);
-  const [addrError, setAddrError] = useState('');
   const [addrManualMode, setAddrManualMode] = useState(false);
-  const addrTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const searchAddress = async (keyword: string) => {
-    if (keyword.trim().length < 2) { setAddrResults([]); setAddrDropdownOpen(false); setAddrError(''); return; }
-    setAddrSearching(true);
-    setAddrError('');
-    try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/address-search?keyword=${encodeURIComponent(keyword)}`;
-      const res = await fetch(apiUrl, {
-        headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-      });
-      const data = await res.json();
-      if (data.error) {
-        setAddrError(data.error);
-        setAddrResults([]);
-        setAddrDropdownOpen(false);
-      } else {
-        setAddrResults(data.results || []);
-        setAddrDropdownOpen((data.results || []).length > 0);
-        if ((data.results || []).length === 0) setAddrError('검색 결과가 없습니다. 더 구체적으로 입력하세요.');
-      }
-    } catch {
-      setAddrError('주소 검색 서비스에 연결할 수 없습니다.');
-      setAddrResults([]);
-    } finally {
-      setAddrSearching(false);
-    }
-  };
-
-  const handleAddrInputChange = (value: string) => {
-    setAddrQuery(value);
-    if (addrTimerRef.current) clearTimeout(addrTimerRef.current);
-    addrTimerRef.current = setTimeout(() => searchAddress(value), 400);
-  };
-
-  const handleAddrSelect = (item: typeof addrResults[0]) => {
-    const admCd = item.admCd || '';
-    const regionCode = admCd.slice(0, 2);
-    const districtCode = admCd.slice(2, 5);
-    const dongCode = admCd.slice(5, 8);
-
-    const updates: Partial<FormData> = {
-      address: item.roadAddr,
-      road_address: item.roadAddr,
-      jibun_address: item.jibunAddr,
-      zip_code: item.zipNo,
-      si_nm: item.siNm,
-      sgg_nm: item.sggNm,
-      emd_nm: item.emdNm,
-      bd_nm: item.bdNm,
-      adm_cd: admCd,
-      region_code: regionCode,
-      district_code: districtCode,
-      dong_code: dongCode,
-    };
-    setForm(prev => ({ ...prev, ...updates }));
-    setAddrQuery(item.roadAddr);
-    setAddrDropdownOpen(false);
-    setAddrResults([]);
+  const openPostcodeSearch = () => {
+    new daum.Postcode({
+      oncomplete: (data: DaumPostcodeData) => {
+        const updates: Partial<FormData> = {
+          address: data.roadAddress || data.address,
+          road_address: data.roadAddress,
+          jibun_address: data.jibunAddress,
+          zip_code: data.zonecode,
+          si_nm: data.sido,
+          sgg_nm: data.sigungu,
+          emd_nm: data.bname || data.bname2,
+          bd_nm: data.buildingName,
+        };
+        setForm(prev => ({ ...prev, ...updates }));
+        setAddrQuery(data.roadAddress || data.address);
+      },
+    }).open();
   };
 
   const loadData = useCallback(async () => {
@@ -317,8 +268,6 @@ export default function ComplexManagement() {
     setEditing(null);
     setForm(emptyForm);
     setAddrQuery('');
-    setAddrResults([]);
-    setAddrDropdownOpen(false);
     setActiveStep(0);
     setDialogOpen(true);
   };
@@ -355,8 +304,6 @@ export default function ComplexManagement() {
       status: c.status || 'poc',
     });
     setAddrQuery(c.address || '');
-    setAddrResults([]);
-    setAddrDropdownOpen(false);
     setActiveStep(0);
     setDialogOpen(true);
   };
@@ -735,73 +682,55 @@ export default function ComplexManagement() {
                   </TextField>
                 </Grid>
               </Grid>
-              {form.address && !addrManualMode && (
-                <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <LocationOnIcon sx={{ fontSize: 16, color: 'success.main' }} />
-                  <Typography variant="caption" sx={{ color: 'text.secondary', flex: 1 }}>{form.road_address || form.address}</Typography>
-                  {form.zip_code && <Chip label={form.zip_code} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} />}
+              {form.address && (
+                <Box sx={{ p: 1.5, bgcolor: 'action.hover', borderRadius: 1, border: '1px solid', borderColor: 'success.main' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <LocationOnIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'success.main' }}>선택된 주소</Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{form.road_address || form.address}</Typography>
+                  {form.jibun_address && (
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>(지번) {form.jibun_address}</Typography>
+                  )}
+                  <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                    {form.zip_code && <Chip label={`우편번호: ${form.zip_code}`} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                    {form.si_nm && <Chip label={form.si_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                    {form.sgg_nm && <Chip label={form.sgg_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                    {form.emd_nm && <Chip label={form.emd_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                  </Box>
                 </Box>
               )}
 
               {!addrManualMode ? (
                 <>
-                  {/* Address Search */}
-                  <Box sx={{ position: 'relative' }}>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     <TextField
                       label="주소 검색"
                       value={addrQuery}
-                      onChange={e => handleAddrInputChange(e.target.value)}
-                      onFocus={() => { if (addrResults.length > 0) setAddrDropdownOpen(true); }}
+                      onClick={openPostcodeSearch}
                       fullWidth size="small" required
-                      placeholder="도로명 + 건물명 또는 지번 (예: 세종대로 209, 의정부시 금오동 123)"
-                      helperText={addrError || (form.address ? undefined : "도로명 + 번지 또는 건물명까지 입력하세요")}
-                      error={!!addrError}
+                      placeholder="클릭하여 주소를 검색하세요"
+                      helperText={form.address ? undefined : "클릭하면 주소 검색 창이 열립니다"}
                       slotProps={{
                         input: {
+                          readOnly: true,
                           startAdornment: (
                             <InputAdornment position="start">
                               <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                             </InputAdornment>
                           ),
-                          endAdornment: addrSearching ? (
-                            <InputAdornment position="end">
-                              <CircularProgress size={16} />
-                            </InputAdornment>
-                          ) : undefined,
                         },
                       }}
+                      sx={{ cursor: 'pointer', '& input': { cursor: 'pointer' } }}
                     />
-                    {addrDropdownOpen && addrResults.length > 0 && (
-                      <Paper
-                        elevation={8}
-                        sx={{
-                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1300,
-                          maxHeight: 280, overflow: 'auto', mt: 0.5, borderRadius: 1,
-                        }}
-                      >
-                        <List dense disablePadding>
-                          {addrResults.map((item, idx) => (
-                            <ListItemButton
-                              key={idx}
-                              onClick={() => handleAddrSelect(item)}
-                              sx={{ py: 1.2, borderBottom: '1px solid', borderColor: 'divider' }}
-                            >
-                              <ListItemIcon sx={{ minWidth: 32 }}>
-                                <LocationOnIcon sx={{ fontSize: 18, color: 'primary.main' }} />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={item.roadAddr}
-                                secondary={`[${item.zipNo}] ${item.jibunAddr}`}
-                                slotProps={{
-                                  primary: { variant: 'body2', sx: { fontWeight: 500 } },
-                                  secondary: { variant: 'caption' },
-                                }}
-                              />
-                            </ListItemButton>
-                          ))}
-                        </List>
-                      </Paper>
-                    )}
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={openPostcodeSearch}
+                      sx={{ minWidth: 80, height: 40 }}
+                    >
+                      검색
+                    </Button>
                   </Box>
                   <Button
                     size="small"
@@ -814,7 +743,6 @@ export default function ComplexManagement() {
                 </>
               ) : (
                 <>
-                  {/* Manual Address Input */}
                   <TextField
                     label="주소 (도로명 또는 지번)"
                     value={form.address}
