@@ -135,7 +135,7 @@ export default function AccessControl() {
         <Typography variant="h1">출입 관리</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/security')}>보안 감사</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>입주민</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>사용자</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/parking')}>주차 운영</Button>
         </Box>
       </Box>

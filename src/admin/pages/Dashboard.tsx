@@ -246,7 +246,7 @@ export default function Dashboard() {
 
   const kpis = [
     { label: '단지', value: stats.complexes, unit: '개', icon: <ApartmentIcon />, color: 'primary.main', path: '/admin/complexes', sparkKey: '' },
-    { label: '입주민', value: stats.residents, unit: '명', icon: <PeopleIcon />, color: 'success.main', path: '/admin/residents', sparkKey: '' },
+    { label: '사용자', value: stats.residents, unit: '명', icon: <PeopleIcon />, color: 'success.main', path: '/admin/residents', sparkKey: '' },
     { label: '주차 중', value: stats.activeSessions, unit: '대', icon: <LocalParkingIcon />, color: 'warning.main', path: '/admin/parking', sparkKey: 'parking' },
     { label: '발전량', value: stats.energyToday.toFixed(0), unit: 'kWh', icon: <BoltIcon />, color: 'secondary.main', path: '/admin/energy', sparkKey: 'energy' },
   ];

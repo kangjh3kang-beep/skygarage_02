@@ -128,7 +128,7 @@ export default function InquiryList() {
         <Typography variant="h1">문의 관리</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/crm')}>CRM</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>입주민</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>사용자</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/contracts')}>계약 관리</Button>
         </Box>
       </Box>

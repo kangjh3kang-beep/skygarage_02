@@ -10,7 +10,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const ROUTE_LABELS: Record<string, string> = {
   admin: 'Dashboard',
   complexes: '단지 관리',
-  residents: '입주민',
+  residents: '사용자',
   parking: '주차 운영',
   atr: 'ATR 로봇',
   elevators: '엘리베이터',

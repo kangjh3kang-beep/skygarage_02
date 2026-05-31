@@ -97,28 +97,6 @@ const COMPLEX_TYPES = [
   { value: 'RSD', label: '주거시설 (RSD)' },
 ];
 
-const REGIONS: Record<string, { code: string; label: string }[]> = {
-  KR: [
-    { code: '11', label: '서울특별시' },
-    { code: '26', label: '부산광역시' },
-    { code: '27', label: '대구광역시' },
-    { code: '28', label: '인천광역시' },
-    { code: '29', label: '광주광역시' },
-    { code: '30', label: '대전광역시' },
-    { code: '31', label: '울산광역시' },
-    { code: '36', label: '세종특별자치시' },
-    { code: '41', label: '경기도' },
-    { code: '42', label: '강원특별자치도' },
-    { code: '43', label: '충청북도' },
-    { code: '44', label: '충청남도' },
-    { code: '45', label: '전라북도' },
-    { code: '46', label: '전라남도' },
-    { code: '47', label: '경상북도' },
-    { code: '48', label: '경상남도' },
-    { code: '50', label: '제주특별자치도' },
-  ],
-};
-
 const STATUS_MAP: Record<string, { label: string; color: 'success' | 'warning' | 'info' | 'default' }> = {
   poc: { label: 'PoC', color: 'info' },
   pilot: { label: 'Pilot', color: 'warning' },
@@ -264,6 +242,11 @@ export default function ComplexManagement() {
   };
 
   const handleAddrSelect = (item: typeof addrResults[0]) => {
+    const admCd = item.admCd || '';
+    const regionCode = admCd.slice(0, 2);
+    const districtCode = admCd.slice(2, 5);
+    const dongCode = admCd.slice(5, 8);
+
     const updates: Partial<FormData> = {
       address: item.roadAddr,
       road_address: item.roadAddr,
@@ -273,7 +256,10 @@ export default function ComplexManagement() {
       sgg_nm: item.sggNm,
       emd_nm: item.emdNm,
       bd_nm: item.bdNm,
-      adm_cd: item.admCd,
+      adm_cd: admCd,
+      region_code: regionCode,
+      district_code: districtCode,
+      dong_code: dongCode,
     };
     setForm(prev => ({ ...prev, ...updates }));
     setAddrQuery(item.roadAddr);
@@ -456,7 +442,7 @@ export default function ComplexManagement() {
 
   const canProceed = (step: number): boolean => {
     switch (step) {
-      case 0: return !!form.name && !!form.region_code && !!form.complex_type;
+      case 0: return !!form.name && !!form.complex_type;
       case 1: return !!form.address;
       case 2: return true;
       default: return true;
@@ -599,7 +585,7 @@ export default function ComplexManagement() {
 
       {/* Quick nav row */}
       <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <Button size="small" variant="outlined" startIcon={<PeopleIcon />} onClick={() => navigate('/admin/residents')}>입주민</Button>
+        <Button size="small" variant="outlined" startIcon={<PeopleIcon />} onClick={() => navigate('/admin/residents')}>사용자</Button>
         <Button size="small" variant="outlined" startIcon={<LocalParkingIcon />} onClick={() => navigate('/admin/parking')}>주차 운영</Button>
         <Button size="small" variant="outlined" startIcon={<BuildIcon />} onClick={() => navigate('/admin/maintenance')}>정비</Button>
         <Button size="small" variant="outlined" startIcon={<BoltIcon />} onClick={() => navigate('/admin/energy')}>에너지</Button>
@@ -665,39 +651,6 @@ export default function ComplexManagement() {
                 </Grid>
                 <Grid size={{ xs: 4 }}>
                   <TextField
-                    label="지역"
-                    select value={form.region_code}
-                    onChange={e => updateField('region_code', e.target.value)}
-                    fullWidth size="small" required
-                  >
-                    {(REGIONS[form.country_code] || []).map(r => (
-                      <MenuItem key={r.code} value={r.code}>{r.label}</MenuItem>
-                    ))}
-                  </TextField>
-                </Grid>
-                <Grid size={{ xs: 4 }}>
-                  <TextField
-                    label="구/군 코드"
-                    value={form.district_code}
-                    onChange={e => updateField('district_code', e.target.value)}
-                    fullWidth size="small"
-                    placeholder="예: 680"
-                    helperText="행정구역 코드"
-                  />
-                </Grid>
-              </Grid>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 6 }}>
-                  <TextField
-                    label="동 코드"
-                    value={form.dong_code}
-                    onChange={e => updateField('dong_code', e.target.value)}
-                    fullWidth size="small"
-                    placeholder="예: 101"
-                  />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <TextField
                     label="단지 유형"
                     select value={form.complex_type}
                     onChange={e => updateField('complex_type', e.target.value)}
@@ -708,18 +661,27 @@ export default function ComplexManagement() {
                     ))}
                   </TextField>
                 </Grid>
+                <Grid size={{ xs: 4 }}>
+                  <TextField
+                    label="운영 상태"
+                    select value={form.status}
+                    onChange={e => updateField('status', e.target.value)}
+                    fullWidth size="small"
+                  >
+                    <MenuItem value="poc">PoC (개념 검증)</MenuItem>
+                    <MenuItem value="pilot">Pilot (시범 운영)</MenuItem>
+                    <MenuItem value="active">운영중</MenuItem>
+                    <MenuItem value="inactive">비활성</MenuItem>
+                  </TextField>
+                </Grid>
               </Grid>
-              <TextField
-                label="운영 상태"
-                select value={form.status}
-                onChange={e => updateField('status', e.target.value)}
-                fullWidth size="small"
-              >
-                <MenuItem value="poc">PoC (개념 검증)</MenuItem>
-                <MenuItem value="pilot">Pilot (시범 운영)</MenuItem>
-                <MenuItem value="active">운영중</MenuItem>
-                <MenuItem value="inactive">비활성</MenuItem>
-              </TextField>
+              {form.address && (
+                <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocationOnIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>{form.road_address || form.address}</Typography>
+                  {form.zip_code && <Chip label={form.zip_code} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} />}
+                </Box>
+              )}
             </Box>
           )}
 

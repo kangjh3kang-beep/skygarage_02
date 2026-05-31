@@ -84,7 +84,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { label: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
       { label: '단지 관리', icon: <ApartmentIcon />, path: '/admin/complexes', minScope: 'region' },
-      { label: '입주민', icon: <PeopleIcon />, path: '/admin/residents' },
+      { label: '사용자', icon: <PeopleIcon />, path: '/admin/residents' },
       { label: '주차 운영', icon: <LocalParkingIcon />, path: '/admin/parking' },
       { label: '우선배차', icon: <AccessibleIcon />, path: '/admin/priority-dispatch', minScope: 'complex' },
       { label: '차량 추적', icon: <GpsFixedIcon />, path: '/admin/fleet', minScope: 'complex' },

@@ -134,7 +134,7 @@ export default function ParkingOperations() {
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/ai-management')}>AI 관리</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/workflows')}>워크플로우</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>입주민</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>사용자</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/energy')}>에너지</Button>
           <Button variant="contained" size="small" color="warning" startIcon={<AccessibleIcon />} onClick={() => navigate('/admin/priority-dispatch')}>우선배차</Button>
         </Box>

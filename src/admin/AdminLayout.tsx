@@ -36,7 +36,7 @@ import { useTenant } from './contexts/TenantContext';
 const routeTitles: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/complexes': '단지 관리',
-  '/admin/residents': '입주민',
+  '/admin/residents': '사용자',
   '/admin/parking': '주차 운영',
   '/admin/atr': 'ATR 로봇',
   '/admin/elevators': '엘리베이터',

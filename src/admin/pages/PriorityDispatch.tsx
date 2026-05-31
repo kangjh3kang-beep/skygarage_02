@@ -387,7 +387,7 @@ export default function PriorityDispatch() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>입주민</TableCell>
+                      <TableCell>사용자</TableCell>
                       <TableCell>카테고리</TableCell>
                       <TableCell>심각도</TableCell>
                       <TableCell>보조 요구사항</TableCell>
@@ -770,7 +770,7 @@ function ProfileDialog({ open, residents, onClose, onSave }: {
       <DialogTitle>교통약자 프로필 등록</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
         <TextField
-          select label="입주민" value={residentId}
+          select label="사용자" value={residentId}
           onChange={e => setResidentId(e.target.value)} fullWidth size="small"
         >
           {residents.map(r => (

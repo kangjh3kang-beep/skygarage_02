@@ -46,7 +46,7 @@ function getLevelProgress(totalXp: number, level: number): number {
 const DAILY_MISSIONS = [
   { key: 'check_dashboard', title: '대시보드 확인', description: '대시보드 방문하기', target: 1, xp: 5 },
   { key: 'review_alerts', title: '알림 확인', description: '시스템 알림 검토하기', target: 1, xp: 10 },
-  { key: 'update_data', title: '데이터 갱신', description: '단지/입주민 데이터 업데이트', target: 1, xp: 15 },
+  { key: 'update_data', title: '데이터 갱신', description: '단지/사용자 데이터 업데이트', target: 1, xp: 15 },
   { key: 'resolve_ticket', title: '티켓 처리', description: '지원 티켓 1건 해결', target: 1, xp: 20 },
 ];
 

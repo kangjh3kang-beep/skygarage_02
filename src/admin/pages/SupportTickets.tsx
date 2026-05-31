@@ -263,7 +263,7 @@ export default function SupportTickets() {
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/alerts')}>알림 센터</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/maintenance')}>정비 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>입주민</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>사용자</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>티켓 등록</Button>
         </Box>
       </Box>
@@ -441,7 +441,7 @@ export default function SupportTickets() {
                   </MenuItem>
                 ))}
               </TextField>
-              <TextField label="연결 입주민" select value={form.resident_id} onChange={e => setForm({ ...form, resident_id: e.target.value })} fullWidth size="small">
+              <TextField label="연결 사용자" select value={form.resident_id} onChange={e => setForm({ ...form, resident_id: e.target.value })} fullWidth size="small">
                 <MenuItem value="">미지정</MenuItem>
                 {residents.map(r => (
                   <MenuItem key={r.id} value={r.id}>
@@ -451,7 +451,7 @@ export default function SupportTickets() {
               </TextField>
               <TextField label="담당자" value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} fullWidth size="small" />
               <Alert severity="info">
-                단지/입주민을 연결하면 이력 관리 및 AI 자동 분류가 활성화됩니다.
+                단지/사용자을 연결하면 이력 관리 및 AI 자동 분류가 활성화됩니다.
               </Alert>
             </Box>
           )}
@@ -473,7 +473,7 @@ export default function SupportTickets() {
               </Box>
               <Divider sx={{ my: 2 }} />
               <Typography variant="body2"><strong>단지:</strong> {complexes.find(cx => cx.id === form.complex_id)?.name || '미지정'}</Typography>
-              <Typography variant="body2"><strong>입주민:</strong> {residents.find(r => r.id === form.resident_id)?.name || '미지정'}</Typography>
+              <Typography variant="body2"><strong>사용자:</strong> {residents.find(r => r.id === form.resident_id)?.name || '미지정'}</Typography>
               {form.description && <Typography variant="body2" sx={{ mt: 1 }}><strong>설명:</strong> {form.description}</Typography>}
             </Box>
           )}

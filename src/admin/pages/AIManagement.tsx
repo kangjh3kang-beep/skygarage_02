@@ -111,7 +111,7 @@ export default function AIManagement() {
     };
 
     const metricsData: DataQualityMetric[] = [
-      buildMetric('입주민', 'residents', residentsRes.data),
+      buildMetric('사용자', 'residents', residentsRes.data),
       buildMetric('ATR 장비', 'atr', atrRes.data),
       buildMetric('엘리베이터', 'elevators', elevatorsRes.data),
       buildMetric('계약', 'contracts', contractsRes.data),

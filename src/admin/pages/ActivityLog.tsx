@@ -45,7 +45,7 @@ const ACTION_CONFIG: Record<string, { color: 'success' | 'primary' | 'error' | '
 
 const TABLE_LABELS: Record<string, string> = {
   complexes: '단지',
-  resident_accounts: '입주민',
+  resident_accounts: '사용자',
   parking_sessions: '주차',
   maintenance_logs: '정비',
   contracts: '계약',

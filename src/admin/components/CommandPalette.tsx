@@ -45,7 +45,7 @@ interface CommandItem {
 const commands: CommandItem[] = [
   { label: 'Dashboard', path: '/admin', icon: <DashboardIcon />, keywords: ['대시보드', 'home', '홈'], group: '운영' },
   { label: '단지 관리', path: '/admin/complexes', icon: <ApartmentIcon />, keywords: ['complex', '아파트', '건물'], group: '운영' },
-  { label: '입주민', path: '/admin/residents', icon: <PeopleIcon />, keywords: ['resident', '주민', '사용자'], group: '운영' },
+  { label: '사용자', path: '/admin/residents', icon: <PeopleIcon />, keywords: ['resident', '주민', '입주민', '사용자'], group: '운영' },
   { label: '주차 운영', path: '/admin/parking', icon: <LocalParkingIcon />, keywords: ['parking', '차량', '입출차'], group: '운영' },
   { label: 'ATR 로봇', path: '/admin/atr', icon: <PrecisionManufacturingIcon />, keywords: ['robot', '로봇', '자동'], group: '운영' },
   { label: '엘리베이터', path: '/admin/elevators', icon: <ElevatorIcon />, keywords: ['elevator', '승강기'], group: '운영' },
@@ -162,7 +162,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             sublabel: r.unit_number || '',
             icon: <PeopleIcon fontSize="small" />,
             path: '/admin/residents',
-            group: '입주민',
+            group: '사용자',
           });
         }
       }

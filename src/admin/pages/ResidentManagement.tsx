@@ -140,7 +140,7 @@ const INTERLOCK_LABELS: Record<string, string> = {
 };
 
 export default function ResidentManagement() {
-  useDocumentTitle('입주민 관리');
+  useDocumentTitle('사용자 관리');
   const { showToast } = useToast();
   const { logAction } = useAuditLog();
   const { isSuperAdmin, role } = useAuth();
@@ -360,7 +360,7 @@ export default function ResidentManagement() {
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>입주민 / 결제 관리</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>사용자 / 결제 관리</Typography>
           <Typography variant="body2" color="text.secondary">
             Palatria Coin 통합 과금 / 서비스 모드 제어 / 특허 [120][660]
           </Typography>
@@ -376,7 +376,7 @@ export default function ResidentManagement() {
             {piiUnmasked ? '마스킹 복원' : '복호화 보기'}
           </Button>
           <Button variant="contained" size="small" startIcon={<AddIcon />}>
-            입주민 등록
+            사용자 등록
           </Button>
         </Box>
       </Box>
@@ -385,7 +385,7 @@ export default function ResidentManagement() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, sm: 3 }}>
           <Card><CardContent sx={{ textAlign: 'center', py: 1.5 }}>
-            <Typography variant="caption" color="text.secondary">전체 입주민</Typography>
+            <Typography variant="caption" color="text.secondary">전체 사용자</Typography>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>{residents.length}</Typography>
           </CardContent></Card>
         </Grid>
