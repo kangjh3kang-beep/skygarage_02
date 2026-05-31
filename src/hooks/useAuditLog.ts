@@ -1,37 +1,20 @@
 import { useCallback } from 'react';
-import { supabase } from '../admin/lib/supabase';
-import { useAuth } from '../admin/contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
-export interface UseAuditLogResult {
-  logAction: (action: string, details?: Record<string, unknown>) => Promise<void>;
-}
-
-export function useAuditLog(): UseAuditLogResult {
-  const { user } = useAuth();
-
+export function useAuditLog() {
   const logAction = useCallback(
-    async (action: string, details?: Record<string, unknown>) => {
-      if (!user) {
-        console.warn('Cannot log audit action without authenticated user');
-        return;
-      }
-
-      try {
-        const { error } = await supabase.from('security_audit_logs').insert({
-          user_id: user.id,
-          action,
-          details: details || null,
-          timestamp: new Date().toISOString(),
-        });
-
-        if (error) {
-          console.error('Failed to log audit action:', error);
-        }
-      } catch (err) {
-        console.error('Error logging audit action:', err);
-      }
+    async (action: string, table_name: string, record_id?: string, details?: Record<string, unknown>) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      await supabase.from('security_audit_logs').insert({
+        user_id: session.user.id,
+        action,
+        table_name,
+        record_id: record_id || null,
+        details: details || {},
+      });
     },
-    [user]
+    []
   );
 
   return { logAction };

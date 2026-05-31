@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
-export default function useDocumentTitle(title: string): void {
+export function useDocumentTitle(title: string) {
   useEffect(() => {
-    document.title = title;
+    document.title = title ? `${title} | SkyGarage` : 'SkyGarage Admin';
   }, [title]);
 }
