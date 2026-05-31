@@ -21,6 +21,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import GetAppIcon from '@mui/icons-material/GetApp';
 import { COLORS } from '../theme';
 import { useColorMode } from '../App';
 
@@ -249,12 +250,22 @@ export default function Navbar() {
               </Tooltip>
 
               <Button
-                variant="outlined"
+                variant="contained"
                 size="small"
+                startIcon={<GetAppIcon sx={{ fontSize: 16 }} />}
                 onClick={() => navigate('/app')}
-                sx={{ ml: 1, py: 0.75, px: 1.5, fontSize: '0.8rem' }}
+                sx={{
+                  ml: 1,
+                  py: 0.75,
+                  px: 1.5,
+                  fontSize: '0.8rem',
+                  bgcolor: '#00d4aa',
+                  color: '#0d1b2a',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: '#00b894' },
+                }}
               >
-                SGP관리
+                SGP App
               </Button>
               <Button
                 variant="contained"
@@ -384,6 +395,17 @@ export default function Navbar() {
             </ListItem>
           ))}
           <ListItem sx={{ px: 3, pt: 2 }}>
+            <Button
+              variant="contained"
+              fullWidth
+              startIcon={<GetAppIcon />}
+              onClick={() => { setDrawerOpen(false); navigate('/app'); }}
+              sx={{ py: 1.5, bgcolor: '#00d4aa', color: '#0d1b2a', fontWeight: 700, '&:hover': { bgcolor: '#00b894' } }}
+            >
+              SGP App 다운로드
+            </Button>
+          </ListItem>
+          <ListItem sx={{ px: 3, pt: 1 }}>
             <Button
               variant="contained"
               fullWidth

@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { AuthProvider, useAuth } from './admin/contexts/AuthContext';
 import { ParkingAuthProvider, useParkingAuth } from './parking/contexts/ParkingAuthContext';
+import { SgpAuthProvider } from './sgp/contexts/SgpAuthContext';
 import { TenantProvider } from './admin/contexts/TenantContext';
 import { ToastProvider } from './admin/contexts/ToastContext';
 import { AdminThemeProvider, useAdminTheme } from './admin/contexts/ThemeContext';
@@ -71,7 +72,7 @@ const FullMapPage = lazy(() => import('./tracking/pages/user/FullMapPage'));
 const FleetManagement = lazy(() => import('./tracking/pages/admin/FleetManagement'));
 const NotFoundPage = lazy(() => import('./tracking/pages/NotFoundPage'));
 
-// Parking App (Resident)
+// Parking App (Resident) - Legacy
 const ParkingLayout = lazy(() => import('./parking/ParkingLayout'));
 const ParkingLoginPage = lazy(() => import('./parking/pages/LoginPage'));
 const ResidentDashboard = lazy(() => import('./parking/pages/resident/Dashboard'));
@@ -82,6 +83,14 @@ const EvCharging = lazy(() => import('./parking/pages/resident/EvCharging'));
 const BillingPage = lazy(() => import('./parking/pages/resident/BillingPage'));
 const ParkingNotifications = lazy(() => import('./parking/pages/resident/NotificationsPage'));
 const ParkingSettings = lazy(() => import('./parking/pages/resident/SettingsPage'));
+
+// SGP App (New User App)
+const SgpLayout = lazy(() => import('./sgp/SgpLayout'));
+const SgpHomePage = lazy(() => import('./sgp/pages/SgpHomePage'));
+const SgpWalletPage = lazy(() => import('./sgp/pages/SgpWalletPage'));
+const SgpPayPage = lazy(() => import('./sgp/pages/SgpPayPage'));
+const SgpParkingPage = lazy(() => import('./sgp/pages/SgpParkingPage'));
+const SgpProfilePage = lazy(() => import('./sgp/pages/SgpProfilePage'));
 
 // Parking App (Visitor)
 const VisitorHome = lazy(() => import('./parking/pages/visitor/VisitorHome'));
@@ -131,6 +140,23 @@ function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onTo
           <Route path="mypage" element={<TrackingMyPage />} />
           <Route path="fleet" element={<FleetManagement />} />
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
+  );
+}
+
+function SgpAppGuard() {
+  const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#0d1b2a' }}><CircularProgress sx={{ color: '#00d4aa' }} /></Box>;
+  return (
+    <Suspense fallback={fallback}>
+      <Routes>
+        <Route element={<SgpLayout />}>
+          <Route index element={<SgpHomePage />} />
+          <Route path="wallet" element={<SgpWalletPage />} />
+          <Route path="pay" element={<SgpPayPage />} />
+          <Route path="parking" element={<SgpParkingPage />} />
+          <Route path="profile" element={<SgpProfilePage />} />
         </Route>
       </Routes>
     </Suspense>
@@ -283,6 +309,14 @@ export default function App() {
       <ColorModeContext.Provider value={colorModeValue}>
         <Routes>
           <Route path="/app/*" element={
+            <SgpAuthProvider>
+              <ThemeProvider theme={publicTheme}>
+                <CssBaseline />
+                <SgpAppGuard />
+              </ThemeProvider>
+            </SgpAuthProvider>
+          } />
+          <Route path="/parking/*" element={
             <ParkingAuthProvider>
               <ThemeProvider theme={publicTheme}>
                 <CssBaseline />
