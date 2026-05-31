@@ -442,8 +442,8 @@ export default function ComplexManagement() {
 
   const canProceed = (step: number): boolean => {
     switch (step) {
-      case 0: return !!form.name && !!form.complex_type;
-      case 1: return !!form.address;
+      case 0: return !!form.name && !!form.complex_type && !!form.address;
+      case 1: return true;
       case 2: return true;
       default: return true;
     }
@@ -682,12 +682,7 @@ export default function ComplexManagement() {
                   {form.zip_code && <Chip label={form.zip_code} size="small" variant="outlined" sx={{ height: 18, fontSize: '0.65rem' }} />}
                 </Box>
               )}
-            </Box>
-          )}
 
-          {/* Step 1: Location & Scale */}
-          {activeStep === 1 && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {/* Address Search */}
               <Box sx={{ position: 'relative' }}>
                 <TextField
@@ -763,6 +758,19 @@ export default function ComplexManagement() {
                     {form.sgg_nm && <Chip label={form.sgg_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
                     {form.emd_nm && <Chip label={form.emd_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
                   </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {/* Step 1: Location & Scale */}
+          {activeStep === 1 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Show selected address summary */}
+              {form.address && (
+                <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LocationOnIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{form.road_address || form.address}</Typography>
                 </Box>
               )}
 
