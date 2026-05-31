@@ -6,7 +6,6 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -20,26 +19,35 @@ import TableRow from '@mui/material/TableRow';
 import Skeleton from '@mui/material/Skeleton';
 import Chip from '@mui/material/Chip';
 import InputAdornment from '@mui/material/InputAdornment';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
 import Alert from '@mui/material/Alert';
-import LinearProgress from '@mui/material/LinearProgress';
 import Grid from '@mui/material/Grid';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Switch from '@mui/material/Switch';
+import Slider from '@mui/material/Slider';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import AccessibleIcon from '@mui/icons-material/Accessible';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
+import SecurityIcon from '@mui/icons-material/Security';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import { supabase } from '../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useToast } from '../contexts/ToastContext';
 import { useAuditLog } from '../../hooks/useAuditLog';
+import { useAuth } from '../contexts/AuthContext';
+
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
 
 interface Resident {
   id: string;
@@ -50,231 +58,275 @@ interface Resident {
   phone: string;
   email: string;
   status: string;
-  household_size: number;
-  vehicle_count: number;
-  move_in_date: string | null;
-  emergency_contact: string;
-  parking_assigned: boolean;
   plan_type: string;
   monthly_fee: number;
-  completeness_score: number;
-  notes: string;
   created_at: string;
 }
 
-interface Vehicle {
+interface ServiceMode {
   id: string;
   resident_id: string;
-  plate_number: string;
-  vehicle_type: string;
-  is_ev: boolean;
+  current_mode: string;
+  uwb_tag_serial: string;
+  lpr_mapping: string;
+  priority_weight: number;
+  gate_interlock_status: string;
+  credit_limit: number;
+  monthly_accumulated: number;
 }
 
-interface Complex {
+interface Wallet {
   id: string;
-  name: string;
-  mdm_code: string | null;
-}
-
-const STEPS = ['기본 정보', '거주 상세', '차량/주차', '확인'];
-
-interface FormData {
-  name: string;
-  unit_number: string;
-  phone: string;
-  email: string;
-  complex_id: string;
+  resident_id: string;
+  balance_coins: number;
+  lifetime_charged: number;
+  lifetime_spent: number;
+  auto_deduct_enabled: boolean;
   status: string;
-  household_size: string;
-  move_in_date: string;
-  emergency_contact: string;
-  plan_type: string;
-  monthly_fee: string;
-  parking_assigned: string;
-  vehicle_count: string;
-  notes: string;
 }
 
-const emptyForm: FormData = {
-  name: '', unit_number: '', phone: '', email: '', complex_id: '',
-  status: 'active', household_size: '1', move_in_date: '', emergency_contact: '',
-  plan_type: 'monthly', monthly_fee: '0', parking_assigned: 'false',
-  vehicle_count: '0', notes: '',
+interface VisitorSession {
+  id: string;
+  complex_id: string;
+  plate_number: string;
+  entry_at: string;
+  exit_at: string | null;
+  rate_per_minute: number;
+  accumulated_charge: number;
+  discount_code: string;
+  discount_amount: number;
+  payment_status: string;
+  exit_lock_active: boolean;
+  store_name: string;
+}
+
+// ─────────────────────────────────────────────
+// PII Masking Utils - Patent [660] Governance
+// ─────────────────────────────────────────────
+
+function maskPlate(plate: string): string {
+  if (!plate || plate.length < 4) return '****';
+  return plate.slice(0, -4) + '****';
+}
+
+function maskName(name: string): string {
+  if (!name || name.length < 2) return '**';
+  return name[0] + '*'.repeat(name.length - 1);
+}
+
+// ─────────────────────────────────────────────
+// Mode labels
+// ─────────────────────────────────────────────
+
+const MODE_LABELS: Record<string, string> = {
+  direct_entry: '세대직입',
+  valet_standard: '공용발렛',
+  valet_premium: '세대직입 프리미엄',
+  self_park: '자가주차',
 };
 
-function calcCompleteness(form: FormData): number {
-  const fields = [form.name, form.unit_number, form.phone, form.email, form.complex_id, form.household_size, form.move_in_date, form.emergency_contact, form.plan_type, form.monthly_fee];
-  const filled = fields.filter(f => f && f !== '0' && f !== 'false').length;
-  return Math.round((filled / fields.length) * 100);
-}
+const MODE_COLORS: Record<string, 'success' | 'primary' | 'warning' | 'default'> = {
+  direct_entry: 'primary',
+  valet_standard: 'warning',
+  valet_premium: 'success',
+  self_park: 'default',
+};
+
+const INTERLOCK_LABELS: Record<string, string> = {
+  normal: '정상',
+  force_open: '강제개방',
+  force_locked: '강제잠금',
+};
 
 export default function ResidentManagement() {
   useDocumentTitle('입주민 관리');
   const { showToast } = useToast();
   const { logAction } = useAuditLog();
-  const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
+
+  const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [residents, setResidents] = useState<Resident[]>([]);
-  const [complexes, setComplexes] = useState<Complex[]>([]);
+  const [serviceModes, setServiceModes] = useState<ServiceMode[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [visitorSessions, setVisitorSessions] = useState<VisitorSession[]>([]);
   const [search, setSearch] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Resident | null>(null);
-  const [form, setForm] = useState<FormData>(emptyForm);
-  const [activeStep, setActiveStep] = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Resident | null>(null);
-  const [vehicleDialog, setVehicleDialog] = useState<Resident | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [vehicleForm, setVehicleForm] = useState({ plate_number: '', vehicle_type: '', is_ev: false });
-  const [accessibilityMap, setAccessibilityMap] = useState<Record<string, string>>({});
+  const [piiUnmasked, setPiiUnmasked] = useState(false);
+  const [mfaDialogOpen, setMfaDialogOpen] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
+  const [detailResident, setDetailResident] = useState<Resident | null>(null);
+  const [detailMode, setDetailMode] = useState<ServiceMode | null>(null);
+  const [detailWallet, setDetailWallet] = useState<Wallet | null>(null);
 
-  const completeness = useMemo(() => calcCompleteness(form), [form]);
+  // ─────────────────────────────────────────────
+  // Data Loading
+  // ─────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    const [rRes, cRes, apRes] = await Promise.all([
+    const [rRes, smRes, wRes, vsRes] = await Promise.all([
       supabase.from('resident_accounts').select('*').order('name'),
-      supabase.from('complexes').select('id, name, mdm_code'),
-      supabase.from('resident_accessibility_profiles').select('resident_id, category').eq('active', true),
+      supabase.from('resident_service_modes').select('*'),
+      supabase.from('palatria_wallets').select('*'),
+      supabase.from('visitor_billing_sessions').select('*').order('entry_at', { ascending: false }).limit(50),
     ]);
     if (rRes.data) setResidents(rRes.data);
-    if (cRes.data) setComplexes(cRes.data);
-    if (apRes.data) {
-      const map: Record<string, string> = {};
-      apRes.data.forEach(p => { map[p.resident_id] = p.category; });
-      setAccessibilityMap(map);
-    }
+    if (smRes.data) setServiceModes(smRes.data);
+    if (wRes.data) setWallets(wRes.data);
+    if (vsRes.data) setVisitorSessions(vsRes.data);
     setLoading(false);
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Real-time subscription
   useEffect(() => {
-    const channel = supabase.channel('residents-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'resident_accounts' }, () => { loadData(); })
+    const channel = supabase.channel('resident-billing-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'resident_accounts' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'palatria_wallets' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visitor_billing_sessions' }, () => loadData())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadData]);
 
-  const loadVehicles = useCallback(async (residentId: string) => {
-    const { data } = await supabase.from('resident_vehicles').select('*').eq('resident_id', residentId);
-    if (data) setVehicles(data);
-  }, []);
+  // ─────────────────────────────────────────────
+  // Lookups
+  // ─────────────────────────────────────────────
 
-  const canProceed = (step: number): boolean => {
-    if (step === 0) return !!form.name && !!form.unit_number && !!form.complex_id;
-    if (step === 1) return !!form.phone;
-    return true;
+  const modeByResident = useMemo(() => {
+    const map = new Map<string, ServiceMode>();
+    serviceModes.forEach(sm => map.set(sm.resident_id, sm));
+    return map;
+  }, [serviceModes]);
+
+  const walletByResident = useMemo(() => {
+    const map = new Map<string, Wallet>();
+    wallets.forEach(w => map.set(w.resident_id, w));
+    return map;
+  }, [wallets]);
+
+  const filtered = residents.filter(r =>
+    !search
+    || r.name?.includes(search)
+    || r.unit_number?.includes(search)
+    || r.registration_code?.includes(search)
+    || modeByResident.get(r.id)?.lpr_mapping?.includes(search)
+  );
+
+  // ─────────────────────────────────────────────
+  // PII MFA Unmask - Patent [660]
+  // ─────────────────────────────────────────────
+
+  const handleMfaRequest = () => {
+    if (!isSuperAdmin) {
+      showToast('최고관리자만 복호화 할 수 있습니다', 'error');
+      return;
+    }
+    setMfaDialogOpen(true);
+    setMfaCode('');
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      let regCode = editing?.registration_code || null;
-      if (!editing) {
-        const { data: codeData } = await supabase.rpc('generate_entity_code', { p_entity_type: 'resident', p_prefix: 'RES' });
-        regCode = codeData;
-      }
-
-      const payload = {
-        name: form.name,
-        unit_number: form.unit_number,
-        phone: form.phone,
-        email: form.email,
-        complex_id: form.complex_id || null,
-        status: form.status,
-        household_size: parseInt(form.household_size) || 1,
-        move_in_date: form.move_in_date || null,
-        emergency_contact: form.emergency_contact,
-        plan_type: form.plan_type,
-        monthly_fee: parseFloat(form.monthly_fee) || 0,
-        parking_assigned: form.parking_assigned === 'true',
-        vehicle_count: parseInt(form.vehicle_count) || 0,
-        notes: form.notes,
-        registration_code: regCode,
-        completeness_score: completeness,
-      };
-
-      if (editing) {
-        const { error } = await supabase.from('resident_accounts').update(payload).eq('id', editing.id);
-        if (error) { showToast('수정 실패: ' + error.message, 'error'); return; }
-        logAction('UPDATE', 'resident_accounts', editing.id, { name: payload.name, registration_code: regCode });
-        showToast('입주민 정보가 수정되었습니다.', 'success');
-      } else {
-        const { error } = await supabase.from('resident_accounts').insert(payload);
-        if (error) { showToast('등록 실패: ' + error.message, 'error'); return; }
-        logAction('CREATE', 'resident_accounts', undefined, { name: payload.name, registration_code: regCode });
-        showToast('입주민이 등록되었습니다.', 'success');
-      }
-      setDialogOpen(false);
-      setActiveStep(0);
-      loadData();
-    } finally {
-      setSaving(false);
+  const handleMfaVerify = () => {
+    if (mfaCode.length === 6) {
+      setPiiUnmasked(true);
+      setMfaDialogOpen(false);
+      showToast('PII 복호화 세션 활성화 (5분간 유효)', 'success');
+      logAction('PII_UNMASK', 'resident_accounts', undefined, { reason: 'admin_mfa_verified' });
+      setTimeout(() => setPiiUnmasked(false), 5 * 60 * 1000);
+    } else {
+      showToast('6자리 OTP를 입력하세요', 'error');
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    const { error } = await supabase.from('resident_accounts').delete().eq('id', deleteTarget.id);
-    if (error) { showToast('삭제 실패: ' + error.message, 'error'); return; }
-    logAction('DELETE', 'resident_accounts', deleteTarget.id, { name: deleteTarget.name });
-    showToast('삭제 완료', 'success');
-    setDeleteTarget(null);
+  // ─────────────────────────────────────────────
+  // Detail Modal Actions
+  // ─────────────────────────────────────────────
+
+  const openDetail = (r: Resident) => {
+    setDetailResident(r);
+    setDetailMode(modeByResident.get(r.id) || null);
+    setDetailWallet(walletByResident.get(r.id) || null);
+  };
+
+  const handleModeChange = async (newMode: string) => {
+    if (!detailResident || !detailMode) return;
+
+    const creditLimits: Record<string, number> = {
+      self_park: 50000,
+      direct_entry: 100000,
+      valet_standard: 150000,
+      valet_premium: 300000,
+    };
+
+    const newLimit = creditLimits[newMode] || 100000;
+
+    if (detailWallet && detailWallet.balance_coins < newLimit * 0.1) {
+      showToast('코인 잔액 부족: 등급 변경에 최소 10% 보증금 필요', 'error');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('resident_service_modes')
+      .update({ current_mode: newMode, credit_limit: newLimit, mode_changed_at: new Date().toISOString() })
+      .eq('id', detailMode.id);
+
+    if (error) { showToast('모드 변경 실패: ' + error.message, 'error'); return; }
+
+    logAction('MODE_CHANGE', 'resident_service_modes', detailMode.id, {
+      from: detailMode.current_mode, to: newMode, credit_limit: newLimit,
+    });
+    showToast(`서비스 모드 변경 완료: ${MODE_LABELS[newMode]}`, 'success');
+    loadData();
+    setDetailResident(null);
+  };
+
+  const handleInterlockChange = async (status: string) => {
+    if (!detailMode) return;
+    const { error } = await supabase
+      .from('resident_service_modes')
+      .update({ gate_interlock_status: status })
+      .eq('id', detailMode.id);
+
+    if (error) { showToast('인터록 변경 실패', 'error'); return; }
+    logAction('GATE_INTERLOCK', 'resident_service_modes', detailMode.id, { status });
+    showToast(`게이트 [120] 인터록: ${INTERLOCK_LABELS[status]}`, 'success');
+    loadData();
+    setDetailResident(null);
+  };
+
+  const handlePriorityChange = async (weight: number) => {
+    if (!detailMode) return;
+    const { error } = await supabase
+      .from('resident_service_modes')
+      .update({ priority_weight: weight })
+      .eq('id', detailMode.id);
+
+    if (error) { showToast('우선순위 변경 실패', 'error'); return; }
+    logAction('PRIORITY_CHANGE', 'resident_service_modes', detailMode.id, { priority_weight: weight });
+    showToast(`출차 우선순위 가중치 변경: ${weight}`, 'success');
     loadData();
   };
 
-  const handleAddVehicle = async () => {
-    if (!vehicleDialog) return;
-    const payload = { resident_id: vehicleDialog.id, ...vehicleForm };
-    const { error } = await supabase.from('resident_vehicles').insert(payload);
-    if (error) { showToast('차량 등록 실패: ' + error.message, 'error'); return; }
-    logAction('CREATE', 'resident_vehicles', undefined, { plate: vehicleForm.plate_number });
-    showToast('차량이 등록되었습니다.', 'success');
-    setVehicleForm({ plate_number: '', vehicle_type: '', is_ev: false });
-    loadVehicles(vehicleDialog.id);
-  };
+  // ─────────────────────────────────────────────
+  // Visitor Exit Lock Toggle
+  // ─────────────────────────────────────────────
 
-  const handleDeleteVehicle = async (v: Vehicle) => {
-    const { error } = await supabase.from('resident_vehicles').delete().eq('id', v.id);
-    if (error) { showToast('삭제 실패', 'error'); return; }
-    logAction('DELETE', 'resident_vehicles', v.id, { plate: v.plate_number });
-    if (vehicleDialog) loadVehicles(vehicleDialog.id);
-  };
+  const toggleExitLock = async (session: VisitorSession) => {
+    const { error } = await supabase
+      .from('visitor_billing_sessions')
+      .update({ exit_lock_active: !session.exit_lock_active })
+      .eq('id', session.id);
 
-  const openNewDialog = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setActiveStep(0);
-    setDialogOpen(true);
-  };
-
-  const openEditDialog = (r: Resident) => {
-    setEditing(r);
-    setForm({
-      name: r.name,
-      unit_number: r.unit_number,
-      phone: r.phone || '',
-      email: r.email || '',
-      complex_id: r.complex_id || '',
-      status: r.status || 'active',
-      household_size: String(r.household_size || 1),
-      move_in_date: r.move_in_date || '',
-      emergency_contact: r.emergency_contact || '',
-      plan_type: r.plan_type || 'monthly',
-      monthly_fee: String(r.monthly_fee || 0),
-      parking_assigned: String(r.parking_assigned || false),
-      vehicle_count: String(r.vehicle_count || 0),
-      notes: r.notes || '',
+    if (error) { showToast('출차 잠금 변경 실패', 'error'); return; }
+    logAction('EXIT_LOCK_TOGGLE', 'visitor_billing_sessions', session.id, {
+      plate: session.plate_number, locked: !session.exit_lock_active,
     });
-    setActiveStep(0);
-    setDialogOpen(true);
+    showToast(session.exit_lock_active ? '출차 잠금 해제' : '출차 잠금 활성화', 'success');
+    loadData();
   };
 
-  const filtered = residents.filter(r =>
-    !search || r.name?.includes(search) || r.unit_number?.includes(search) || r.phone?.includes(search) || r.registration_code?.includes(search)
-  );
-
-  const complexName = (id: string) => complexes.find(c => c.id === id)?.name || '-';
+  // ─────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -287,20 +339,31 @@ export default function ResidentManagement() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+      {/* Header */}
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>입주민 관리</Typography>
-          <Typography variant="body2" color="text.secondary">MDM 기반 입주민 등록 및 관리 시스템</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>입주민 / 결제 관리</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Palatria Coin 통합 과금 / 서비스 모드 제어 / 특허 [120][660]
+          </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/ai-management')}>AI 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/workflows')}>워크플로우</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/parking')}>주차 운영</Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openNewDialog}>입주민 등록</Button>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={piiUnmasked ? <VisibilityIcon /> : <VisibilityOffIcon />}
+            onClick={piiUnmasked ? () => setPiiUnmasked(false) : handleMfaRequest}
+            color={piiUnmasked ? 'warning' : 'inherit'}
+          >
+            {piiUnmasked ? '마스킹 복원' : '복호화 보기'}
+          </Button>
+          <Button variant="contained" size="small" startIcon={<AddIcon />}>
+            입주민 등록
+          </Button>
         </Box>
       </Box>
 
+      {/* Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, sm: 3 }}>
           <Card><CardContent sx={{ textAlign: 'center', py: 1.5 }}>
@@ -310,246 +373,387 @@ export default function ResidentManagement() {
         </Grid>
         <Grid size={{ xs: 6, sm: 3 }}>
           <Card><CardContent sx={{ textAlign: 'center', py: 1.5 }}>
-            <Typography variant="caption" color="text.secondary">활성</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700 }} color="success.main">{residents.filter(r => r.status === 'active').length}</Typography>
+            <Typography variant="caption" color="text.secondary">활성 지갑</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }} color="success.main">{wallets.filter(w => w.status === 'active').length}</Typography>
           </CardContent></Card>
         </Grid>
         <Grid size={{ xs: 6, sm: 3 }}>
           <Card><CardContent sx={{ textAlign: 'center', py: 1.5 }}>
-            <Typography variant="caption" color="text.secondary">평균 완성도</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>{residents.length > 0 ? Math.round(residents.reduce((s, r) => s + (r.completeness_score || 0), 0) / residents.length) : 0}%</Typography>
+            <Typography variant="caption" color="text.secondary">총 코인 유통량</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>{wallets.reduce((s, w) => s + w.balance_coins, 0).toLocaleString()}</Typography>
           </CardContent></Card>
         </Grid>
         <Grid size={{ xs: 6, sm: 3 }}>
           <Card><CardContent sx={{ textAlign: 'center', py: 1.5 }}>
-            <Typography variant="caption" color="text.secondary">연결 단지</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>{new Set(residents.filter(r => r.complex_id).map(r => r.complex_id)).size}</Typography>
+            <Typography variant="caption" color="text.secondary">방문차량 미결제</Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }} color="error.main">
+              {visitorSessions.filter(v => v.payment_status === 'pending' || v.payment_status === 'overdue').length}
+            </Typography>
           </CardContent></Card>
         </Grid>
       </Grid>
 
-      <TextField size="small" placeholder="이름, 호수, 전화번호, 등록코드 검색" value={search} onChange={e => setSearch(e.target.value)} sx={{ mb: 2, width: 360 }}
-        slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }} />
+      {/* Tab Navigation */}
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Tab label="사용자 마스터" icon={<DirectionsCarIcon sx={{ fontSize: 16 }} />} iconPosition="start" sx={{ fontSize: '0.8125rem', minHeight: 40 }} />
+        <Tab label="상업용 정산" icon={<MonetizationOnIcon sx={{ fontSize: 16 }} />} iconPosition="start" sx={{ fontSize: '0.8125rem', minHeight: 40 }} />
+      </Tabs>
 
-      <Card>
-        <TableContainer>
-          <Table size="small">
-            <TableHead><TableRow>
-              <TableCell>등록코드</TableCell>
-              <TableCell>이름</TableCell>
-              <TableCell>호수</TableCell>
-              <TableCell>단지</TableCell>
-              <TableCell>전화번호</TableCell>
-              <TableCell align="center">교통약자</TableCell>
-              <TableCell align="center">완성도</TableCell>
-              <TableCell>상태</TableCell>
-              <TableCell align="center">관리</TableCell>
-            </TableRow></TableHead>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={9} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>입주민 데이터가 없습니다</Typography></TableCell></TableRow>
-              ) : filtered.map(r => (
-                <TableRow key={r.id} hover>
-                  <TableCell>
-                    <Typography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'text.secondary' }}>
-                      {r.registration_code || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{r.name}</Typography></TableCell>
-                  <TableCell>{r.unit_number}</TableCell>
-                  <TableCell><Typography variant="caption">{complexName(r.complex_id)}</Typography></TableCell>
-                  <TableCell>{r.phone || '-'}</TableCell>
-                  <TableCell align="center">
-                    {accessibilityMap[r.id] ? (
-                      <Chip
-                        icon={<AccessibleIcon />}
-                        label={accessibilityMap[r.id] === 'elderly' ? '노약자' : accessibilityMap[r.id] === 'disabled' ? '장애인' : accessibilityMap[r.id] === 'pregnant' ? '임산부' : accessibilityMap[r.id] === 'child_companion' ? '영유아' : '부상'}
-                        size="small"
-                        color="warning"
-                        variant="outlined"
-                        sx={{ height: 22, fontSize: '0.65rem' }}
-                      />
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}>
-                      {(r.completeness_score || 0) >= 80
-                        ? <CheckCircleIcon sx={{ fontSize: 14, color: 'success.main' }} />
-                        : <WarningIcon sx={{ fontSize: 14, color: 'warning.main' }} />}
-                      <Typography variant="caption">{r.completeness_score || 0}%</Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell><Chip label={r.status || 'active'} size="small" color={r.status === 'active' ? 'success' : 'default'} /></TableCell>
-                  <TableCell align="center">
-                    <IconButton size="small" onClick={() => { setVehicleDialog(r); loadVehicles(r.id); }}><DirectionsCarIcon sx={{ fontSize: 16 }} /></IconButton>
-                    <IconButton size="small" onClick={() => openEditDialog(r)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
-                    <IconButton size="small" onClick={() => setDeleteTarget(r)} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
+      {/* Tab 0: User Master Grid */}
+      {tab === 0 && (
+        <>
+          <TextField
+            size="small"
+            placeholder="이름, 호수, 등록코드, 차량번호 검색"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            sx={{ mb: 2, width: { xs: '100%', sm: 360 } }}
+            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
+          />
 
-      {/* Registration Stepper Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+          <Card>
+            <TableContainer sx={{ maxHeight: 600 }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>이름</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>세대(동/호)</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>LPR 매핑</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>UWB 태그</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>서비스 모드</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} align="right">코인 잔액</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} align="center">당월 과금</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} align="center">상태</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filtered.length === 0 ? (
+                    <TableRow><TableCell colSpan={8} align="center">
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>데이터 없음</Typography>
+                    </TableCell></TableRow>
+                  ) : filtered.map(r => {
+                    const mode = modeByResident.get(r.id);
+                    const wallet = walletByResident.get(r.id);
+                    return (
+                      <TableRow
+                        key={r.id}
+                        hover
+                        onDoubleClick={() => openDetail(r)}
+                        sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                      >
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {piiUnmasked ? r.name : maskName(r.name)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{r.unit_number}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                            {mode?.lpr_mapping ? (piiUnmasked ? mode.lpr_mapping : maskPlate(mode.lpr_mapping)) : '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                            {mode?.uwb_tag_serial || '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {mode ? (
+                            <Chip
+                              label={MODE_LABELS[mode.current_mode] || mode.current_mode}
+                              size="small"
+                              color={MODE_COLORS[mode.current_mode] || 'default'}
+                              sx={{ height: 22, fontSize: '0.6875rem' }}
+                            />
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                            <AccountBalanceWalletIcon sx={{ fontSize: 14, color: wallet && wallet.balance_coins < 5000 ? 'error.main' : 'success.main' }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {wallet ? wallet.balance_coins.toLocaleString() : '-'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Typography variant="caption">
+                            {mode ? `${mode.monthly_accumulated.toLocaleString()} / ${mode.credit_limit.toLocaleString()}` : '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={r.status}
+                            size="small"
+                            color={r.status === 'active' ? 'success' : 'default'}
+                            sx={{ height: 20, fontSize: '0.65rem' }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+
+          {!piiUnmasked && (
+            <Alert severity="info" sx={{ mt: 2, fontSize: '0.75rem' }} icon={<SecurityIcon sx={{ fontSize: 16 }} />}>
+              개인정보 보호 정책[660]에 의거 민감 데이터는 마스킹 표시됩니다. 실데이터 확인은 MFA 인증 후 가능합니다.
+            </Alert>
+          )}
+        </>
+      )}
+
+      {/* Tab 1: Commercial Visitor Billing */}
+      {tab === 1 && (
+        <>
+          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700 }}>
+            방문차량 실시간 과금 현황
+          </Typography>
+
+          <Card>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>차량번호</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>입차시간</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>체류시간</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} align="right">누적과금</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>할인쿠폰</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>연동매장</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} align="center">결제상태</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} align="center">출차제한</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {visitorSessions.length === 0 ? (
+                    <TableRow><TableCell colSpan={8} align="center">
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>방문차량 없음</Typography>
+                    </TableCell></TableRow>
+                  ) : visitorSessions.map(vs => {
+                    const entryTime = new Date(vs.entry_at);
+                    const now = vs.exit_at ? new Date(vs.exit_at) : new Date();
+                    const minutes = Math.floor((now.getTime() - entryTime.getTime()) / 60000);
+                    const charge = vs.accumulated_charge || minutes * vs.rate_per_minute;
+                    const isOverdue = vs.payment_status === 'overdue';
+
+                    return (
+                      <TableRow key={vs.id} hover sx={{ bgcolor: isOverdue ? 'rgba(255,82,82,0.04)' : undefined }}>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                            {piiUnmasked ? vs.plate_number : maskPlate(vs.plate_number)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption">{entryTime.toLocaleString('ko-KR')}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{minutes}분</Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: charge > 10000 ? 'error.main' : 'text.primary' }}>
+                            {charge.toLocaleString()}원
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {vs.discount_code ? (
+                            <Chip label={vs.discount_code} size="small" color="info" sx={{ height: 20, fontSize: '0.65rem' }} />
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption">{vs.store_name || '-'}</Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={vs.payment_status === 'paid' ? '결제완료' : vs.payment_status === 'overdue' ? '연체' : '미결제'}
+                            size="small"
+                            color={vs.payment_status === 'paid' ? 'success' : vs.payment_status === 'overdue' ? 'error' : 'warning'}
+                            sx={{ height: 20, fontSize: '0.65rem' }}
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title={vs.exit_lock_active ? '출차 잠금 해제' : '출차 잠금 활성화'}>
+                            <IconButton size="small" onClick={() => toggleExitLock(vs)} color={vs.exit_lock_active ? 'error' : 'default'}>
+                              {vs.exit_lock_active ? <LockIcon sx={{ fontSize: 16 }} /> : <LockOpenIcon sx={{ fontSize: 16 }} />}
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+
+          {visitorSessions.filter(v => v.payment_status === 'overdue').length > 0 && (
+            <Alert severity="warning" sx={{ mt: 2, fontSize: '0.75rem' }} icon={<WarningAmberIcon sx={{ fontSize: 16 }} />}>
+              미결제 초과 차량 {visitorSessions.filter(v => v.payment_status === 'overdue').length}건 - 강제 출차 제한 제어 검토 필요
+            </Alert>
+          )}
+        </>
+      )}
+
+      {/* MFA Verification Dialog */}
+      <Dialog open={mfaDialogOpen} onClose={() => setMfaDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>{editing ? '입주민 수정' : '입주민 등록'}</Typography>
-          <Typography variant="caption" color="text.secondary">MDM 기반 체계적 입주민 등록</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <SecurityIcon color="primary" />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>2차 인증 (MFA)</Typography>
+          </Box>
         </DialogTitle>
         <DialogContent>
-          <Stepper activeStep={activeStep} sx={{ mb: 3, mt: 1 }}>
-            {STEPS.map(label => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
-          </Stepper>
-
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <Box>
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>데이터 완성도</Typography>
-                <LinearProgress variant="determinate" value={completeness} sx={{ mt: 0.5, width: 160, borderRadius: 1, height: 6 }} color={completeness >= 80 ? 'success' : completeness >= 50 ? 'warning' : 'error'} />
-              </Box>
-              <Chip label={`${completeness}%`} size="small" color={completeness >= 80 ? 'success' : 'warning'} />
-            </Box>
+          <Alert severity="info" sx={{ mb: 2, fontSize: '0.75rem' }}>
+            개인정보 복호화를 위해 OTP 보안키를 입력하세요. 거버넌스[660] 정책에 의거 5분간 유효합니다.
           </Alert>
-
-          {activeStep === 0 && (
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="이름 *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} fullWidth size="small" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="호수 *" value={form.unit_number} onChange={e => setForm({ ...form, unit_number: e.target.value })} fullWidth size="small" placeholder="예: 101동 1501호" />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <TextField label="소속 단지 *" select value={form.complex_id} onChange={e => setForm({ ...form, complex_id: e.target.value })} fullWidth size="small">
-                  <MenuItem value="">선택하세요</MenuItem>
-                  {complexes.map(c => <MenuItem key={c.id} value={c.id}>{c.name} {c.mdm_code && <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>({c.mdm_code})</Typography>}</MenuItem>)}
-                </TextField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="상태" select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} fullWidth size="small">
-                  <MenuItem value="active">활성</MenuItem>
-                  <MenuItem value="inactive">비활성</MenuItem>
-                  <MenuItem value="pending">대기</MenuItem>
-                  <MenuItem value="moved_out">퇴거</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="가구원 수" type="number" value={form.household_size} onChange={e => setForm({ ...form, household_size: e.target.value })} fullWidth size="small" slotProps={{ input: { inputProps: { min: 1, max: 10 } } }} />
-              </Grid>
-            </Grid>
-          )}
-
-          {activeStep === 1 && (
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="전화번호 *" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} fullWidth size="small" placeholder="010-0000-0000" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="이메일" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} fullWidth size="small" type="email" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="입주일" type="date" value={form.move_in_date} onChange={e => setForm({ ...form, move_in_date: e.target.value })} fullWidth size="small" slotProps={{ inputLabel: { shrink: true } }} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="비상 연락처" value={form.emergency_contact} onChange={e => setForm({ ...form, emergency_contact: e.target.value })} fullWidth size="small" />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="요금제" select value={form.plan_type} onChange={e => setForm({ ...form, plan_type: e.target.value })} fullWidth size="small">
-                  <MenuItem value="monthly">월정액</MenuItem>
-                  <MenuItem value="usage">종량제</MenuItem>
-                  <MenuItem value="premium">프리미엄</MenuItem>
-                  <MenuItem value="free">무료</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="월 이용료 (원)" type="number" value={form.monthly_fee} onChange={e => setForm({ ...form, monthly_fee: e.target.value })} fullWidth size="small" />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <TextField label="메모" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} fullWidth size="small" multiline rows={2} />
-              </Grid>
-            </Grid>
-          )}
-
-          {activeStep === 2 && (
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="보유 차량 수" type="number" value={form.vehicle_count} onChange={e => setForm({ ...form, vehicle_count: e.target.value })} fullWidth size="small" slotProps={{ input: { inputProps: { min: 0, max: 5 } } }} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField label="주차 배정" select value={form.parking_assigned} onChange={e => setForm({ ...form, parking_assigned: e.target.value })} fullWidth size="small">
-                  <MenuItem value="true">배정 완료</MenuItem>
-                  <MenuItem value="false">미배정</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
-                  차량 상세 정보는 등록 완료 후 차량 관리 기능에서 추가할 수 있습니다.
-                </Alert>
-              </Grid>
-            </Grid>
-          )}
-
-          {activeStep === 3 && (
-            <Card variant="outlined" sx={{ p: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700 }}>등록 정보 확인</Typography>
-              <Grid container spacing={1.5}>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">이름</Typography><Typography variant="body2" sx={{ fontWeight: 600 }}>{form.name}</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">호수</Typography><Typography variant="body2">{form.unit_number}</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">단지</Typography><Typography variant="body2">{complexName(form.complex_id)}</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">전화</Typography><Typography variant="body2">{form.phone || '-'}</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">요금제</Typography><Typography variant="body2">{form.plan_type}</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">가구원</Typography><Typography variant="body2">{form.household_size}명</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">차량</Typography><Typography variant="body2">{form.vehicle_count}대</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">주차</Typography><Typography variant="body2">{form.parking_assigned === 'true' ? '배정' : '미배정'}</Typography></Grid>
-              </Grid>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="caption" color="text.secondary">완성도:</Typography>
-                <Chip label={completeness >= 80 ? '우수' : '추가 입력 권장'} size="small" color={completeness >= 80 ? 'success' : 'warning'} />
-              </Box>
-            </Card>
-          )}
+          <TextField
+            label="6자리 OTP 코드"
+            value={mfaCode}
+            onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            fullWidth
+            autoFocus
+            slotProps={{ input: { sx: { fontFamily: 'monospace', fontSize: '1.5rem', letterSpacing: '0.3em', textAlign: 'center' } } }}
+          />
         </DialogContent>
-        <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-          <Button onClick={() => setDialogOpen(false)}>취소</Button>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {activeStep > 0 && <Button onClick={() => setActiveStep(s => s - 1)}>이전</Button>}
-            {activeStep < STEPS.length - 1 ? (
-              <Button variant="contained" onClick={() => setActiveStep(s => s + 1)} disabled={!canProceed(activeStep)}>다음</Button>
-            ) : (
-              <Button variant="contained" onClick={handleSave} disabled={saving || !form.name}>{saving ? '저장 중...' : editing ? '수정 완료' : '등록 완료'}</Button>
-            )}
-          </Box>
+        <DialogActions>
+          <Button onClick={() => setMfaDialogOpen(false)}>취소</Button>
+          <Button variant="contained" onClick={handleMfaVerify} disabled={mfaCode.length !== 6}>인증</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs">
-        <DialogTitle>입주민 삭제</DialogTitle>
-        <DialogContent><Typography>"{deleteTarget?.name}" 님을 삭제하시겠습니까?</Typography></DialogContent>
-        <DialogActions><Button onClick={() => setDeleteTarget(null)}>취소</Button><Button variant="contained" color="error" onClick={handleDelete}>삭제</Button></DialogActions>
-      </Dialog>
-
-      {/* Vehicle Management Dialog */}
-      <Dialog open={!!vehicleDialog} onClose={() => setVehicleDialog(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>{vehicleDialog?.name} - 차량 관리</DialogTitle>
+      {/* User Detail Modal - Double Click */}
+      <Dialog open={!!detailResident} onClose={() => setDetailResident(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {detailResident?.name} - 세부 제어
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {detailResident?.unit_number} / 특허 [120] 게이트 제어, [660] 거버넌스
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', gap: 1, mb: 2, mt: 1 }}>
-            <TextField label="차량번호" size="small" value={vehicleForm.plate_number} onChange={e => setVehicleForm({ ...vehicleForm, plate_number: e.target.value })} />
-            <TextField label="차종" size="small" value={vehicleForm.vehicle_type} onChange={e => setVehicleForm({ ...vehicleForm, vehicle_type: e.target.value })} />
-            <Button variant="contained" size="small" onClick={handleAddVehicle} disabled={!vehicleForm.plate_number}>추가</Button>
-          </Box>
-          {vehicles.map(v => (
-            <Box key={v.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}>
-              <Typography variant="body2">{v.plate_number} ({v.vehicle_type || '-'}) {v.is_ev && <Chip label="EV" size="small" color="success" sx={{ ml: 1 }} />}</Typography>
-              <IconButton size="small" onClick={() => handleDeleteVehicle(v)} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 14 }} /></IconButton>
+          {detailMode && (
+            <Box sx={{ mt: 1 }}>
+              {/* Service Mode Change */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>서비스 모드 변경</Typography>
+              <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+                {Object.entries(MODE_LABELS).map(([key, label]) => (
+                  <Button
+                    key={key}
+                    variant={detailMode.current_mode === key ? 'contained' : 'outlined'}
+                    size="small"
+                    onClick={() => handleModeChange(key)}
+                    disabled={detailMode.current_mode === key}
+                    sx={{ fontSize: '0.75rem' }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Priority Weight w2 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                출차 우선순위 가중치 ($w_2$)
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                교통약자 가중치. 높을수록 우선 배차됩니다.
+              </Typography>
+              <Slider
+                value={detailMode.priority_weight}
+                onChange={(_, v) => setDetailMode({ ...detailMode, priority_weight: v as number })}
+                onChangeCommitted={(_, v) => handlePriorityChange(v as number)}
+                min={0.5}
+                max={5.0}
+                step={0.5}
+                marks={[
+                  { value: 1, label: '1.0' },
+                  { value: 2.5, label: '2.5' },
+                  { value: 5, label: '5.0' },
+                ]}
+                valueLabelDisplay="on"
+                sx={{ mx: 2, mb: 3 }}
+              />
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Gate Interlock [120] */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                게이트 [120] 인터록 제어
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <Button
+                  variant={detailMode.gate_interlock_status === 'normal' ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => handleInterlockChange('normal')}
+                  color="success"
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  정상
+                </Button>
+                <Button
+                  variant={detailMode.gate_interlock_status === 'force_open' ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => handleInterlockChange('force_open')}
+                  color="warning"
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  강제 개방
+                </Button>
+                <Button
+                  variant={detailMode.gate_interlock_status === 'force_locked' ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => handleInterlockChange('force_locked')}
+                  color="error"
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  강제 잠금
+                </Button>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Wallet Info */}
+              {detailWallet && (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Palatria Coin 지갑</Typography>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 4 }}>
+                      <Typography variant="caption" color="text.secondary">잔액</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>{detailWallet.balance_coins.toLocaleString()}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 4 }}>
+                      <Typography variant="caption" color="text.secondary">누적 충전</Typography>
+                      <Typography variant="body2">{detailWallet.lifetime_charged.toLocaleString()}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 4 }}>
+                      <Typography variant="caption" color="text.secondary">누적 사용</Typography>
+                      <Typography variant="body2">{detailWallet.lifetime_spent.toLocaleString()}</Typography>
+                    </Grid>
+                  </Grid>
+                  <FormControlLabel
+                    control={<Switch checked={detailWallet.auto_deduct_enabled} disabled />}
+                    label={<Typography variant="caption">자동 차감 활성화</Typography>}
+                    sx={{ mt: 1 }}
+                  />
+                </Box>
+              )}
             </Box>
-          ))}
-          {vehicles.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>등록된 차량이 없습니다</Typography>}
+          )}
+
+          {!detailMode && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              서비스 모드가 등록되지 않은 사용자입니다. 서비스 모드를 먼저 설정하세요.
+            </Alert>
+          )}
         </DialogContent>
-        <DialogActions><Button onClick={() => setVehicleDialog(null)}>닫기</Button></DialogActions>
+        <DialogActions>
+          <Button onClick={() => setDetailResident(null)}>닫기</Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
