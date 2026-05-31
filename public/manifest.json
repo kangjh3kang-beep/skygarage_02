@@ -1,7 +1,7 @@
 {
   "name": "SGP App - SkyGarage Parking",
   "short_name": "SGP App",
-  "description": "SkyGarage 스마트 주차 결제 앱",
+  "description": "SkyGarage 스마트 주차 결제 앱 - 코인충전, NFC결제, 내차위치 확인",
   "start_url": "/app",
   "scope": "/app",
   "display": "standalone",
@@ -9,18 +9,20 @@
   "theme_color": "#0d1b2a",
   "background_color": "#0d1b2a",
   "categories": ["lifestyle", "utilities"],
+  "lang": "ko",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/logo01.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/logo03.png",
@@ -29,6 +31,7 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "id": "/app"
 }

@@ -1,9 +1,10 @@
-const CACHE_NAME = 'sgp-app-v1';
+const CACHE_NAME = 'sgp-app-v2';
 const STATIC_ASSETS = [
   '/app',
   '/favicon.svg',
   '/logo01.png',
   '/logo03.png',
+  '/manifest.json',
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,25 +31,31 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/app')) {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/app'))
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match('/app'))
     );
     return;
   }
 
-  if (STATIC_ASSETS.includes(url.pathname)) {
+  if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(request).then((cached) => cached || fetch(request))
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        });
+      })
     );
-    return;
   }
-
-  event.respondWith(
-    fetch(request).then((response) => {
-      if (response.ok && url.origin === self.location.origin) {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-      }
-      return response;
-    }).catch(() => caches.match(request))
-  );
 });
