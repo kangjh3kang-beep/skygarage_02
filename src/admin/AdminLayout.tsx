@@ -27,8 +27,11 @@ import ConnectionStatus from './components/ConnectionStatus';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import ErrorBoundary from './components/ErrorBoundary';
 import Breadcrumbs from './components/Breadcrumbs';
+import ContextSwitcher from './components/ContextSwitcher';
+import CoManagementIndicator from './components/CoManagementIndicator';
 import { useAuth } from './contexts/AuthContext';
 import { useAdminTheme } from './contexts/ThemeContext';
+import { useTenant } from './contexts/TenantContext';
 
 const routeTitles: Record<string, string> = {
   '/admin': 'Dashboard',
@@ -104,6 +107,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { user, role, signOut } = useAuth();
   const { mode, toggleMode } = useAdminTheme();
+  const { isImpersonating } = useTenant();
 
   const title = routeTitles[location.pathname] || 'Admin';
   const displayName = user?.email?.split('@')[0] || 'User';
@@ -170,6 +174,9 @@ export default function AdminLayout() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%', overflow: 'hidden' }}>
+      {/* Co-Management Gold Glow Indicator */}
+      <CoManagementIndicator />
+
       <Box
         component="a"
         href="#main-content"
@@ -203,6 +210,7 @@ export default function AdminLayout() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          pt: isImpersonating ? '24px' : 0,
         }}
       >
         <AppBar
@@ -229,10 +237,15 @@ export default function AdminLayout() {
             <Typography
               variant="subtitle1"
               noWrap
-              sx={{ flex: 1, color: 'text.primary' }}
+              sx={{ color: 'text.primary', display: { xs: 'none', sm: 'block' } }}
             >
               {title}
             </Typography>
+
+            {/* Hierarchical Context Switcher */}
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: { xs: 'flex-start', md: 'center' }, ml: { xs: 0, sm: 1 } }}>
+              <ContextSwitcher />
+            </Box>
 
             <ConnectionStatus />
 

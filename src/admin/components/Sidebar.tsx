@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -12,6 +12,8 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { useTenant, type AdminScopeLevel } from '../contexts/TenantContext';
+import { useAuth } from '../contexts/AuthContext';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import PeopleIcon from '@mui/icons-material/People';
@@ -61,9 +63,19 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const DRAWER_WIDTH = 260;
 
+type ScopeVisibility = 'global' | 'region' | 'complex' | 'building' | 'all';
+
+interface MenuItem {
+  label: string;
+  icon: React.ReactNode;
+  path: string;
+  minScope?: ScopeVisibility;
+}
+
 interface MenuGroup {
   label: string;
-  items: { label: string; icon: React.ReactNode; path: string }[];
+  items: MenuItem[];
+  minScope?: ScopeVisibility;
 }
 
 const menuGroups: MenuGroup[] = [
@@ -84,20 +96,21 @@ const menuGroups: MenuGroup[] = [
   {
     label: '비즈니스',
     items: [
-      { label: '계약 관리', icon: <DescriptionIcon />, path: '/admin/contracts' },
-      { label: '파트너', icon: <HandshakeIcon />, path: '/admin/partners' },
+      { label: '계약 관리', icon: <DescriptionIcon />, path: '/admin/contracts', minScope: 'region' },
+      { label: '파트너', icon: <HandshakeIcon />, path: '/admin/partners', minScope: 'region' },
       { label: '청구/인보이스', icon: <DescriptionIcon />, path: '/admin/billing' },
-      { label: '매출/청구', icon: <AttachMoneyIcon />, path: '/admin/revenue' },
-      { label: 'CRM', icon: <SupportAgentIcon />, path: '/admin/crm' },
+      { label: '매출/청구', icon: <AttachMoneyIcon />, path: '/admin/revenue', minScope: 'global' },
+      { label: 'CRM', icon: <SupportAgentIcon />, path: '/admin/crm', minScope: 'region' },
       { label: '문의 관리', icon: <InboxIcon />, path: '/admin/inquiries' },
     ],
   },
   {
     label: 'IP/특허',
     items: [
-      { label: '특허 관리', icon: <GavelIcon />, path: '/admin/patents' },
-      { label: '라이선스', icon: <WorkspacePremiumIcon />, path: '/admin/licenses' },
+      { label: '특허 관리', icon: <GavelIcon />, path: '/admin/patents', minScope: 'global' },
+      { label: '라이선스', icon: <WorkspacePremiumIcon />, path: '/admin/licenses', minScope: 'global' },
     ],
+    minScope: 'global',
   },
   {
     label: '지원/정비',
@@ -125,13 +138,13 @@ const menuGroups: MenuGroup[] = [
   {
     label: '인프라',
     items: [
-      { label: '시스템 현황', icon: <ShieldIcon />, path: '/admin/system' },
+      { label: '시스템 현황', icon: <ShieldIcon />, path: '/admin/system', minScope: 'region' },
       { label: '안전 정책', icon: <ShieldIcon />, path: '/admin/safety' },
-      { label: 'V2G 에너지', icon: <EvStationIcon />, path: '/admin/v2g' },
-      { label: '지역 허브', icon: <HubIcon />, path: '/admin/regions' },
+      { label: 'V2G 에너지', icon: <EvStationIcon />, path: '/admin/v2g', minScope: 'region' },
+      { label: '지역 허브', icon: <HubIcon />, path: '/admin/regions', minScope: 'global' },
       { label: '존 콘솔', icon: <GridViewIcon />, path: '/admin/zones' },
-      { label: '워크플로', icon: <AutoFixHighIcon />, path: '/admin/workflows' },
-      { label: '프로젝트', icon: <AccountTreeIcon />, path: '/admin/projects' },
+      { label: '워크플로', icon: <AutoFixHighIcon />, path: '/admin/workflows', minScope: 'region' },
+      { label: '프로젝트', icon: <AccountTreeIcon />, path: '/admin/projects', minScope: 'region' },
     ],
   },
   {
@@ -144,10 +157,10 @@ const menuGroups: MenuGroup[] = [
   {
     label: '시스템',
     items: [
-      { label: '사용자 관리', icon: <AdminPanelSettingsIcon />, path: '/admin/users' },
+      { label: '사용자 관리', icon: <AdminPanelSettingsIcon />, path: '/admin/users', minScope: 'region' },
       { label: '팀원 관리', icon: <GroupsIcon />, path: '/admin/team' },
       { label: 'AI Agent', icon: <SmartToyIcon />, path: '/admin/ai' },
-      { label: 'AI 관리', icon: <SmartToyIcon />, path: '/admin/ai-management' },
+      { label: 'AI 관리', icon: <SmartToyIcon />, path: '/admin/ai-management', minScope: 'global' },
       { label: '설정', icon: <SettingsIcon />, path: '/admin/settings' },
     ],
   },
@@ -163,11 +176,40 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const navigate = useNavigate();
   const location = useLocation();
+  const { scopeLevel } = useTenant();
+  const { role } = useAuth();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     menuGroups.forEach(g => { initial[g.label] = true; });
     return initial;
   });
+
+  // Scope visibility filtering
+  const SCOPE_HIERARCHY: AdminScopeLevel[] = ['building', 'complex', 'region', 'global'];
+
+  const isVisibleAtScope = (minScope: ScopeVisibility | undefined, currentScope: AdminScopeLevel): boolean => {
+    if (!minScope || minScope === 'all') return true;
+    const minIdx = SCOPE_HIERARCHY.indexOf(minScope as AdminScopeLevel);
+    const curIdx = SCOPE_HIERARCHY.indexOf(currentScope);
+    // If user is at 'global' scope (highest), they see everything
+    // If user is at 'building' scope (lowest), only items with no restriction or 'building'/'all' are shown
+    return curIdx >= minIdx;
+  };
+
+  // Determine effective scope: use role-based scope when no impersonation active
+  const effectiveScope: AdminScopeLevel = scopeLevel === 'global'
+    ? (role === 'super_admin' ? 'global' : role === 'admin' ? 'region' : role === 'manager' ? 'complex' : 'building')
+    : scopeLevel;
+
+  const filteredMenuGroups = useMemo(() => {
+    return menuGroups
+      .filter(group => isVisibleAtScope(group.minScope, effectiveScope))
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item => isVisibleAtScope(item.minScope, effectiveScope)),
+      }))
+      .filter(group => group.items.length > 0);
+  }, [effectiveScope]);
 
   const toggleGroup = (label: string) => {
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -272,7 +314,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           },
         }}
       >
-        {menuGroups.map((group) => (
+        {filteredMenuGroups.map((group) => (
           <Box key={group.label} sx={{ mb: 0.5 }}>
             <ListItemButton
               onClick={() => toggleGroup(group.label)}
