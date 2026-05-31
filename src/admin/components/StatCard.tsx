@@ -1,4 +1,3 @@
-// FILE: src/admin/components/StatCard.tsx
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -18,36 +17,26 @@ interface StatCardProps {
 export default function StatCard({ label, value, change, changeLabel, color, icon }: StatCardProps) {
   const isPositive = change >= 0;
   return (
-    <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 3,
-          background: `linear-gradient(90deg, ${color}, ${color}80)`,
-        }}
-      />
-      <CardContent sx={{ p: '20px 24px !important' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+    <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden', transition: 'all 0.2s ease' }}>
+      <CardContent sx={{ p: '20px !important' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2.5 }}>
           <Typography
-            variant="caption"
-            sx={{ color: 'text.secondary', fontSize: '0.8125rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+            variant="body2"
+            sx={{ color: 'text.secondary', fontWeight: 500 }}
           >
             {label}
           </Typography>
           <Box
             sx={{
-              width: 40,
-              height: 40,
+              width: 36,
+              height: 36,
               borderRadius: 2,
-              background: `${color}18`,
-              border: `1px solid ${color}30`,
+              background: `${color}12`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color,
+              '& .MuiSvgIcon-root': { fontSize: 20 },
             }}
           >
             {icon}
@@ -55,26 +44,51 @@ export default function StatCard({ label, value, change, changeLabel, color, ico
         </Box>
         <Typography
           sx={{
-            fontSize: '2.25rem',
-            fontWeight: 800,
-            color,
+            fontSize: '1.875rem',
+            fontWeight: 700,
+            color: 'text.primary',
             lineHeight: 1,
-            mb: 1,
-            fontFamily: '"Montserrat", sans-serif',
+            mb: 1.5,
+            letterSpacing: '-0.02em',
           }}
         >
           {value}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          {isPositive ? (
-            <TrendingUpIcon sx={{ fontSize: 16, color: '#00e676' }} />
-          ) : (
-            <TrendingDownIcon sx={{ fontSize: 16, color: '#ff5252' }} />
-          )}
-          <Typography variant="caption" sx={{ color: isPositive ? '#00e676' : '#ff5252', fontWeight: 700, fontSize: '0.8125rem' }}>
-            {isPositive ? '+' : ''}{change}%
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.25,
+              px: 0.75,
+              py: 0.25,
+              borderRadius: 1,
+              bgcolor: isPositive ? 'success.main' : 'error.main',
+              opacity: 0.12,
+              position: 'absolute',
+            }}
+          />
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.25,
+              px: 0.75,
+              py: 0.25,
+              borderRadius: 1,
+              bgcolor: isPositive ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+            }}
+          >
+            {isPositive ? (
+              <TrendingUpIcon sx={{ fontSize: 14, color: 'success.main' }} />
+            ) : (
+              <TrendingDownIcon sx={{ fontSize: 14, color: 'error.main' }} />
+            )}
+            <Typography variant="caption" sx={{ color: isPositive ? 'success.main' : 'error.main', fontWeight: 600, fontSize: '0.75rem' }}>
+              {isPositive ? '+' : ''}{change}%
+            </Typography>
+          </Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.72rem' }}>
             {changeLabel}
           </Typography>
         </Box>

@@ -228,35 +228,36 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }} role="navigation" aria-label="관리자 메뉴">
       {/* Header */}
-      <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 56 }}>
+      <Box sx={{ px: 2.5, py: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 60 }}>
         <Box
           component={Link}
           to="/admin"
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
+            gap: 1.2,
             textDecoration: 'none',
           }}
         >
           <Box
             sx={{
-              width: 32,
-              height: 32,
-              borderRadius: 1,
-              bgcolor: 'primary.main',
+              width: 34,
+              height: 34,
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(14,165,233,0.3)',
             }}
           >
-            <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, color: 'common.black' }}>SG</Typography>
+            <Typography sx={{ fontSize: '0.7rem', fontWeight: 800, color: '#fff', letterSpacing: '0.02em' }}>SG</Typography>
           </Box>
           <Box>
-            <Typography sx={{ fontSize: '0.9375rem', fontWeight: 800, color: 'text.primary', lineHeight: 1.2 }}>
+            <Typography sx={{ fontSize: '0.9rem', fontWeight: 700, color: 'text.primary', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
               SkyGarage
             </Typography>
-            <Typography sx={{ fontSize: '0.625rem', color: 'text.secondary', lineHeight: 1.2 }}>
+            <Typography sx={{ fontSize: '0.6rem', color: 'text.secondary', lineHeight: 1.2, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
               Admin Console
             </Typography>
           </Box>
@@ -268,33 +269,32 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         )}
       </Box>
 
-      <Divider />
-
       {/* Home link */}
-      <Box sx={{ px: 1.5, pt: 1.5, pb: 0.5 }}>
+      <Box sx={{ px: 2, pb: 1.5 }}>
         <Tooltip title="프론트엔드 홈페이지로 이동" placement="right">
           <ListItemButton
             onClick={() => { navigate('/'); if (isMobile) onMobileClose(); }}
             sx={{
-              borderRadius: 1.5,
-              py: 0.75,
+              borderRadius: 2,
+              py: 0.7,
               px: 1.5,
-              minHeight: 36,
-              border: 1,
-              borderColor: 'divider',
-              '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
+              minHeight: 34,
+              bgcolor: 'action.hover',
+              '&:hover': { bgcolor: 'action.selected' },
             }}
           >
             <ListItemIcon sx={{ minWidth: 28, color: 'text.secondary' }}>
-              <OpenInNewIcon sx={{ fontSize: 18 }} />
+              <OpenInNewIcon sx={{ fontSize: 16 }} />
             </ListItemIcon>
             <ListItemText
-              primary="홈페이지 보기"
-              slotProps={{ primary: { sx: { fontSize: '0.8125rem', fontWeight: 600 } } }}
+              primary="홈페이지"
+              slotProps={{ primary: { sx: { fontSize: '0.78rem', fontWeight: 500 } } }}
             />
           </ListItemButton>
         </Tooltip>
       </Box>
+
+      <Divider sx={{ mx: 2 }} />
 
       {/* Navigation groups */}
       <Box
@@ -302,15 +302,13 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           flex: 1,
           overflowY: 'auto',
           overflowX: 'hidden',
-          py: 1,
-          '&::-webkit-scrollbar': { width: 4 },
+          py: 1.5,
+          px: 0.5,
+          '&::-webkit-scrollbar': { width: 3 },
           '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
           '&::-webkit-scrollbar-thumb': {
             bgcolor: 'action.disabled',
             borderRadius: 2,
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            bgcolor: 'text.secondary',
           },
         }}
       >
@@ -320,18 +318,20 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               onClick={() => toggleGroup(group.label)}
               sx={{
                 px: 2,
-                py: 0.5,
-                minHeight: 32,
-                '&:hover': { bgcolor: 'action.hover' },
+                py: 0.4,
+                minHeight: 28,
+                borderRadius: 1.5,
+                mx: 0.5,
+                '&:hover': { bgcolor: 'transparent' },
               }}
             >
               <ListItemText
                 primary={group.label}
-                slotProps={{ primary: { sx: { fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary' } } }}
+                slotProps={{ primary: { sx: { fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'text.secondary', opacity: 0.7 } } }}
               />
-              {openGroups[group.label] ? <ExpandLessIcon sx={{ fontSize: 16, color: 'text.secondary' }} /> : <ExpandMoreIcon sx={{ fontSize: 16, color: 'text.secondary' }} />}
+              {openGroups[group.label] ? <ExpandLessIcon sx={{ fontSize: 14, color: 'text.secondary', opacity: 0.5 }} /> : <ExpandMoreIcon sx={{ fontSize: 14, color: 'text.secondary', opacity: 0.5 }} />}
             </ListItemButton>
-            <Collapse in={openGroups[group.label]} timeout="auto">
+            <Collapse in={openGroups[group.label]} timeout={200}>
               <List disablePadding sx={{ px: 1 }}>
                 {group.items.map((item) => {
                   const active = isActive(item.path);
@@ -341,25 +341,37 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
                       onClick={() => handleNav(item.path)}
                       selected={active}
                       sx={{
-                        borderRadius: 1.5,
-                        mb: 0.25,
-                        py: 0.625,
+                        borderRadius: 2,
+                        mb: 0.2,
+                        py: 0.55,
                         px: 1.5,
-                        minHeight: 36,
+                        minHeight: 34,
+                        transition: 'all 0.15s ease',
                         '&.Mui-selected': {
-                          bgcolor: 'rgba(0,212,255,0.08)',
+                          bgcolor: 'rgba(14,165,233,0.1)',
                           color: 'primary.main',
-                          '&:hover': { bgcolor: 'rgba(0,212,255,0.12)' },
+                          '& .MuiListItemIcon-root': { color: 'primary.main' },
+                          '&:hover': { bgcolor: 'rgba(14,165,233,0.14)' },
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            top: '20%',
+                            bottom: '20%',
+                            width: 3,
+                            borderRadius: '0 3px 3px 0',
+                            bgcolor: 'primary.main',
+                          },
                         },
                         '&:hover': { bgcolor: 'action.hover' },
                       }}
                     >
-                      <ListItemIcon sx={{ minWidth: 32, color: active ? 'primary.main' : 'text.secondary' }}>
+                      <ListItemIcon sx={{ minWidth: 30, color: active ? 'primary.main' : 'text.secondary', '& svg': { fontSize: 18 } }}>
                         {item.icon}
                       </ListItemIcon>
                       <ListItemText
                         primary={item.label}
-                        slotProps={{ primary: { sx: { fontSize: '0.8125rem', fontWeight: active ? 700 : 500 } } }}
+                        slotProps={{ primary: { sx: { fontSize: '0.8rem', fontWeight: active ? 600 : 450, letterSpacing: '-0.01em' } } }}
                       />
                     </ListItemButton>
                   );
@@ -376,8 +388,9 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     width: DRAWER_WIDTH,
     boxSizing: 'border-box' as const,
     bgcolor: 'background.paper',
-    borderRight: 1,
+    borderRight: '1px solid',
     borderColor: 'divider',
+    backdropFilter: 'blur(8px)',
   };
 
   if (isMobile) {

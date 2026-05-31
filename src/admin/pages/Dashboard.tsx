@@ -33,6 +33,7 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import ElevatorIcon from '@mui/icons-material/Elevator';
 import StorageIcon from '@mui/icons-material/Storage';
 import AccessibleIcon from '@mui/icons-material/Accessible';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useTenant } from '../contexts/TenantContext';
@@ -90,7 +91,6 @@ export default function Dashboard() {
   const scopeComplexId = scope.complex?.id || null;
 
   const loadData = useCallback(async () => {
-    // Scope-filtered queries: non-global users only see their assigned complex data
     let cQuery = supabase.from('complexes').select('id', { count: 'exact', head: true });
     let rQuery = supabase.from('resident_accounts').select('id', { count: 'exact', head: true });
     let sQuery = supabase.from('parking_sessions').select('id', { count: 'exact', head: true }).is('exit_at', null);
@@ -225,18 +225,18 @@ export default function Dashboard() {
   if (loading) {
     return (
       <Box>
-        <Skeleton variant="text" width={200} height={40} sx={{ mb: 2 }} />
-        <Grid container spacing={2}>
+        <Skeleton variant="text" width={240} height={36} sx={{ mb: 3 }} />
+        <Grid container spacing={2.5}>
           {[1, 2, 3, 4].map(i => (
             <Grid size={{ xs: 6, md: 3 }} key={i}>
-              <Skeleton variant="rectangular" height={90} sx={{ borderRadius: 1 }} />
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2.5 }} />
             </Grid>
           ))}
         </Grid>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid container spacing={2.5} sx={{ mt: 1.5 }}>
           {[1, 2, 3].map(i => (
             <Grid size={{ xs: 12, md: 4 }} key={i}>
-              <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
+              <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2.5 }} />
             </Grid>
           ))}
         </Grid>
@@ -286,24 +286,22 @@ export default function Dashboard() {
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography variant="h1">Dashboard</Typography>
-          <Chip label="실시간" size="small" color="success" sx={{ fontSize: '0.7rem' }} />
+      {/* Header */}
+      <Box sx={{ mb: 3.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+        <Box>
+          <Typography variant="h1" sx={{ mb: 0.25 }}>Dashboard</Typography>
+          <Typography variant="body2" color="text.secondary">시스템 현황을 한눈에 확인하세요</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/ai-management')}>AI 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/workflows')}>워크플로우</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/observability')}>관측성</Button>
+          <Chip
+            label="Live"
+            size="small"
+            color="success"
+            variant="outlined"
+            sx={{ fontSize: '0.65rem', fontWeight: 700, height: 24, '& .MuiChip-label': { px: 1 } }}
+          />
         </Box>
       </Box>
-
-      {/* Engagement Widget */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-          <EngagementWidget />
-        </Grid>
-      </Grid>
 
       {/* KPI Cards */}
       <Grid container spacing={2}>
@@ -312,27 +310,27 @@ export default function Dashboard() {
           return (
             <Grid size={{ xs: 6, md: 3 }} key={kpi.label}>
               <Card
-                sx={{ cursor: 'pointer', transition: 'border-color 0.2s', '&:hover': { borderColor: 'primary.main' } }}
+                sx={{ cursor: 'pointer', transition: 'all 0.2s ease', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-2px)' } }}
                 onClick={() => navigate(kpi.path)}
               >
                 <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                        {kpi.label}
-                      </Typography>
-                      <Typography sx={{ fontSize: '1.75rem', fontWeight: 800, lineHeight: 1.2 }}>
-                        {kpi.value}
-                        <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                          {kpi.unit}
-                        </Typography>
-                      </Typography>
-                    </Box>
-                    <Box sx={{ color: kpi.color, opacity: 0.8 }}>{kpi.icon}</Box>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      {kpi.label}
+                    </Typography>
+                    <Box sx={{ color: kpi.color, opacity: 0.8, '& .MuiSvgIcon-root': { fontSize: 20 } }}>{kpi.icon}</Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                    <Typography sx={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em' }}>
+                      {kpi.value}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {kpi.unit}
+                    </Typography>
                   </Box>
                   {spark && spark.length >= 2 && (
                     <Box sx={{ mt: 1.5 }}>
-                      <Sparkline data={spark} width={120} height={24} color={kpi.color.replace('.main', '') === 'warning' ? '#ed6c02' : kpi.color.replace('.main', '') === 'secondary' ? '#0288d1' : '#1976d2'} />
+                      <Sparkline data={spark} width={120} height={24} color={kpi.color.replace('.main', '') === 'warning' ? '#ed6c02' : kpi.color.replace('.main', '') === 'secondary' ? '#0891b2' : '#0ea5e9'} />
                     </Box>
                   )}
                 </CardContent>
@@ -342,96 +340,104 @@ export default function Dashboard() {
         })}
       </Grid>
 
+      {/* Engagement Widget */}
+      <Grid container spacing={2} sx={{ mt: 0.5 }}>
+        <Grid size={{ xs: 12, md: 5, lg: 4 }}>
+          <EngagementWidget />
+        </Grid>
+      </Grid>
+
       {/* System Status + Recent Alerts + Recent Tickets */}
-      <Grid container spacing={2} sx={{ mt: 1 }}>
+      <Grid container spacing={2} sx={{ mt: 0.5 }}>
         {/* System Health */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <TrendingUpIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                <Typography variant="subtitle2">시스템 상태</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main', animation: 'pulse 2s infinite', '@keyframes pulse': { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.5 } } }} />
+                  <Typography variant="subtitle2">시스템 상태</Typography>
+                </Box>
               </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                 {/* ATR */}
                 <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <PrecisionManufacturingIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">ATR 로봇</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <PrecisionManufacturingIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.78rem' }}>ATR 로봇</Typography>
                     </Box>
                     {atrUptimePct !== null ? (
-                      <Typography variant="caption" color={atrUptimePct >= 90 ? 'success.main' : atrUptimePct >= 70 ? 'warning.main' : 'error.main'} sx={{ fontWeight: 700 }}>
-                        {systemHealth.atrOperational}/{systemHealth.atrTotal}대 · {atrUptimePct}%
+                      <Typography variant="caption" color={atrUptimePct >= 90 ? 'success.main' : atrUptimePct >= 70 ? 'warning.main' : 'error.main'} sx={{ fontWeight: 600 }}>
+                        {systemHealth.atrOperational}/{systemHealth.atrTotal} ({atrUptimePct}%)
                       </Typography>
                     ) : (
-                      <Typography variant="caption" color="text.secondary">데이터 없음</Typography>
+                      <Typography variant="caption" color="text.secondary">-</Typography>
                     )}
                   </Box>
                   <LinearProgress
                     variant="determinate"
                     value={atrUptimePct ?? 0}
                     color={atrUptimePct !== null && atrUptimePct >= 90 ? 'success' : atrUptimePct !== null && atrUptimePct >= 70 ? 'warning' : 'error'}
-                    sx={{ borderRadius: 1, height: 6 }}
+                    sx={{ borderRadius: 2, height: 5, bgcolor: 'action.hover' }}
                   />
                 </Box>
 
                 {/* Elevators */}
                 <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <ElevatorIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">엘리베이터</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <ElevatorIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.78rem' }}>엘리베이터</Typography>
                     </Box>
                     {elevUptimePct !== null ? (
-                      <Typography variant="caption" color={elevUptimePct >= 90 ? 'primary' : elevUptimePct >= 70 ? 'warning.main' : 'error.main'} sx={{ fontWeight: 700 }}>
-                        {systemHealth.elevatorOperational}/{systemHealth.elevatorTotal}대 · {elevUptimePct}%
+                      <Typography variant="caption" color={elevUptimePct >= 90 ? 'primary' : elevUptimePct >= 70 ? 'warning.main' : 'error.main'} sx={{ fontWeight: 600 }}>
+                        {systemHealth.elevatorOperational}/{systemHealth.elevatorTotal} ({elevUptimePct}%)
                       </Typography>
                     ) : (
-                      <Typography variant="caption" color="text.secondary">데이터 없음</Typography>
+                      <Typography variant="caption" color="text.secondary">-</Typography>
                     )}
                   </Box>
                   <LinearProgress
                     variant="determinate"
                     value={elevUptimePct ?? 0}
                     color="primary"
-                    sx={{ borderRadius: 1, height: 6 }}
+                    sx={{ borderRadius: 2, height: 5, bgcolor: 'action.hover' }}
                   />
                 </Box>
 
                 {/* Parking */}
                 <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <LocalParkingIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                      <Typography variant="caption" color="text.secondary">주차장 사용률</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <LocalParkingIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.78rem' }}>주차장 사용률</Typography>
                     </Box>
-                    <Typography variant="caption" color="warning.main" sx={{ fontWeight: 700 }}>
-                      {stats.activeSessions}
-                      {systemHealth.parkingTotal > 0 ? `/${systemHealth.parkingTotal}면` : '대'} · {parkingUsagePct}%
+                    <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600 }}>
+                      {stats.activeSessions}{systemHealth.parkingTotal > 0 ? `/${systemHealth.parkingTotal}` : ''} ({parkingUsagePct}%)
                     </Typography>
                   </Box>
                   <LinearProgress
                     variant="determinate"
                     value={parkingUsagePct}
                     color="warning"
-                    sx={{ borderRadius: 1, height: 6 }}
+                    sx={{ borderRadius: 2, height: 5, bgcolor: 'action.hover' }}
                   />
                 </Box>
 
                 {/* ATR Operating Modes */}
                 {systemHealth.atrTotal > 0 && (
                   <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>ATR 운영 모드 분포</Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontSize: '0.72rem' }}>운영 모드 분포</Typography>
+                    <Box sx={{ display: 'flex', gap: 0.75 }}>
                       {[
                         { key: 'autonomous', label: '자율', color: 'success.main' },
                         { key: 'semi_autonomous', label: '반자율', color: 'warning.main' },
                         { key: 'manual', label: '수동', color: 'text.secondary' },
                       ].map(m => (
-                        <Box key={m.key} sx={{ flex: 1, textAlign: 'center', p: 0.5, borderRadius: 0.5, border: 1, borderColor: 'divider' }}>
-                          <Typography variant="caption" sx={{ fontSize: '0.6rem', color: m.color, fontWeight: 700 }}>{atrModes[m.key as keyof typeof atrModes]}</Typography>
-                          <Typography variant="caption" sx={{ display: 'block', fontSize: '0.55rem' }}>{m.label}</Typography>
+                        <Box key={m.key} sx={{ flex: 1, textAlign: 'center', py: 0.75, px: 0.5, borderRadius: 1.5, bgcolor: 'action.hover' }}>
+                          <Typography sx={{ fontSize: '0.875rem', color: m.color, fontWeight: 700, lineHeight: 1.2 }}>{atrModes[m.key as keyof typeof atrModes]}</Typography>
+                          <Typography variant="caption" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>{m.label}</Typography>
                         </Box>
                       ))}
                     </Box>
@@ -446,13 +452,18 @@ export default function Dashboard() {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <WarningAmberIcon sx={{ fontSize: 18, color: 'warning.main' }} />
-                <Typography variant="subtitle2">최근 알림</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningAmberIcon sx={{ fontSize: 18, color: 'warning.main' }} />
+                  <Typography variant="subtitle2">최근 알림</Typography>
+                </Box>
+                {recentAlerts.length > 0 && (
+                  <Chip label={recentAlerts.length} size="small" color="warning" variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }} />
+                )}
               </Box>
               {recentAlerts.length === 0 ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 3, justifyContent: 'center' }}>
-                  <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, gap: 1 }}>
+                  <CheckCircleIcon sx={{ fontSize: 28, color: 'success.main', opacity: 0.6 }} />
                   <Typography variant="body2" color="text.secondary">현재 알림이 없습니다</Typography>
                 </Box>
               ) : (
@@ -461,17 +472,17 @@ export default function Dashboard() {
                     <ListItemButton
                       key={alert.id}
                       onClick={() => navigate('/admin/alerts')}
-                      sx={{ borderRadius: 1, px: 1, py: 0.5 }}
+                      sx={{ borderRadius: 1.5, px: 1.5, py: 0.75, mb: 0.5 }}
                     >
                       <ListItemIcon sx={{ minWidth: 28 }}>
-                        <WarningAmberIcon sx={{ fontSize: 16, color: `${severityColor(alert.severity)}.main` }} />
+                        <WarningAmberIcon sx={{ fontSize: 15, color: `${severityColor(alert.severity)}.main` }} />
                       </ListItemIcon>
                       <ListItemText
                         primary={alert.title}
                         secondary={new Date(alert.created_at).toLocaleDateString('ko-KR')}
                         slotProps={{
-                          primary: { sx: { fontSize: '0.75rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
-                          secondary: { sx: { fontSize: '0.625rem' } },
+                          primary: { sx: { fontSize: '0.78rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
+                          secondary: { sx: { fontSize: '0.65rem' } },
                         }}
                       />
                     </ListItemButton>
@@ -486,13 +497,18 @@ export default function Dashboard() {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <BuildIcon sx={{ fontSize: 18, color: 'primary.main' }} />
-                <Typography variant="subtitle2">지원 티켓</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <BuildIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                  <Typography variant="subtitle2">지원 티켓</Typography>
+                </Box>
+                {recentTickets.length > 0 && (
+                  <Chip label={recentTickets.length} size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }} />
+                )}
               </Box>
               {recentTickets.length === 0 ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 3, justifyContent: 'center' }}>
-                  <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4, gap: 1 }}>
+                  <CheckCircleIcon sx={{ fontSize: 28, color: 'success.main', opacity: 0.6 }} />
                   <Typography variant="body2" color="text.secondary">현재 티켓이 없습니다</Typography>
                 </Box>
               ) : (
@@ -501,21 +517,21 @@ export default function Dashboard() {
                     <ListItemButton
                       key={ticket.id}
                       onClick={() => navigate('/admin/tickets')}
-                      sx={{ borderRadius: 1, px: 1, py: 0.5 }}
+                      sx={{ borderRadius: 1.5, px: 1.5, py: 0.75, mb: 0.5 }}
                     >
                       <ListItemIcon sx={{ minWidth: 28 }}>
-                        <ScheduleIcon sx={{ fontSize: 16, color: `${statusColor(ticket.status)}.main` }} />
+                        <ScheduleIcon sx={{ fontSize: 15, color: `${statusColor(ticket.status)}.main` }} />
                       </ListItemIcon>
                       <ListItemText
                         primary={ticket.subject}
-                        slotProps={{ primary: { sx: { fontSize: '0.75rem', fontWeight: 600 } } }}
+                        slotProps={{ primary: { sx: { fontSize: '0.78rem', fontWeight: 600 } } }}
                       />
                       <Chip
                         label={statusLabel(ticket.status)}
                         size="small"
                         color={statusColor(ticket.status)}
                         variant="outlined"
-                        sx={{ fontSize: '0.625rem', height: 20 }}
+                        sx={{ fontSize: '0.6rem', height: 20 }}
                       />
                     </ListItemButton>
                   ))}
@@ -528,35 +544,43 @@ export default function Dashboard() {
 
       {/* AI Recommendations */}
       {aiRecommendations.length > 0 && (
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid size={{ xs: 12 }}>
             <Card>
               <CardContent sx={{ p: 2.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <PrecisionManufacturingIcon sx={{ fontSize: 18, color: 'primary.main' }} />
                     <Typography variant="subtitle2">AI 권장사항</Typography>
-                    <Chip label={`${aiRecommendations.length}건`} size="small" color="primary" sx={{ fontSize: '0.65rem', height: 20 }} />
+                    <Chip label={`${aiRecommendations.length}건`} size="small" color="primary" variant="outlined" sx={{ fontSize: '0.65rem', height: 20, fontWeight: 600 }} />
                   </Box>
-                  <Button variant="text" size="small" onClick={() => navigate('/admin/ai-management')}>전체 보기</Button>
+                  <Button
+                    variant="text"
+                    size="small"
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+                    onClick={() => navigate('/admin/ai-management')}
+                    sx={{ fontSize: '0.75rem' }}
+                  >
+                    전체 보기
+                  </Button>
                 </Box>
                 <List disablePadding dense>
                   {aiRecommendations.map(rec => (
                     <ListItemButton
                       key={rec.id}
                       onClick={() => navigate('/admin/ai-management')}
-                      sx={{ borderRadius: 1, px: 1, py: 0.5 }}
+                      sx={{ borderRadius: 1.5, px: 1.5, py: 0.75, mb: 0.5 }}
                     >
                       <ListItemText
                         primary={rec.title}
-                        slotProps={{ primary: { sx: { fontSize: '0.75rem', fontWeight: 600 } } }}
+                        slotProps={{ primary: { sx: { fontSize: '0.78rem', fontWeight: 600 } } }}
                       />
                       <Chip
                         label={rec.priority}
                         size="small"
                         color={rec.priority === 'high' ? 'error' : rec.priority === 'medium' ? 'warning' : 'default'}
                         variant="outlined"
-                        sx={{ fontSize: '0.625rem', height: 20 }}
+                        sx={{ fontSize: '0.6rem', height: 20 }}
                       />
                     </ListItemButton>
                   ))}
@@ -567,93 +591,74 @@ export default function Dashboard() {
         </Grid>
       )}
 
-      {/* Data Quality Metrics */}
-      {dqMetrics.totalComplexes > 0 && (
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={{ xs: 12 }}>
-            <Card>
+      {/* Data Quality + Priority Dispatch */}
+      <Grid container spacing={2} sx={{ mt: 0.5 }}>
+        {/* Data Quality Metrics */}
+        {dqMetrics.totalComplexes > 0 && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card sx={{ height: '100%' }}>
               <CardContent sx={{ p: 2.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
                   <StorageIcon sx={{ fontSize: 18, color: 'primary.main' }} />
                   <Typography variant="subtitle2">데이터 품질 (MDM)</Typography>
-                  <Chip label={`${dqMetrics.totalComplexes}개 단지`} size="small" sx={{ fontSize: '0.65rem', height: 20 }} />
+                  <Chip label={`${dqMetrics.totalComplexes}개`} size="small" variant="outlined" sx={{ fontSize: '0.6rem', height: 18 }} />
                 </Box>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <Box sx={{ textAlign: 'center', p: 1.5, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                      <Typography variant="caption" color="text.secondary">평균 DQ 스코어</Typography>
-                      <Typography variant="h2" color={dqMetrics.avgScore >= 80 ? 'success.main' : dqMetrics.avgScore >= 50 ? 'warning.main' : 'error.main'}>
-                        {dqMetrics.avgScore}%
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <Box sx={{ textAlign: 'center', p: 1.5, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                      <Typography variant="caption" color="text.secondary">데이터 완성도</Typography>
-                      <Typography variant="h2">{dqMetrics.avgCompleteness}%</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <Box sx={{ textAlign: 'center', p: 1.5, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                      <Typography variant="caption" color="text.secondary">우수 품질</Typography>
-                      <Typography variant="h2" color="success.main">{dqMetrics.highQuality}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <Box sx={{ textAlign: 'center', p: 1.5, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                      <Typography variant="caption" color="text.secondary">개선 필요</Typography>
-                      <Typography variant="h2" color={dqMetrics.lowQuality > 0 ? 'error.main' : 'text.primary'}>{dqMetrics.lowQuality}</Typography>
-                    </Box>
-                  </Grid>
+                <Grid container spacing={1.5}>
+                  {[
+                    { label: 'DQ 스코어', value: `${dqMetrics.avgScore}%`, color: dqMetrics.avgScore >= 80 ? 'success.main' : dqMetrics.avgScore >= 50 ? 'warning.main' : 'error.main' },
+                    { label: '완성도', value: `${dqMetrics.avgCompleteness}%`, color: 'text.primary' },
+                    { label: '우수', value: String(dqMetrics.highQuality), color: 'success.main' },
+                    { label: '개선 필요', value: String(dqMetrics.lowQuality), color: dqMetrics.lowQuality > 0 ? 'error.main' : 'text.primary' },
+                  ].map(item => (
+                    <Grid size={{ xs: 6 }} key={item.label}>
+                      <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontSize: '0.68rem' }}>{item.label}</Typography>
+                        <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: item.color, lineHeight: 1 }}>{item.value}</Typography>
+                      </Box>
+                    </Grid>
+                  ))}
                 </Grid>
               </CardContent>
             </Card>
           </Grid>
-        </Grid>
-      )}
+        )}
 
-      {/* Priority Dispatch Widget */}
-      <Grid container spacing={2} sx={{ mt: 1 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
+        {/* Priority Dispatch Widget */}
+        <Grid size={{ xs: 12, md: dqMetrics.totalComplexes > 0 ? 6 : 12 }}>
           <Card
-            sx={{ cursor: 'pointer', transition: 'border-color 0.2s', '&:hover': { borderColor: 'warning.main' } }}
+            sx={{ height: '100%', cursor: 'pointer', transition: 'all 0.2s ease', '&:hover': { borderColor: 'warning.main' } }}
             onClick={() => navigate('/admin/priority-dispatch')}
           >
             <CardContent sx={{ p: 2.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <AccessibleIcon sx={{ fontSize: 18, color: 'warning.main' }} />
                   <Typography variant="subtitle2">교통약자 우선배차</Typography>
                 </Box>
-                <Button variant="text" size="small" onClick={(e) => { e.stopPropagation(); navigate('/admin/priority-dispatch'); }}>관리</Button>
+                <Button
+                  variant="text"
+                  size="small"
+                  endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+                  onClick={(e) => { e.stopPropagation(); navigate('/admin/priority-dispatch'); }}
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  관리
+                </Button>
               </Box>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                    <Typography variant="caption" color="text.secondary">배차 대기</Typography>
-                    <Typography variant="h2" color="warning.main">{priorityDispatch.activePriority}</Typography>
-                  </Box>
-                </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                    <Typography variant="caption" color="text.secondary">등록 프로필</Typography>
-                    <Typography variant="h2">{priorityDispatch.totalProfiles}</Typography>
-                  </Box>
-                </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                    <Typography variant="caption" color="text.secondary">인증 완료</Typography>
-                    <Typography variant="h2" color="success.main">{priorityDispatch.verified}</Typography>
-                  </Box>
-                </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <Box sx={{ textAlign: 'center', p: 1, borderRadius: 1.5, border: 1, borderColor: 'divider' }}>
-                    <Typography variant="caption" color="text.secondary">인증율</Typography>
-                    <Typography variant="h2">
-                      {priorityDispatch.totalProfiles > 0 ? Math.round((priorityDispatch.verified / priorityDispatch.totalProfiles) * 100) : 0}%
-                    </Typography>
-                  </Box>
-                </Grid>
+              <Grid container spacing={1.5}>
+                {[
+                  { label: '배차 대기', value: String(priorityDispatch.activePriority), color: 'warning.main' },
+                  { label: '등록 프로필', value: String(priorityDispatch.totalProfiles), color: 'text.primary' },
+                  { label: '인증 완료', value: String(priorityDispatch.verified), color: 'success.main' },
+                  { label: '인증율', value: `${priorityDispatch.totalProfiles > 0 ? Math.round((priorityDispatch.verified / priorityDispatch.totalProfiles) * 100) : 0}%`, color: 'text.primary' },
+                ].map(item => (
+                  <Grid size={{ xs: 6, sm: 3 }} key={item.label}>
+                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontSize: '0.68rem' }}>{item.label}</Typography>
+                      <Typography sx={{ fontSize: '1.25rem', fontWeight: 700, color: item.color, lineHeight: 1 }}>{item.value}</Typography>
+                    </Box>
+                  </Grid>
+                ))}
               </Grid>
             </CardContent>
           </Card>
@@ -661,45 +666,43 @@ export default function Dashboard() {
       </Grid>
 
       {/* Quick Navigation */}
-      <Grid container spacing={2} sx={{ mt: 1 }}>
+      <Grid container spacing={2} sx={{ mt: 0.5 }}>
         <Grid size={{ xs: 12 }}>
           <Card>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1.5 }}>빠른 이동</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 2 }}>빠른 이동</Typography>
               <Grid container spacing={1}>
                 {[
                   { label: '단지 관리', path: '/admin/complexes', icon: <ApartmentIcon sx={{ fontSize: 18 }} /> },
                   { label: '정비 관리', path: '/admin/maintenance', icon: <BuildIcon sx={{ fontSize: 18 }} /> },
-                  { label: 'NOC 모니터링', path: '/admin/noc', icon: <MonitorHeartIcon sx={{ fontSize: 18 }} /> },
+                  { label: 'NOC', path: '/admin/noc', icon: <MonitorHeartIcon sx={{ fontSize: 18 }} /> },
                   { label: '보안 감사', path: '/admin/security', icon: <SecurityIcon sx={{ fontSize: 18 }} /> },
-                  { label: '계약 관리', path: '/admin/contracts', icon: <DescriptionIcon sx={{ fontSize: 18 }} /> },
+                  { label: '계약', path: '/admin/contracts', icon: <DescriptionIcon sx={{ fontSize: 18 }} /> },
                   { label: 'CRM', path: '/admin/crm', icon: <SupportAgentIcon sx={{ fontSize: 18 }} /> },
-                  { label: '문의 관리', path: '/admin/inquiries', icon: <InboxIcon sx={{ fontSize: 18 }} /> },
-                  { label: '이미지 관리', path: '/admin/images', icon: <ImageIcon sx={{ fontSize: 18 }} /> },
+                  { label: '문의', path: '/admin/inquiries', icon: <InboxIcon sx={{ fontSize: 18 }} /> },
+                  { label: '이미지', path: '/admin/images', icon: <ImageIcon sx={{ fontSize: 18 }} /> },
                   { label: '파트너', path: '/admin/partners', icon: <HandshakeIcon sx={{ fontSize: 18 }} /> },
-                  { label: 'ESG 인증', path: '/admin/esg', icon: <EnergySavingsLeafIcon sx={{ fontSize: 18 }} /> },
-                  { label: '알림 센터', path: '/admin/alerts', icon: <WarningAmberIcon sx={{ fontSize: 18 }} /> },
-                  { label: '우선배차', path: '/admin/priority-dispatch', icon: <AccessibleIcon sx={{ fontSize: 18 }} /> },
+                  { label: 'ESG', path: '/admin/esg', icon: <EnergySavingsLeafIcon sx={{ fontSize: 18 }} /> },
+                  { label: '알림', path: '/admin/alerts', icon: <WarningAmberIcon sx={{ fontSize: 18 }} /> },
                   { label: '분석', path: '/admin/analytics', icon: <TrendingUpIcon sx={{ fontSize: 18 }} /> },
                 ].map(item => (
-                  <Grid size={{ xs: 6, sm: 3 }} key={item.path}>
+                  <Grid size={{ xs: 4, sm: 3, md: 2 }} key={item.path}>
                     <Box
                       onClick={() => navigate(item.path)}
                       sx={{
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        gap: 1,
+                        gap: 0.75,
                         p: 1.5,
-                        borderRadius: 1.5,
-                        border: 1,
-                        borderColor: 'divider',
+                        borderRadius: 2,
                         cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
+                        transition: 'all 0.15s ease',
+                        '&:hover': { bgcolor: 'action.hover', transform: 'translateY(-1px)' },
                       }}
                     >
-                      <Box sx={{ color: 'text.secondary' }}>{item.icon}</Box>
-                      <Typography variant="caption" sx={{ fontWeight: 600 }}>{item.label}</Typography>
+                      <Box sx={{ color: 'text.secondary', transition: 'color 0.15s', '.MuiBox-root:hover > &': { color: 'primary.main' } }}>{item.icon}</Box>
+                      <Typography variant="caption" sx={{ fontWeight: 500, fontSize: '0.7rem', textAlign: 'center' }}>{item.label}</Typography>
                     </Box>
                   </Grid>
                 ))}

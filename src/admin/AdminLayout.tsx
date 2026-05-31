@@ -219,17 +219,18 @@ export default function AdminLayout() {
           aria-label="상단 도구 모음"
           sx={{
             bgcolor: 'background.paper',
-            borderBottom: 1,
+            borderBottom: '1px solid',
             borderColor: 'divider',
             zIndex: (theme) => theme.zIndex.appBar,
+            backdropFilter: 'blur(8px)',
           }}
         >
-          <Toolbar sx={{ minHeight: { xs: 52, sm: 56 }, gap: 0.5 }}>
+          <Toolbar sx={{ minHeight: { xs: 52, sm: 56 }, gap: 0.75, px: { xs: 1.5, sm: 2.5 } }}>
             <IconButton
               edge="start"
               color="inherit"
               onClick={() => setMobileOpen(true)}
-              sx={{ display: { lg: 'none' }, mr: 0.5 }}
+              sx={{ display: { lg: 'none' }, mr: 0.5, color: 'text.secondary' }}
             >
               <MenuIcon />
             </IconButton>
@@ -237,7 +238,7 @@ export default function AdminLayout() {
             <Typography
               variant="subtitle1"
               noWrap
-              sx={{ color: 'text.primary', display: { xs: 'none', sm: 'block' } }}
+              sx={{ color: 'text.primary', fontWeight: 700, letterSpacing: '-0.02em', display: { xs: 'none', sm: 'block' } }}
             >
               {title}
             </Typography>
@@ -258,11 +259,13 @@ export default function AdminLayout() {
                 variant="outlined"
                 onClick={() => setCommandPaletteOpen(true)}
                 sx={{
-                  height: 28,
-                  fontSize: '0.6875rem',
+                  height: 26,
+                  fontSize: '0.65rem',
+                  fontWeight: 500,
                   cursor: 'pointer',
                   display: { xs: 'none', md: 'flex' },
-                  '&:hover': { borderColor: 'primary.main' },
+                  borderColor: 'divider',
+                  '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
                 }}
               />
             </Tooltip>
@@ -272,9 +275,9 @@ export default function AdminLayout() {
               <IconButton
                 size="small"
                 onClick={toggleMode}
-                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'action.hover' } }}
               >
-                {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+                {mode === 'dark' ? <LightModeIcon sx={{ fontSize: 18 }} /> : <DarkModeIcon sx={{ fontSize: 18 }} />}
               </IconButton>
             </Tooltip>
 
@@ -304,8 +307,10 @@ export default function AdminLayout() {
               <Avatar
                 onClick={(e) => setAnchorEl(e.currentTarget)}
                 sx={{
-                  width: 32, height: 32, fontSize: '0.75rem', fontWeight: 700,
-                  bgcolor: 'primary.main', color: 'primary.contrastText', cursor: 'pointer',
+                  width: 30, height: 30, fontSize: '0.7rem', fontWeight: 700,
+                  background: 'linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%)',
+                  color: '#fff', cursor: 'pointer',
+                  transition: 'opacity 0.15s',
                   '&:hover': { opacity: 0.85 },
                 }}
               >
@@ -336,7 +341,7 @@ export default function AdminLayout() {
           </Toolbar>
         </AppBar>
 
-        <Box id="main-content" sx={{ flex: 1, p: { xs: 2, sm: 3 }, overflow: 'auto', minWidth: 0 }} role="main">
+        <Box id="main-content" sx={{ flex: 1, p: { xs: 2, sm: 2.5, md: 3 }, overflow: 'auto', minWidth: 0 }} role="main">
           <Breadcrumbs />
           <ErrorBoundary>
             <Outlet />
