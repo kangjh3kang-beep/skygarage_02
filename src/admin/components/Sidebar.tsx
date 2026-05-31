@@ -34,12 +34,10 @@ import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import BuildIcon from '@mui/icons-material/Build';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
-import WarningIcon from '@mui/icons-material/Warning';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import EnergySavingsLeafIcon from '@mui/icons-material/EnergySavingsLeaf';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import ImageIcon from '@mui/icons-material/Image';
-import ViewCarouselIcon from '@mui/icons-material/ViewCarousel';
 import InboxIcon from '@mui/icons-material/Inbox';
 import GavelIcon from '@mui/icons-material/Gavel';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
@@ -54,9 +52,7 @@ import AccessibleIcon from '@mui/icons-material/Accessible';
 import ShieldIcon from '@mui/icons-material/Shield';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import HubIcon from '@mui/icons-material/Hub';
-import GridViewIcon from '@mui/icons-material/GridView';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import EvStationIcon from '@mui/icons-material/EvStation';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -76,91 +72,72 @@ interface MenuGroup {
   label: string;
   items: MenuItem[];
   minScope?: ScopeVisibility;
+  defaultOpen?: boolean;
 }
 
 const menuGroups: MenuGroup[] = [
   {
-    label: '운영',
+    label: '개요',
+    defaultOpen: true,
     items: [
       { label: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
+      { label: '운영 현황', icon: <SpeedIcon />, path: '/admin/operations', minScope: 'complex' },
+      { label: 'NOC', icon: <PublicIcon />, path: '/admin/noc', minScope: 'global' },
+      { label: '시스템', icon: <ShieldIcon />, path: '/admin/system', minScope: 'region' },
+    ],
+  },
+  {
+    label: '운영 관리',
+    defaultOpen: true,
+    items: [
       { label: '단지 관리', icon: <ApartmentIcon />, path: '/admin/complexes', minScope: 'region' },
       { label: '사용자', icon: <PeopleIcon />, path: '/admin/residents' },
       { label: '주차 운영', icon: <LocalParkingIcon />, path: '/admin/parking' },
-      { label: '우선배차', icon: <AccessibleIcon />, path: '/admin/priority-dispatch', minScope: 'complex' },
-      { label: '차량 추적', icon: <GpsFixedIcon />, path: '/admin/fleet', minScope: 'complex' },
       { label: 'ATR 로봇', icon: <PrecisionManufacturingIcon />, path: '/admin/atr', minScope: 'complex' },
       { label: '엘리베이터', icon: <ElevatorIcon />, path: '/admin/elevators', minScope: 'complex' },
       { label: '에너지/V2G', icon: <BoltIcon />, path: '/admin/energy', minScope: 'complex' },
+      { label: '차량 추적', icon: <GpsFixedIcon />, path: '/admin/fleet', minScope: 'complex' },
+      { label: '우선배차', icon: <AccessibleIcon />, path: '/admin/priority-dispatch', minScope: 'complex' },
+      { label: '정비', icon: <BuildIcon />, path: '/admin/maintenance', minScope: 'complex' },
     ],
   },
   {
     label: '비즈니스',
     items: [
-      { label: '계약 관리', icon: <DescriptionIcon />, path: '/admin/contracts', minScope: 'region' },
+      { label: '계약', icon: <DescriptionIcon />, path: '/admin/contracts', minScope: 'region' },
       { label: '파트너', icon: <HandshakeIcon />, path: '/admin/partners', minScope: 'region' },
-      { label: '청구/인보이스', icon: <DescriptionIcon />, path: '/admin/billing' },
-      { label: '매출/청구', icon: <AttachMoneyIcon />, path: '/admin/revenue', minScope: 'global' },
+      { label: '청구/인보이스', icon: <AttachMoneyIcon />, path: '/admin/billing' },
+      { label: '매출', icon: <AttachMoneyIcon />, path: '/admin/revenue', minScope: 'global' },
       { label: 'CRM', icon: <SupportAgentIcon />, path: '/admin/crm', minScope: 'region' },
-      { label: '문의 관리', icon: <InboxIcon />, path: '/admin/inquiries' },
-    ],
-  },
-  {
-    label: 'IP/특허',
-    items: [
-      { label: '특허 관리', icon: <GavelIcon />, path: '/admin/patents', minScope: 'global' },
+      { label: '문의', icon: <InboxIcon />, path: '/admin/inquiries' },
+      { label: '지원 티켓', icon: <ConfirmationNumberIcon />, path: '/admin/tickets' },
+      { label: '특허', icon: <GavelIcon />, path: '/admin/patents', minScope: 'global' },
       { label: '라이선스', icon: <WorkspacePremiumIcon />, path: '/admin/licenses', minScope: 'global' },
     ],
-    minScope: 'global',
   },
   {
-    label: '지원/정비',
+    label: '분석/보안',
     items: [
-      { label: '정비 관리', icon: <BuildIcon />, path: '/admin/maintenance', minScope: 'complex' },
-      { label: '지원 티켓', icon: <ConfirmationNumberIcon />, path: '/admin/tickets' },
-      { label: '알림 센터', icon: <WarningIcon />, path: '/admin/alerts' },
-      { label: '알림', icon: <NotificationsIcon />, path: '/admin/notifications' },
-    ],
-  },
-  {
-    label: '모니터링',
-    items: [
-      { label: 'NOC', icon: <PublicIcon />, path: '/admin/noc', minScope: 'global' },
-      { label: '운영 대시보드', icon: <SpeedIcon />, path: '/admin/operations', minScope: 'complex' },
       { label: '분석', icon: <BarChartIcon />, path: '/admin/analytics', minScope: 'complex' },
       { label: '관측성', icon: <MonitorHeartIcon />, path: '/admin/observability', minScope: 'region' },
-      { label: '이벤트 로그', icon: <ListAltIcon />, path: '/admin/events' },
-      { label: '활동 로그', icon: <ListAltIcon />, path: '/admin/activity' },
-      { label: 'ESG 인증', icon: <EnergySavingsLeafIcon />, path: '/admin/esg', minScope: 'region' },
       { label: '보안 감사', icon: <SecurityIcon />, path: '/admin/security', minScope: 'region' },
       { label: '출입 관리', icon: <VpnKeyIcon />, path: '/admin/access' },
+      { label: 'ESG', icon: <EnergySavingsLeafIcon />, path: '/admin/esg', minScope: 'region' },
+      { label: '알림', icon: <NotificationsIcon />, path: '/admin/alerts' },
+      { label: '활동 로그', icon: <ListAltIcon />, path: '/admin/activity' },
     ],
   },
   {
-    label: '인프라',
-    items: [
-      { label: '시스템 현황', icon: <ShieldIcon />, path: '/admin/system', minScope: 'region' },
-      { label: '안전 정책', icon: <ShieldIcon />, path: '/admin/safety' },
-      { label: 'V2G 에너지', icon: <EvStationIcon />, path: '/admin/v2g', minScope: 'region' },
-      { label: '지역 허브', icon: <HubIcon />, path: '/admin/regions', minScope: 'global' },
-      { label: '존 콘솔', icon: <GridViewIcon />, path: '/admin/zones' },
-      { label: '워크플로', icon: <AutoFixHighIcon />, path: '/admin/workflows', minScope: 'region' },
-      { label: '프로젝트', icon: <AccountTreeIcon />, path: '/admin/projects', minScope: 'region' },
-    ],
-  },
-  {
-    label: '프론트엔드',
-    items: [
-      { label: '이미지 관리', icon: <ImageIcon />, path: '/admin/images' },
-      { label: '섹션 미디어', icon: <ViewCarouselIcon />, path: '/admin/media' },
-    ],
-  },
-  {
-    label: '시스템',
+    label: '설정',
     items: [
       { label: '사용자 관리', icon: <AdminPanelSettingsIcon />, path: '/admin/users', minScope: 'region' },
-      { label: '팀원 관리', icon: <GroupsIcon />, path: '/admin/team' },
-      { label: 'AI Agent', icon: <SmartToyIcon />, path: '/admin/ai' },
-      { label: 'AI 관리', icon: <SmartToyIcon />, path: '/admin/ai-management', minScope: 'global' },
+      { label: '팀원', icon: <GroupsIcon />, path: '/admin/team' },
+      { label: 'AI', icon: <SmartToyIcon />, path: '/admin/ai' },
+      { label: '워크플로', icon: <AutoFixHighIcon />, path: '/admin/workflows', minScope: 'region' },
+      { label: '지역 허브', icon: <HubIcon />, path: '/admin/regions', minScope: 'global' },
+      { label: '프로젝트', icon: <AccountTreeIcon />, path: '/admin/projects', minScope: 'region' },
+      { label: '안전 정책', icon: <ShieldIcon />, path: '/admin/safety' },
+      { label: '콘텐츠', icon: <ImageIcon />, path: '/admin/images' },
       { label: '설정', icon: <SettingsIcon />, path: '/admin/settings' },
     ],
   },
@@ -180,23 +157,19 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const { role } = useAuth();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    menuGroups.forEach(g => { initial[g.label] = true; });
+    menuGroups.forEach(g => { initial[g.label] = g.defaultOpen ?? false; });
     return initial;
   });
 
-  // Scope visibility filtering
   const SCOPE_HIERARCHY: AdminScopeLevel[] = ['building', 'complex', 'region', 'global'];
 
   const isVisibleAtScope = (minScope: ScopeVisibility | undefined, currentScope: AdminScopeLevel): boolean => {
     if (!minScope || minScope === 'all') return true;
     const minIdx = SCOPE_HIERARCHY.indexOf(minScope as AdminScopeLevel);
     const curIdx = SCOPE_HIERARCHY.indexOf(currentScope);
-    // If user is at 'global' scope (highest), they see everything
-    // If user is at 'building' scope (lowest), only items with no restriction or 'building'/'all' are shown
     return curIdx >= minIdx;
   };
 
-  // Determine effective scope: use role-based scope when no impersonation active
   const effectiveScope: AdminScopeLevel = scopeLevel === 'global'
     ? (role === 'super_admin' ? 'global' : role === 'admin' ? 'region' : role === 'manager' ? 'complex' : 'building')
     : scopeLevel;
@@ -210,6 +183,25 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       }))
       .filter(group => group.items.length > 0);
   }, [effectiveScope]);
+
+  // Auto-expand the group containing the active route
+  const activeGroup = useMemo(() => {
+    for (const group of filteredMenuGroups) {
+      for (const item of group.items) {
+        if (item.path === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(item.path)) {
+          return group.label;
+        }
+      }
+    }
+    return null;
+  }, [location.pathname, filteredMenuGroups]);
+
+  // Ensure active group is expanded
+  useMemo(() => {
+    if (activeGroup && !openGroups[activeGroup]) {
+      setOpenGroups(prev => ({ ...prev, [activeGroup]: true }));
+    }
+  }, [activeGroup]);
 
   const toggleGroup = (label: string) => {
     setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
@@ -232,12 +224,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         <Box
           component={Link}
           to="/admin"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.2,
-            textDecoration: 'none',
-          }}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1.2, textDecoration: 'none' }}
         >
           <Box
             sx={{
@@ -306,10 +293,7 @@ export default function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           px: 0.5,
           '&::-webkit-scrollbar': { width: 3 },
           '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
-          '&::-webkit-scrollbar-thumb': {
-            bgcolor: 'action.disabled',
-            borderRadius: 2,
-          },
+          '&::-webkit-scrollbar-thumb': { bgcolor: 'action.disabled', borderRadius: 2 },
         }}
       >
         {filteredMenuGroups.map((group) => (
