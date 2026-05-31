@@ -35,6 +35,14 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import HistoryIcon from '@mui/icons-material/History';
+import SearchIcon from '@mui/icons-material/Search';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import InputAdornment from '@mui/material/InputAdornment';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Paper from '@mui/material/Paper';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -46,6 +54,14 @@ interface Complex {
   name: string;
   code: string;
   address: string;
+  road_address: string;
+  jibun_address: string;
+  zip_code: string;
+  si_nm: string;
+  sgg_nm: string;
+  emd_nm: string;
+  bd_nm: string;
+  adm_cd: string;
   total_parking_slots: number;
   total_units: number;
   created_at: string;
@@ -115,6 +131,14 @@ const STEPS = ['기본 정보', '위치 및 규모', '시설 현황', '확인'];
 interface FormData {
   name: string;
   address: string;
+  road_address: string;
+  jibun_address: string;
+  zip_code: string;
+  si_nm: string;
+  sgg_nm: string;
+  emd_nm: string;
+  bd_nm: string;
+  adm_cd: string;
   country_code: string;
   region_code: string;
   district_code: string;
@@ -137,6 +161,14 @@ interface FormData {
 const emptyForm: FormData = {
   name: '',
   address: '',
+  road_address: '',
+  jibun_address: '',
+  zip_code: '',
+  si_nm: '',
+  sgg_nm: '',
+  emd_nm: '',
+  bd_nm: '',
+  adm_cd: '',
   country_code: 'KR',
   region_code: '',
   district_code: '',
@@ -200,6 +232,55 @@ export default function ComplexManagement() {
   const [historyDialog, setHistoryDialog] = useState<Complex | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; action: string; changes: Record<string, unknown>; created_at: string }>>([]);
 
+  // Address search state
+  const [addrQuery, setAddrQuery] = useState('');
+  const [addrResults, setAddrResults] = useState<Array<{ roadAddr: string; jibunAddr: string; zipNo: string; bdNm: string; siNm: string; sggNm: string; emdNm: string; admCd: string }>>([]);
+  const [addrSearching, setAddrSearching] = useState(false);
+  const [addrDropdownOpen, setAddrDropdownOpen] = useState(false);
+  const addrTimerRef = { current: null as ReturnType<typeof setTimeout> | null };
+
+  const searchAddress = async (keyword: string) => {
+    if (keyword.trim().length < 2) { setAddrResults([]); setAddrDropdownOpen(false); return; }
+    setAddrSearching(true);
+    try {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/address-search?keyword=${encodeURIComponent(keyword)}`;
+      const res = await fetch(apiUrl, {
+        headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+      });
+      const data = await res.json();
+      setAddrResults(data.results || []);
+      setAddrDropdownOpen((data.results || []).length > 0);
+    } catch {
+      setAddrResults([]);
+    } finally {
+      setAddrSearching(false);
+    }
+  };
+
+  const handleAddrInputChange = (value: string) => {
+    setAddrQuery(value);
+    if (addrTimerRef.current) clearTimeout(addrTimerRef.current);
+    addrTimerRef.current = setTimeout(() => searchAddress(value), 400);
+  };
+
+  const handleAddrSelect = (item: typeof addrResults[0]) => {
+    const updates: Partial<FormData> = {
+      address: item.roadAddr,
+      road_address: item.roadAddr,
+      jibun_address: item.jibunAddr,
+      zip_code: item.zipNo,
+      si_nm: item.siNm,
+      sgg_nm: item.sggNm,
+      emd_nm: item.emdNm,
+      bd_nm: item.bdNm,
+      adm_cd: item.admCd,
+    };
+    setForm(prev => ({ ...prev, ...updates }));
+    setAddrQuery(item.roadAddr);
+    setAddrDropdownOpen(false);
+    setAddrResults([]);
+  };
+
   const loadData = useCallback(async () => {
     const { data } = await supabase.from('complexes').select('*').order('name');
     if (data) setComplexes(data);
@@ -221,6 +302,9 @@ export default function ComplexManagement() {
   const handleOpenAdd = () => {
     setEditing(null);
     setForm(emptyForm);
+    setAddrQuery('');
+    setAddrResults([]);
+    setAddrDropdownOpen(false);
     setActiveStep(0);
     setDialogOpen(true);
   };
@@ -230,6 +314,14 @@ export default function ComplexManagement() {
     setForm({
       name: c.name,
       address: c.address || '',
+      road_address: c.road_address || '',
+      jibun_address: c.jibun_address || '',
+      zip_code: c.zip_code || '',
+      si_nm: c.si_nm || '',
+      sgg_nm: c.sgg_nm || '',
+      emd_nm: c.emd_nm || '',
+      bd_nm: c.bd_nm || '',
+      adm_cd: c.adm_cd || '',
       country_code: c.country_code || 'KR',
       region_code: c.region_code || '',
       district_code: c.district_code || '',
@@ -248,6 +340,9 @@ export default function ComplexManagement() {
       has_valet_system: c.has_valet_system || false,
       status: c.status || 'poc',
     });
+    setAddrQuery(c.address || '');
+    setAddrResults([]);
+    setAddrDropdownOpen(false);
     setActiveStep(0);
     setDialogOpen(true);
   };
@@ -278,6 +373,14 @@ export default function ComplexManagement() {
       name: form.name,
       code: mdmCode || editing?.code || '',
       address: form.address,
+      road_address: form.road_address,
+      jibun_address: form.jibun_address,
+      zip_code: form.zip_code,
+      si_nm: form.si_nm,
+      sgg_nm: form.sgg_nm,
+      emd_nm: form.emd_nm,
+      bd_nm: form.bd_nm,
+      adm_cd: form.adm_cd,
       country_code: form.country_code,
       region_code: form.region_code,
       district_code: form.district_code,
@@ -623,12 +726,90 @@ export default function ComplexManagement() {
           {/* Step 1: Location & Scale */}
           {activeStep === 1 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Address Search */}
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  label="주소 검색"
+                  value={addrQuery}
+                  onChange={e => handleAddrInputChange(e.target.value)}
+                  onFocus={() => { if (addrResults.length > 0) setAddrDropdownOpen(true); }}
+                  fullWidth size="small" required
+                  placeholder="도로명, 건물명, 지번 검색"
+                  helperText={form.address ? undefined : "주소를 검색하여 선택하세요"}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: addrSearching ? (
+                        <InputAdornment position="end">
+                          <CircularProgress size={16} />
+                        </InputAdornment>
+                      ) : undefined,
+                    },
+                  }}
+                />
+                {addrDropdownOpen && addrResults.length > 0 && (
+                  <Paper
+                    elevation={8}
+                    sx={{
+                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1300,
+                      maxHeight: 280, overflow: 'auto', mt: 0.5, borderRadius: 1,
+                    }}
+                  >
+                    <List dense disablePadding>
+                      {addrResults.map((item, idx) => (
+                        <ListItemButton
+                          key={idx}
+                          onClick={() => handleAddrSelect(item)}
+                          sx={{ py: 1.2, borderBottom: '1px solid', borderColor: 'divider' }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 32 }}>
+                            <LocationOnIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={item.roadAddr}
+                            secondary={`[${item.zipNo}] ${item.jibunAddr}`}
+                            slotProps={{
+                              primary: { variant: 'body2', sx: { fontWeight: 500 } },
+                              secondary: { variant: 'caption' },
+                            }}
+                          />
+                        </ListItemButton>
+                      ))}
+                    </List>
+                  </Paper>
+                )}
+              </Box>
+
+              {/* Selected Address Display */}
+              {form.address && (
+                <Box sx={{ p: 1.5, bgcolor: 'action.hover', borderRadius: 1, border: '1px solid', borderColor: 'success.main' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <LocationOnIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'success.main' }}>선택된 주소</Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{form.road_address || form.address}</Typography>
+                  {form.jibun_address && (
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>(지번) {form.jibun_address}</Typography>
+                  )}
+                  <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                    {form.zip_code && <Chip label={`우편번호: ${form.zip_code}`} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                    {form.si_nm && <Chip label={form.si_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                    {form.sgg_nm && <Chip label={form.sgg_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                    {form.emd_nm && <Chip label={form.emd_nm} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />}
+                  </Box>
+                </Box>
+              )}
+
               <TextField
-                label="주소"
-                value={form.address}
-                onChange={e => updateField('address', e.target.value)}
-                fullWidth size="small" required
-                helperText="정확한 도로명 주소를 입력하세요"
+                label="상세주소 (동/호)"
+                value={form.bd_nm}
+                onChange={e => updateField('bd_nm', e.target.value)}
+                fullWidth size="small"
+                placeholder="예: 101동 1501호, A동"
               />
               <Grid container spacing={2}>
                 <Grid size={{ xs: 6 }}>
@@ -769,7 +950,8 @@ export default function ComplexManagement() {
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="caption" color="text.secondary">주소</Typography>
-                      <Typography variant="body2">{form.address || '-'}</Typography>
+                      <Typography variant="body2">{form.road_address || form.address || '-'}</Typography>
+                      {form.zip_code && <Typography variant="caption" color="text.secondary">우편번호: {form.zip_code}</Typography>}
                     </Grid>
                     <Grid size={{ xs: 4 }}>
                       <Typography variant="caption" color="text.secondary">세대수</Typography>
