@@ -306,11 +306,13 @@ export default function ComplexManagement() {
       const { error } = await supabase.from('complexes').update(payload).eq('id', editing.id);
       if (error) { showToast('수정 실패: ' + error.message, 'error'); setSaving(false); return; }
       logAction('UPDATE', 'complexes', editing.id, { name: payload.name, mdm_code: payload.mdm_code });
+      await supabase.from('complex_registration_history').insert({ complex_id: editing.id, action: 'update', changes: payload });
       showToast('단지가 수정되었습니다.', 'success');
     } else {
-      const { error } = await supabase.from('complexes').insert(payload);
+      const { data: newRow, error } = await supabase.from('complexes').insert(payload).select('id').maybeSingle();
       if (error) { showToast('등록 실패: ' + error.message, 'error'); setSaving(false); return; }
       logAction('CREATE', 'complexes', undefined, { name: payload.name, mdm_code: payload.mdm_code });
+      if (newRow) await supabase.from('complex_registration_history').insert({ complex_id: newRow.id, action: 'create', changes: payload });
       showToast('단지가 등록되었습니다.', 'success');
     }
     setSaving(false);
@@ -320,6 +322,7 @@ export default function ComplexManagement() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    await supabase.from('complex_registration_history').insert({ complex_id: deleteTarget.id, action: 'delete', changes: { name: deleteTarget.name } });
     const { error } = await supabase.from('complexes').delete().eq('id', deleteTarget.id);
     if (error) { showToast('삭제 실패: ' + error.message, 'error'); return; }
     logAction('DELETE', 'complexes', deleteTarget.id, { name: deleteTarget.name });

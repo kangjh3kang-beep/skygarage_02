@@ -201,8 +201,8 @@ export default function AtrManagement() {
           <Typography variant="body2" color="text.secondary">자동 이송 로봇 등록 및 모니터링</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/ai-management')}>AI 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/workflows')}>워크플로우</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/parking')}>주차 운영</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/elevators')}>엘리베이터</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/maintenance')}>정비 관리</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openNew}>장비 등록</Button>

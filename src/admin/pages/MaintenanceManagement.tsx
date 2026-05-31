@@ -366,8 +366,8 @@ export default function MaintenanceManagement() {
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h1">정비 관리</Typography>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/ai-management')}>AI 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/workflows')}>워크플로우</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/atr')}>ATR 관리</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/elevators')}>엘리베이터</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/alerts')}>알림 센터</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>정비 등록</Button>

@@ -335,9 +335,21 @@ export default function AlertCenter() {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                      {a.source || '-'}
-                    </Typography>
+                    {a.source ? (
+                      <Chip
+                        label={a.source}
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          if (a.source === 'atr') navigate('/admin/atr');
+                          else if (a.source === 'elevator') navigate('/admin/elevators');
+                          else if (a.source === 'parking') navigate('/admin/parking');
+                          else if (a.source === 'energy') navigate('/admin/energy');
+                          else if (a.complex_id) navigate('/admin/complexes');
+                        }}
+                        sx={{ cursor: 'pointer', fontSize: '0.7rem' }}
+                      />
+                    ) : '-'}
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption">

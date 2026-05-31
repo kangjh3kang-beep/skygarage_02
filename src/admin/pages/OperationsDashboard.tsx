@@ -263,7 +263,7 @@ export default function OperationsDashboard() {
             </Grid>
             <Grid size={{ xs: 6, md: 3 }}>
               <Box
-                onClick={() => navigate('/admin/support-tickets')}
+                onClick={() => navigate('/admin/tickets')}
                 sx={{ p: 1.5, borderRadius: 2, cursor: 'pointer', bgcolor: 'rgba(239,83,80,0.04)', border: '1px solid rgba(239,83,80,0.15)', '&:hover': { bgcolor: 'rgba(239,83,80,0.08)' } }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>

@@ -215,8 +215,9 @@ export default function CrmDashboard() {
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h1">CRM 대시보드</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/ai-management')}>AI 관리</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/inquiries')}>문의 관리</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/contracts')}>계약 관리</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/tickets')}>지원 티켓</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/partners')}>파트너</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditing(null); setForm(emptyForm); setActiveStep(0); setDialogOpen(true); }}>리드 등록</Button>
         </Box>

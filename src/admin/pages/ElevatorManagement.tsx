@@ -227,10 +227,10 @@ export default function ElevatorManagement() {
           <Typography variant="body2" color="text.secondary">차량용 엘리베이터 등록 및 SkyGarage 연동</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/ai-management')}>AI 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/workflows')}>워크플로우</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/atr')}>ATR 로봇</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/maintenance')}>정비 관리</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/alerts')}>알림 센터</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={openNew}>엘리베이터 등록</Button>
         </Box>
       </Box>

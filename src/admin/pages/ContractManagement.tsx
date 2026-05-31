@@ -255,6 +255,8 @@ export default function ContractManagement() {
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/crm')}>CRM</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/partners')}>파트너</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/billing')}>청구 관리</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>계약 등록</Button>
         </Box>
       </Box>

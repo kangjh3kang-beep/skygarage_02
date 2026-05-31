@@ -263,7 +263,9 @@ export default function BillingInvoices() {
         <Typography variant="h1">청구 / 인보이스</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/contracts')}>계약 관리</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/revenue')}>수익 현황</Button>
           <Button variant="outlined" size="small" onClick={() => navigate('/admin/partners')}>파트너</Button>
+          <Button variant="outlined" size="small" onClick={() => navigate('/admin/complexes')}>단지 관리</Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>인보이스 등록</Button>
         </Box>
       </Box>
