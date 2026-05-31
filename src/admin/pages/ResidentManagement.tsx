@@ -357,6 +357,15 @@ export default function ResidentManagement() {
 
   return (
     <Box>
+      {/* Scope Context Banner */}
+      {isGlobal && (
+        <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            글로벌 관리자 모드: 전체 단지의 사용자 통계를 조회합니다. 개별 사용자 관리는 해당 단지/건물 관리자가 담당합니다.
+          </Typography>
+        </Alert>
+      )}
+
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1 }}>
         <Box>

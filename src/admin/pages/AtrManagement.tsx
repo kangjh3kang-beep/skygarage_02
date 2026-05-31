@@ -31,6 +31,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
+import ApartmentIcon from '@mui/icons-material/Apartment';
+import CloseIcon from '@mui/icons-material/Close';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -103,6 +105,7 @@ export default function AtrManagement() {
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AtrUnit | null>(null);
+  const [detailUnit, setDetailUnit] = useState<AtrUnit | null>(null);
 
   const completeness = useMemo(() => calcCompleteness(form), [form]);
 
@@ -253,10 +256,15 @@ export default function AtrManagement() {
               {units.length === 0 ? (
                 <TableRow><TableCell colSpan={8} align="center"><Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>등록된 ATR 장비가 없습니다</Typography></TableCell></TableRow>
               ) : units.map(u => (
-                <TableRow key={u.id} hover>
+                <TableRow key={u.id} hover onClick={() => setDetailUnit(u)} sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
                   <TableCell><Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '0.75rem' }}>{u.unit_code}</Typography></TableCell>
                   <TableCell><Typography variant="caption">{u.model || '-'}</Typography></TableCell>
-                  <TableCell><Typography variant="caption">{complexName(u.complex_id)}</Typography></TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <ApartmentIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600 }}>{complexName(u.complex_id)}</Typography>
+                    </Box>
+                  </TableCell>
                   <TableCell><Chip label={u.status} size="small" color={statusColors[u.status] || 'default'} /></TableCell>
                   <TableCell sx={{ minWidth: 100 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -270,7 +278,7 @@ export default function AtrManagement() {
                       ? <CheckCircleIcon sx={{ fontSize: 14, color: 'success.main' }} />
                       : <WarningIcon sx={{ fontSize: 14, color: 'warning.main' }} />}
                   </TableCell>
-                  <TableCell align="center">
+                  <TableCell align="center" onClick={e => e.stopPropagation()}>
                     <IconButton size="small" onClick={() => openEdit(u)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
                     <IconButton size="small" onClick={() => setDeleteTarget(u)} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
                   </TableCell>
@@ -407,6 +415,98 @@ export default function AtrManagement() {
         <DialogTitle>장비 삭제</DialogTitle>
         <DialogContent><Typography>"{deleteTarget?.unit_code}" 장비를 삭제하시겠습니까?</Typography></DialogContent>
         <DialogActions><Button onClick={() => setDeleteTarget(null)}>취소</Button><Button variant="contained" color="error" onClick={handleDelete}>삭제</Button></DialogActions>
+      </Dialog>
+
+      {/* ATR Detail Dialog */}
+      <Dialog open={!!detailUnit} onClose={() => setDetailUnit(null)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
+        {detailUnit && (
+          <>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>ATR 장비 상세</Typography>
+                <Chip label={detailUnit.status} size="small" color={statusColors[detailUnit.status] || 'default'} />
+              </Box>
+              <IconButton size="small" onClick={() => setDetailUnit(null)}><CloseIcon fontSize="small" /></IconButton>
+            </DialogTitle>
+            <DialogContent>
+              {/* Location Context */}
+              <Box sx={{ mb: 2.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>소속 단지/건물</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
+                  <ApartmentIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{complexName(detailUnit.complex_id)}</Typography>
+                    {detailUnit.location_zone && <Typography variant="caption" color="text.secondary">구역: {detailUnit.location_zone}</Typography>}
+                  </Box>
+                </Box>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Equipment Info */}
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>장비 코드</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{detailUnit.unit_code}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>모델</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailUnit.model || '-'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>제조사</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailUnit.manufacturer || '-'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>펌웨어</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailUnit.firmware_version || '-'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>운영 모드</Typography>
+                  <Chip label={detailUnit.operating_mode || 'direct'} size="small" variant="outlined" />
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>최대 적재량</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailUnit.max_payload_kg ? `${detailUnit.max_payload_kg}kg` : '-'}</Typography>
+                </Grid>
+              </Grid>
+
+              {/* Battery & Stats */}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>배터리</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LinearProgress variant="determinate" value={detailUnit.battery_level || 0} color={batteryColor(detailUnit.battery_level)} sx={{ flex: 1, height: 8, borderRadius: 4 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 40 }}>{detailUnit.battery_level}%</Typography>
+                </Box>
+              </Box>
+
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>총 사이클</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{(detailUnit.total_cycles || 0).toLocaleString()}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>정비 주기</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailUnit.maintenance_interval_days ? `${detailUnit.maintenance_interval_days}일` : '-'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>최종 통신</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailUnit.last_heartbeat ? new Date(detailUnit.last_heartbeat).toLocaleString('ko-KR') : '-'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>설치일</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailUnit.commissioned_at ? new Date(detailUnit.commissioned_at).toLocaleDateString('ko-KR') : '-'}</Typography>
+                </Grid>
+              </Grid>
+
+              {/* Actions */}
+              <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                <Button variant="outlined" size="small" onClick={() => { setDetailUnit(null); openEdit(detailUnit); }}>수정</Button>
+                <Button variant="outlined" size="small" onClick={() => navigate('/admin/maintenance')}>정비 이력</Button>
+              </Box>
+            </DialogContent>
+          </>
+        )}
       </Dialog>
     </Box>
   );

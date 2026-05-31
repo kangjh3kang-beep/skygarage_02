@@ -31,6 +31,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
+import ApartmentIcon from '@mui/icons-material/Apartment';
+import CloseIcon from '@mui/icons-material/Close';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
@@ -118,6 +120,7 @@ export default function ElevatorManagement() {
   const [activeStep, setActiveStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Elevator | null>(null);
+  const [detailElevator, setDetailElevator] = useState<Elevator | null>(null);
 
   const completeness = useMemo(() => calcCompleteness(form), [form]);
 
@@ -267,7 +270,7 @@ export default function ElevatorManagement() {
           <Table size="small">
             <TableHead><TableRow>
               <TableCell>코드</TableCell>
-              <TableCell>동/위치</TableCell>
+              <TableCell>단지/동</TableCell>
               <TableCell>제조사</TableCell>
               <TableCell>상태</TableCell>
               <TableCell>어댑터</TableCell>
@@ -280,16 +283,24 @@ export default function ElevatorManagement() {
               ) : elevators.map(e => {
                 const st = statusMap[e.status] || { color: 'default' as const, label: e.status };
                 return (
-                  <TableRow key={e.id} hover>
+                  <TableRow key={e.id} hover onClick={() => setDetailElevator(e)} sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
                     <TableCell><Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '0.75rem' }}>{e.elevator_code}</Typography></TableCell>
-                    <TableCell>{e.building_name || e.vendor || '-'}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <ApartmentIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
+                        <Box>
+                          <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', lineHeight: 1.2 }}>{complexName(e.complex_id)}</Typography>
+                          {e.building_name && <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>{e.building_name}</Typography>}
+                        </Box>
+                      </Box>
+                    </TableCell>
                     <TableCell><Typography variant="caption">{e.manufacturer || '-'}</Typography></TableCell>
                     <TableCell><Chip label={st.label} size="small" color={st.color} /></TableCell>
                     <TableCell><Chip label={e.adapter_type || 'none'} size="small" variant="outlined" color={e.adapter_type && e.adapter_type !== 'none' ? 'primary' : 'default'} sx={{ fontSize: '0.65rem' }} /></TableCell>
                     <TableCell align="center">
                       {(e.completeness_score || 0) >= 80 ? <CheckCircleIcon sx={{ fontSize: 14, color: 'success.main' }} /> : <WarningIcon sx={{ fontSize: 14, color: 'warning.main' }} />}
                     </TableCell>
-                    <TableCell align="center">
+                    <TableCell align="center" onClick={ev => ev.stopPropagation()}>
                       <IconButton size="small" onClick={() => openEdit(e)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
                       <IconButton size="small" onClick={() => setDeleteTarget(e)} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
                     </TableCell>
@@ -420,6 +431,103 @@ export default function ElevatorManagement() {
         <DialogTitle>엘리베이터 삭제</DialogTitle>
         <DialogContent><Typography>"{deleteTarget?.elevator_code}" 엘리베이터를 삭제하시겠습니까?</Typography></DialogContent>
         <DialogActions><Button onClick={() => setDeleteTarget(null)}>취소</Button><Button variant="contained" color="error" onClick={handleDelete}>삭제</Button></DialogActions>
+      </Dialog>
+
+      {/* Elevator Detail Dialog */}
+      <Dialog open={!!detailElevator} onClose={() => setDetailElevator(null)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
+        {detailElevator && (() => {
+          const st = statusMap[detailElevator.status] || { color: 'default' as const, label: detailElevator.status };
+          return (
+            <>
+              <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>엘리베이터 상세</Typography>
+                  <Chip label={st.label} size="small" color={st.color} />
+                </Box>
+                <IconButton size="small" onClick={() => setDetailElevator(null)}><CloseIcon fontSize="small" /></IconButton>
+              </DialogTitle>
+              <DialogContent>
+                {/* Location Context */}
+                <Box sx={{ mb: 2.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>소속 단지/건물</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
+                    <ApartmentIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{complexName(detailElevator.complex_id)}</Typography>
+                      {detailElevator.building_name && <Typography variant="caption" color="text.secondary">{detailElevator.building_name}</Typography>}
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                {/* Equipment Info */}
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>장비 코드</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace' }}>{detailElevator.elevator_code}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>제조사/모델</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailElevator.manufacturer || '-'} {detailElevator.model || ''}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>운행 층</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailElevator.min_floor || 'B?'}F ~ {detailElevator.max_floor || '?'}F</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>현재 층</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{detailElevator.current_floor || '-'}F</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>최대 하중</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailElevator.load_kg ? `${detailElevator.load_kg}kg` : '-'}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>속도</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailElevator.speed_mps ? `${detailElevator.speed_mps}m/s` : '-'}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>도어 폭</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailElevator.door_width_mm ? `${detailElevator.door_width_mm}mm` : '-'}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>카 깊이</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailElevator.car_depth_mm ? `${detailElevator.car_depth_mm}mm` : '-'}</Typography>
+                  </Grid>
+                </Grid>
+
+                {/* Integration & Maintenance */}
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>SkyGarage 어댑터</Typography>
+                    <Chip label={detailElevator.adapter_type || 'none'} size="small" variant="outlined" color={detailElevator.adapter_type && detailElevator.adapter_type !== 'none' ? 'primary' : 'default'} />
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>총 운행 횟수</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{(detailElevator.total_trips || 0).toLocaleString()}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>최종 정비</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{detailElevator.last_maintenance ? new Date(detailElevator.last_maintenance).toLocaleDateString('ko-KR') : '-'}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 6 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>검사 예정</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: detailElevator.inspection_due && new Date(detailElevator.inspection_due) < new Date() ? 'error.main' : 'text.primary' }}>
+                      {detailElevator.inspection_due ? new Date(detailElevator.inspection_due).toLocaleDateString('ko-KR') : '-'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+
+                {/* Actions */}
+                <Box sx={{ mt: 3, display: 'flex', gap: 1 }}>
+                  <Button variant="outlined" size="small" onClick={() => { setDetailElevator(null); openEdit(detailElevator); }}>수정</Button>
+                  <Button variant="outlined" size="small" onClick={() => navigate('/admin/maintenance')}>정비 이력</Button>
+                </Box>
+              </DialogContent>
+            </>
+          );
+        })()}
       </Dialog>
     </Box>
   );
