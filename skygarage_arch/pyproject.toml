@@ -1,0 +1,19 @@
+[project]
+name = "skygarage-arch"
+version = "1.0.0"
+description = "SkyGarage Platform Architecture - Hierarchical RPC & Tenant Isolation Core"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["skygarage_arch/tests"]
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
