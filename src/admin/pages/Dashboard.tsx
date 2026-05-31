@@ -36,6 +36,7 @@ import AccessibleIcon from '@mui/icons-material/Accessible';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useTenant } from '../contexts/TenantContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import EngagementWidget from '../components/EngagementWidget';
 import Sparkline from '../components/Sparkline';
@@ -71,7 +72,8 @@ function buildDailyCountSpark(rows: { [key: string]: string | null }[], dateFiel
 
 export default function Dashboard() {
   useDocumentTitle('Dashboard');
-  const { selectedComplex: tenantComplex } = useTenant();
+  const { scope, scopeLevel } = useTenant();
+  const { role } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ complexes: 0, residents: 0, activeSessions: 0, energyToday: 0 });
@@ -84,18 +86,37 @@ export default function Dashboard() {
   const [atrModes, setAtrModes] = useState<{ autonomous: number; semi_autonomous: number; manual: number }>({ autonomous: 0, semi_autonomous: 0, manual: 0 });
   const [priorityDispatch, setPriorityDispatch] = useState({ activePriority: 0, totalProfiles: 0, verified: 0, avgWait: 0 });
 
+  const isGlobal = role === 'super_admin' && scopeLevel === 'global';
+  const scopeComplexId = scope.complex?.id || null;
+
   const loadData = useCallback(async () => {
+    // Scope-filtered queries: non-global users only see their assigned complex data
+    let cQuery = supabase.from('complexes').select('id', { count: 'exact', head: true });
+    let rQuery = supabase.from('resident_accounts').select('id', { count: 'exact', head: true });
+    let sQuery = supabase.from('parking_sessions').select('id', { count: 'exact', head: true }).is('exit_at', null);
+    let eQuery = supabase.from('energy_metrics').select('solar_generation_kwh').order('date', { ascending: false }).limit(10);
+    let alertQuery = supabase.from('system_alerts').select('id, title, severity, created_at').order('created_at', { ascending: false }).limit(5);
+    let ticketQuery = supabase.from('support_tickets').select('id, subject, status, created_at').order('created_at', { ascending: false }).limit(5);
+    let atrQuery = supabase.from('atr_units').select('id, status, operating_mode');
+    let elevQuery = supabase.from('elevators').select('id, status');
+    let complexSlotsQuery = supabase.from('complexes').select('total_parking_slots');
+    let dqQuery = supabase.from('complexes').select('data_quality_score, completeness_ratio');
+
+    if (!isGlobal && scopeComplexId) {
+      cQuery = cQuery.eq('id', scopeComplexId);
+      rQuery = rQuery.eq('complex_id', scopeComplexId);
+      sQuery = sQuery.eq('complex_id', scopeComplexId);
+      eQuery = eQuery.eq('complex_id', scopeComplexId);
+      alertQuery = alertQuery.eq('complex_id', scopeComplexId);
+      ticketQuery = ticketQuery.eq('complex_id', scopeComplexId);
+      atrQuery = atrQuery.eq('complex_id', scopeComplexId);
+      elevQuery = elevQuery.eq('complex_id', scopeComplexId);
+      complexSlotsQuery = complexSlotsQuery.eq('id', scopeComplexId);
+      dqQuery = dqQuery.eq('id', scopeComplexId);
+    }
+
     const [cRes, rRes, sRes, eRes, alertRes, ticketRes, atrRes, elevRes, complexSlotsRes, dqRes] = await Promise.all([
-      supabase.from('complexes').select('id', { count: 'exact', head: true }),
-      supabase.from('resident_accounts').select('id', { count: 'exact', head: true }),
-      supabase.from('parking_sessions').select('id', { count: 'exact', head: true }).is('exit_at', null),
-      supabase.from('energy_metrics').select('solar_generation_kwh').order('date', { ascending: false }).limit(10),
-      supabase.from('system_alerts').select('id, title, severity, created_at').order('created_at', { ascending: false }).limit(5),
-      supabase.from('support_tickets').select('id, subject, status, created_at').order('created_at', { ascending: false }).limit(5),
-      supabase.from('atr_units').select('id, status, operating_mode'),
-      supabase.from('elevators').select('id, status'),
-      supabase.from('complexes').select('total_parking_slots'),
-      supabase.from('complexes').select('data_quality_score, completeness_ratio'),
+      cQuery, rQuery, sQuery, eQuery, alertQuery, ticketQuery, atrQuery, elevQuery, complexSlotsQuery, dqQuery,
     ]);
 
     setStats({
@@ -145,11 +166,13 @@ export default function Dashboard() {
     const energyData = eRes.data || [];
     const energySpark = energyData.map(r => r.solar_generation_kwh || 0).reverse();
 
-    const { data: parkingHistory } = await supabase
+    let parkingHistoryQuery = supabase
       .from('parking_sessions')
       .select('entry_at')
       .order('entry_at', { ascending: false })
       .limit(50);
+    if (!isGlobal && scopeComplexId) parkingHistoryQuery = parkingHistoryQuery.eq('complex_id', scopeComplexId);
+    const { data: parkingHistory } = await parkingHistoryQuery;
 
     const parkingSpark = buildDailyCountSpark(parkingHistory || [], 'entry_at', 7);
 
@@ -158,18 +181,24 @@ export default function Dashboard() {
       parking: parkingSpark,
     });
 
-    const { data: aiRecs } = await supabase
+    let aiQuery = supabase
       .from('ai_recommendations')
       .select('id, title, priority, type, status')
       .in('status', ['pending', 'acknowledged'])
       .order('created_at', { ascending: false })
       .limit(5);
+    if (!isGlobal && scopeComplexId) aiQuery = aiQuery.eq('complex_id', scopeComplexId);
+    const { data: aiRecs } = await aiQuery;
     if (aiRecs) setAiRecommendations(aiRecs);
 
-    const [prioritySessionsRes, profilesRes] = await Promise.all([
-      supabase.from('parking_sessions').select('id', { count: 'exact', head: true }).eq('is_priority_dispatch', true).is('exit_at', null),
-      supabase.from('resident_accessibility_profiles').select('id, verified, active').eq('active', true),
-    ]);
+    let priorityQuery = supabase.from('parking_sessions').select('id', { count: 'exact', head: true }).eq('is_priority_dispatch', true).is('exit_at', null);
+    let profilesQuery = supabase.from('resident_accessibility_profiles').select('id, verified, active').eq('active', true);
+    if (!isGlobal && scopeComplexId) {
+      priorityQuery = priorityQuery.eq('complex_id', scopeComplexId);
+      profilesQuery = profilesQuery.eq('complex_id', scopeComplexId);
+    }
+
+    const [prioritySessionsRes, profilesRes] = await Promise.all([priorityQuery, profilesQuery]);
     const profs = profilesRes.data || [];
     setPriorityDispatch({
       activePriority: prioritySessionsRes.count || 0,
@@ -179,7 +208,7 @@ export default function Dashboard() {
     });
 
     setLoading(false);
-  }, [tenantComplex]);
+  }, [isGlobal, scopeComplexId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

@@ -44,6 +44,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useToast } from '../contexts/ToastContext';
 import { useAuditLog } from '../../hooks/useAuditLog';
 import { useAuth } from '../contexts/AuthContext';
+import { useTenant } from '../contexts/TenantContext';
 
 // ─────────────────────────────────────────────
 // Types
@@ -142,7 +143,11 @@ export default function ResidentManagement() {
   useDocumentTitle('입주민 관리');
   const { showToast } = useToast();
   const { logAction } = useAuditLog();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, role } = useAuth();
+  const { scope, scopeLevel } = useTenant();
+
+  const isGlobal = role === 'super_admin' && scopeLevel === 'global';
+  const scopeComplexId = scope.complex?.id || null;
 
   const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -159,22 +164,35 @@ export default function ResidentManagement() {
   const [detailWallet, setDetailWallet] = useState<Wallet | null>(null);
 
   // ─────────────────────────────────────────────
-  // Data Loading
+  // Data Loading - Tenant Isolated [660]
   // ─────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    const [rRes, smRes, wRes, vsRes] = await Promise.all([
-      supabase.from('resident_accounts').select('*').order('name'),
-      supabase.from('resident_service_modes').select('*'),
-      supabase.from('palatria_wallets').select('*'),
-      supabase.from('visitor_billing_sessions').select('*').order('entry_at', { ascending: false }).limit(50),
-    ]);
-    if (rRes.data) setResidents(rRes.data);
-    if (smRes.data) setServiceModes(smRes.data);
-    if (wRes.data) setWallets(wRes.data);
+    let rQuery = supabase.from('resident_accounts').select('*').order('name');
+    let smQuery = supabase.from('resident_service_modes').select('*');
+    let wQuery = supabase.from('palatria_wallets').select('*');
+    let vsQuery = supabase.from('visitor_billing_sessions').select('*').order('entry_at', { ascending: false }).limit(50);
+
+    if (!isGlobal && scopeComplexId) {
+      rQuery = rQuery.eq('complex_id', scopeComplexId);
+      vsQuery = vsQuery.eq('complex_id', scopeComplexId);
+    }
+
+    const [rRes, smRes, wRes, vsRes] = await Promise.all([rQuery, smQuery, wQuery, vsQuery]);
+
+    let residentData = rRes.data || [];
+    if (!isGlobal && scopeComplexId && smRes.data) {
+      const residentIds = new Set(residentData.map(r => r.id));
+      setServiceModes(smRes.data.filter(sm => residentIds.has(sm.resident_id)));
+      if (wRes.data) setWallets(wRes.data.filter(w => residentIds.has(w.resident_id)));
+    } else {
+      if (smRes.data) setServiceModes(smRes.data);
+      if (wRes.data) setWallets(wRes.data);
+    }
+    setResidents(residentData);
     if (vsRes.data) setVisitorSessions(vsRes.data);
     setLoading(false);
-  }, []);
+  }, [isGlobal, scopeComplexId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
