@@ -1,3 +1,43 @@
+/**
+ * ============================================================================
+ * SkyGarage Palatria - Hardware Gateway Edge Function
+ * ============================================================================
+ *
+ * 이 Edge Function은 협력업체의 ATR 자율주행주차로봇 및 차량 엘리베이터 시스템과
+ * Palatria 플랫폼 간의 통신 게이트웨이 역할을 합니다.
+ *
+ * ■ 엔드포인트 (협력업체 → 플랫폼)
+ *   POST /hardware-gateway/telemetry     - 장비 텔레메트리 데이터 수신
+ *   POST /hardware-gateway/command-ack   - 명령 실행 상태 콜백
+ *   POST /hardware-gateway/health-event  - 헬스/장애 이벤트 보고
+ *
+ * ■ 엔드포인트 (플랫폼 → 협력업체)
+ *   POST /hardware-gateway/dispatch-command - 장비에 명령 전송 (move, call, stop 등)
+ *   GET  /hardware-gateway/device-status/:serial - 장비 현재 상태 조회
+ *
+ * ■ 협력업체에서 제공받아야 하는 것:
+ *   1. API 엔드포인트 URL (운영/테스트 환경)
+ *   2. 인증 자격 증명 (API Key, OAuth2 Client ID/Secret, 또는 mTLS 인증서)
+ *   3. Webhook 콜백 등록 기능 (당사 Gateway URL을 콜백으로 등록)
+ *   4. 디바이스 시리얼 넘버 목록 (사전 등록용)
+ *   5. 에러 코드 참조표
+ *   6. 텔레메트리 전송 주기 설정 가능 여부 확인
+ *
+ * ■ 당사(SkyGarage)에서 협력업체에 제공하는 것:
+ *   1. 이 Gateway의 공개 URL (HTTPS)
+ *   2. 인증 헤더: X-Adapter-Key (어댑터별 발급)
+ *   3. 메시지 포맷 JSON Schema (아래 interface 참조)
+ *   4. Rate Limit: 1000 req/min per device
+ *   5. Sandbox 테스트 환경 URL
+ *
+ * ■ 통신 흐름도:
+ *   [ATR Robot/Elevator] --(telemetry/event)--> [이 Gateway] --> [Supabase DB]
+ *   [Admin UI] --> [이 Gateway] --(command)--> [Partner API] --> [Device]
+ *   [Device] --(command-ack)--> [이 Gateway] --> [Supabase DB] --> [Admin UI 실시간 반영]
+ *
+ * ============================================================================
+ */
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -8,32 +48,64 @@ const corsHeaders = {
     "Content-Type, Authorization, X-Client-Info, Apikey, X-Device-Serial, X-Adapter-Key",
 };
 
+/**
+ * ■ 텔레메트리 페이로드 (협력업체 → 플랫폼)
+ *
+ * 협력업체 장비가 주기적으로 전송하는 센서 데이터.
+ * 협력업체는 이 포맷에 맞춰 JSON을 POST /hardware-gateway/telemetry 로 전송해야 합니다.
+ *
+ * 제공받아야 할 것:
+ * - 장비별 device_serial 넘버 (사전 등록 필요)
+ * - 전송 주기 설정 인터페이스 (기본 10초, 긴급 시 1초)
+ * - metric type별 단위(unit) 및 범위 문서
+ */
 interface TelemetryPayload {
   device_serial: string;
   metrics: Array<{
-    type: string;
+    type: string;       // 'position' | 'speed' | 'battery' | 'temperature' | 'vibration' | 'load' | 'door_status' | 'motor_current'
     value_numeric?: number;
     value_text?: string;
-    unit?: string;
+    unit?: string;      // 'm', 'm/s', '%', 'celsius', 'kg', 'A'
     floor?: number;
-    recorded_at?: string;
+    recorded_at?: string; // ISO 8601 (장비 측 타임스탬프)
   }>;
 }
 
+/**
+ * ■ 명령 응답 콜백 (협력업체 → 플랫폼)
+ *
+ * 플랫폼이 발행한 명령에 대해 장비가 상태를 보고합니다.
+ * 협력업체는 명령 수신 후 반드시 이 콜백을 호출하여 진행 상태를 알려야 합니다.
+ *
+ * 제공받아야 할 것:
+ * - 명령 수신 확인(ACK) 응답 시간 보장 (3초 이내)
+ * - 상태 전이: acknowledged → executing → completed/failed
+ * - 실패 시 error_code + error_message (에러 코드표 필요)
+ */
 interface CommandAckPayload {
   command_id: string;
   status: "acknowledged" | "executing" | "completed" | "failed";
-  error_code?: string;
-  error_message?: string;
+  error_code?: string;    // 협력업체 에러 코드표에 정의된 코드
+  error_message?: string; // 사람이 읽을 수 있는 에러 설명
 }
 
+/**
+ * ■ 헬스 이벤트 보고 (협력업체 → 플랫폼)
+ *
+ * 장비에서 비정상 상태나 경고가 발생하면 이 엔드포인트로 즉시 전송합니다.
+ *
+ * 제공받아야 할 것:
+ * - 이벤트 유형별 severity 매핑 기준 문서
+ * - diagnostic_data에 포함할 원시 센서 데이터 스키마
+ * - 긴급 이벤트(emergency) 발생 시 즉시 전송 보장 (1초 이내)
+ */
 interface HealthEventPayload {
   device_serial: string;
-  event_type: string;
-  severity: string;
+  event_type: string;     // 'heartbeat_miss' | 'error' | 'warning' | 'recovery' | 'firmware_alert' | 'calibration_drift' | 'overload' | 'emergency'
+  severity: string;       // 'critical' | 'high' | 'medium' | 'low' | 'info'
   title: string;
   description?: string;
-  diagnostic_data?: Record<string, unknown>;
+  diagnostic_data?: Record<string, unknown>; // 제조사별 진단 원시 데이터
 }
 
 Deno.serve(async (req: Request) => {

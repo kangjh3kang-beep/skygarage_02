@@ -40,6 +40,7 @@ import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ArticleIcon from '@mui/icons-material/Article';
 import { supabase } from '../lib/supabase';
 
 interface HardwareAdapter {
@@ -306,6 +307,7 @@ export default function HardwareIntegration() {
           <Tab icon={<RouterIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="장비 레지스트리" sx={{ minHeight: 44, fontSize: '0.8rem' }} />
           <Tab icon={<HealthAndSafetyIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="상태 모니터링" sx={{ minHeight: 44, fontSize: '0.8rem' }} />
           <Tab icon={<TerminalIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="명령 콘솔" sx={{ minHeight: 44, fontSize: '0.8rem' }} />
+          <Tab icon={<ArticleIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="협력업체 요구사항" sx={{ minHeight: 44, fontSize: '0.8rem' }} />
         </Tabs>
       </Box>
 
@@ -553,6 +555,265 @@ export default function HardwareIntegration() {
               </TableBody>
             </Table>
           </TableContainer>
+        </Box>
+      )}
+
+      {/* Tab 4: 협력업체 요구사항 가이드 - Vendor Integration Requirements */}
+      {tab === 4 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+          {/* 개요 */}
+          <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
+            아래는 SkyGarage Palatria 플랫폼과 연동하기 위해 협력업체(ATR 로봇, 차량 엘리베이터)로부터 제공받아야 하는 항목 목록입니다.
+            연동 계약 체결 시 아래 체크리스트를 기준으로 기술 협의를 진행합니다.
+          </Alert>
+
+          {/* Section 1: ATR 자율주행주차로봇 */}
+          <Card sx={{ border: '1px solid', borderColor: 'info.main' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <SmartToyIcon color="info" />
+                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem' }}>
+                  ATR 자율주행주차로봇 - 협력업체 제공 항목
+                </Typography>
+              </Box>
+
+              {/* 1-1: API/프로토콜 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'info.main' }}>
+                1. 통신 인터페이스 (API/Protocol Specification)
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>API 문서</strong> - REST API 또는 gRPC 서비스 정의서 (OpenAPI 3.0 / Proto 파일)</li>
+                <li><strong>인증 방식</strong> - API Key, OAuth2 Client Credentials, mTLS 인증서 중 택 1</li>
+                <li><strong>엔드포인트 URL</strong> - 운영/테스트 환경 각각의 Base URL</li>
+                <li><strong>MQTT 토픽 구조</strong> - MQTT 사용 시 토픽 네이밍 규칙 및 QoS 레벨</li>
+                <li><strong>메시지 포맷</strong> - JSON Schema 또는 Protobuf 정의</li>
+                <li><strong>Rate Limit</strong> - 초당 최대 요청 수, 동시 연결 제한</li>
+                <li><strong>Webhook 콜백 URL 등록</strong> - 당사 Gateway URL을 콜백으로 등록 가능 여부</li>
+              </Box>
+
+              {/* 1-2: 명령 체계 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'info.main' }}>
+                2. 명령 체계 (Command Interface)
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>move_vehicle</strong> - 차량 이송 명령 (출발 스팟 → 도착 스팟, 차량 크기/무게 파라미터)</li>
+                <li><strong>dock_charge</strong> - 로봇 충전 도킹 (자동 복귀 충전 트리거)</li>
+                <li><strong>emergency_stop</strong> - 비상 정지 (즉시 정지, 0.5초 이내 응답 보장 필요)</li>
+                <li><strong>resume</strong> - 비상 해제 후 재개</li>
+                <li><strong>diagnostics</strong> - 자가진단 실행 및 결과 반환</li>
+                <li><strong>명령 ACK 프로토콜</strong> - queued→sent→acknowledged→executing→completed 상태 전이 콜백</li>
+                <li><strong>에러 코드 체계</strong> - 에러 코드표 (코드, 설명, 복구 가능 여부, 권장 조치)</li>
+              </Box>
+
+              {/* 1-3: 텔레메트리 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'info.main' }}>
+                3. 텔레메트리 데이터 (Telemetry Feed)
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>위치 (position)</strong> - X, Y 좌표 또는 스팟 ID, 현재 층 (최소 1초 간격)</li>
+                <li><strong>속도 (speed)</strong> - 이동 속도 m/s</li>
+                <li><strong>배터리 (battery)</strong> - 잔량 %, 충전 상태, 예상 잔여시간</li>
+                <li><strong>온도 (temperature)</strong> - 모터/배터리 온도 (과열 임계값 포함)</li>
+                <li><strong>진동 (vibration)</strong> - 진동 센서 값 (베어링 마모 감지용)</li>
+                <li><strong>하중 (load)</strong> - 현재 적재 무게 kg</li>
+                <li><strong>장애물 감지</strong> - LiDAR/카메라 기반 장애물 이벤트</li>
+                <li><strong>Heartbeat</strong> - 10초 이내 주기적 생존 신호</li>
+              </Box>
+
+              {/* 1-4: 하드웨어 사양 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'info.main' }}>
+                4. 하드웨어 사양서
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>모델명/시리얼 체계</strong> - 시리얼 넘버 규칙 (자산 추적용)</li>
+                <li><strong>최대 적재 중량</strong> - kg 단위 (차량 크기별 대응 가능 범위)</li>
+                <li><strong>이동 속도</strong> - 공차/적재 시 최대 속도</li>
+                <li><strong>리프트 높이</strong> - 차량 리프팅 최대 높이</li>
+                <li><strong>배터리 용량/충전 시간</strong> - 완충 시간, 연속 운행 가능 시간</li>
+                <li><strong>운행 가능 경사도</strong> - 최대 경사 각도</li>
+                <li><strong>회전 반경</strong> - 최소 회전 반경 (통로 폭 설계에 필요)</li>
+                <li><strong>펌웨어 업데이트 방식</strong> - OTA 지원 여부, 업데이트 절차</li>
+                <li><strong>네트워크 인터페이스</strong> - WiFi/5G/LAN, IP 할당 방식</li>
+              </Box>
+
+              {/* 1-5: 안전 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'info.main' }}>
+                5. 안전 및 인증
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>안전 인증서</strong> - CE, KC, ISO 13849 (기능 안전) 등</li>
+                <li><strong>비상정지 메커니즘</strong> - 물리 버튼 + 소프트웨어 E-Stop 이중화</li>
+                <li><strong>장애물 감지 사양</strong> - LiDAR 범위, 정지 거리, 반응 시간</li>
+                <li><strong>화재 방지</strong> - 배터리 과열 보호, 화재 감지 센서</li>
+                <li><strong>소음 기준</strong> - 야간 운행 시 소음 레벨 dB(A)</li>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Section 2: 차량 엘리베이터 */}
+          <Card sx={{ border: '1px solid', borderColor: 'warning.main' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <ElevatorIcon color="warning" />
+                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem' }}>
+                  차량 엘리베이터 - 협력업체 제공 항목
+                </Typography>
+              </Box>
+
+              {/* 2-1: API/프로토콜 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'warning.main' }}>
+                1. 통신 인터페이스 (API/Protocol Specification)
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>제어 API</strong> - REST API, Modbus TCP, OPC-UA 중 지원 프로토콜 명시</li>
+                <li><strong>SDK/라이브러리</strong> - 제조사 제공 SDK (있을 경우)</li>
+                <li><strong>인증 방식</strong> - 로컬 네트워크 mTLS 또는 API Key</li>
+                <li><strong>실시간 상태 스트림</strong> - WebSocket/MQTT 기반 상태 Push 지원 여부</li>
+                <li><strong>제어 권한 레벨</strong> - 읽기 전용 / 호출 제어 / 완전 제어 (수동 운행 포함)</li>
+              </Box>
+
+              {/* 2-2: 명령 체계 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'warning.main' }}>
+                2. 명령 체계 (Command Interface)
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>call_elevator</strong> - 특정 층 호출 (목적층, 문 방향, 우선순위)</li>
+                <li><strong>open_gate</strong> - 차량 진입/진출 게이트 개방 (개방 유지 시간 설정)</li>
+                <li><strong>emergency_stop</strong> - 긴급 정지 (1초 이내 응답 보장)</li>
+                <li><strong>floor_lock/unlock</strong> - 특정 층 접근 제한/해제</li>
+                <li><strong>운행 모드 전환</strong> - 자동/수동/정비 모드 전환 API</li>
+                <li><strong>문 제어</strong> - 강제 개방/폐쇄, 개방 유지 타이머</li>
+                <li><strong>에러 코드 체계</strong> - 에러 코드표 및 자동 복구 가능 여부</li>
+              </Box>
+
+              {/* 2-3: 텔레메트리 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'warning.main' }}>
+                3. 텔레메트리 데이터 (Telemetry Feed)
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>현재 층 (position)</strong> - 실시간 층 위치 및 이동 방향</li>
+                <li><strong>하중 (load)</strong> - 현재 적재 중량 kg (차량 무게 감지)</li>
+                <li><strong>문 상태 (door_status)</strong> - open/closing/closed/opening</li>
+                <li><strong>모터 전류 (motor_current)</strong> - 구동 모터 전류값 A</li>
+                <li><strong>속도 (speed)</strong> - 승강 속도 m/s</li>
+                <li><strong>온도 (temperature)</strong> - 기계실/권상기 온도</li>
+                <li><strong>운행 횟수 (trip_count)</strong> - 누적 운행 횟수</li>
+                <li><strong>Heartbeat</strong> - 15초 이내 주기적 생존 신호</li>
+              </Box>
+
+              {/* 2-4: 하드웨어 사양 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'warning.main' }}>
+                4. 하드웨어 사양서
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, mb: 2, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>최대 적재 중량</strong> - 차량 + 로봇 합산 중량 지원 (최소 5,000kg)</li>
+                <li><strong>카 사이즈</strong> - 폭 x 깊이 x 높이 (SUV 급 차량 수용 필수)</li>
+                <li><strong>운행 층수</strong> - 최저층 ~ 최고층 범위</li>
+                <li><strong>승강 속도</strong> - m/s (차량 탑재 시 속도 제한 포함)</li>
+                <li><strong>문 크기/개방 시간</strong> - 차량 진입 가능 폭, 완전 개방 소요 시간</li>
+                <li><strong>바닥 내하중</strong> - 카 바닥 단위면적당 하중 (kgf/m2)</li>
+                <li><strong>정전 시 동작</strong> - UPS 여부, 최근층 자동 이동 기능</li>
+                <li><strong>유지보수 주기</strong> - 정기점검 간격, 부품 수명 정보</li>
+              </Box>
+
+              {/* 2-5: 안전 */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'warning.main' }}>
+                5. 안전 및 인증
+              </Typography>
+              <Box component="ul" sx={{ pl: 3, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                <li><strong>승강기 검사 인증</strong> - 한국승강기안전공단 검사 합격증</li>
+                <li><strong>차량 감지 센서</strong> - 카 내 차량/사람 감지 (광전 센서, 레이더)</li>
+                <li><strong>과적 보호</strong> - 하중 초과 시 자동 정지 및 알림</li>
+                <li><strong>화재 시 동작</strong> - 화재 모드 (지정층 이동 후 문 개방)</li>
+                <li><strong>지진 감지</strong> - 지진 감지기 연동 자동 정지</li>
+                <li><strong>비상 탈출</strong> - 차량 내 인명 감지 시 비상 프로토콜</li>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Section 3: 공통 요구사항 */}
+          <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 2 }}>
+                공통 요구사항 (양사 모두)
+              </Typography>
+
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>기술 문서</Typography>
+                  <Box component="ul" sx={{ pl: 3, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                    <li>API 명세서 (OpenAPI 3.0 또는 AsyncAPI)</li>
+                    <li>장비 설치/설정 매뉴얼</li>
+                    <li>에러 코드 참조표 (코드, 설명, 복구 절차)</li>
+                    <li>네트워크 요구사항 (포트, 대역폭, 지연 허용치)</li>
+                    <li>보안 가이드 (인증서 교체 주기, 키 로테이션)</li>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>운영 지원</Typography>
+                  <Box component="ul" sx={{ pl: 3, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                    <li>테스트 환경 (Sandbox/Staging) 제공</li>
+                    <li>시뮬레이터 또는 에뮬레이터 제공</li>
+                    <li>기술 지원 연락처 (24/7 긴급, 업무시간 일반)</li>
+                    <li>SLA 정의 (응답시간, 가용률, 복구시간 목표)</li>
+                    <li>펌웨어 업데이트 릴리스 노트 사전 공유</li>
+                    <li>현장 설치 엔지니어 파견 일정</li>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>연동 계약 조건</Typography>
+                  <Box component="ul" sx={{ pl: 3, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                    <li>API 호출 과금 체계 (있을 경우)</li>
+                    <li>데이터 소유권 및 처리 범위 합의</li>
+                    <li>장애 시 책임 범위 (하드웨어 vs 소프트웨어)</li>
+                    <li>유지보수 비용 분담 구조</li>
+                    <li>계약 기간 및 갱신 조건</li>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>당사(SkyGarage) 제공 항목</Typography>
+                  <Box component="ul" sx={{ pl: 3, '& li': { fontSize: '0.8rem', mb: 0.5, color: 'text.secondary' } }}>
+                    <li>Hardware Gateway Webhook URL (텔레메트리/이벤트 수신)</li>
+                    <li>Command Dispatch API 문서</li>
+                    <li>디바이스 등록/인증 절차 안내</li>
+                    <li>테스트 도구 (시뮬레이터, API 테스터)</li>
+                    <li>모니터링 대시보드 접근 권한</li>
+                    <li>장애 에스컬레이션 프로세스</li>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Section 4: 연동 워크플로 */}
+          <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1rem', mb: 2 }}>
+                연동 프로세스 (Integration Workflow)
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {[
+                  { step: '1', title: '기술 협의', desc: 'API 문서 교환, 프로토콜 합의, 보안 인증 방식 확정' },
+                  { step: '2', title: '어댑터 개발', desc: '당사 Gateway에 협력업체 프로토콜 어댑터 구현' },
+                  { step: '3', title: 'Sandbox 테스트', desc: '협력업체 테스트 환경에서 시뮬레이터를 이용한 통합 테스트' },
+                  { step: '4', title: '현장 설치', desc: '실제 단지에 장비 설치, 네트워크 연결, 디바이스 등록' },
+                  { step: '5', title: '연동 검증', desc: '실 장비 명령/텔레메트리 테스트, 비상 정지 테스트, 부하 테스트' },
+                  { step: '6', title: '상용 전환', desc: '모니터링 활성화, SLA 적용, 24/7 운영 전환' },
+                ].map(item => (
+                  <Box key={item.step} sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700 }}>{item.step}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.title}</Typography>
+                      <Typography variant="caption" color="text.secondary">{item.desc}</Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
         </Box>
       )}
 
