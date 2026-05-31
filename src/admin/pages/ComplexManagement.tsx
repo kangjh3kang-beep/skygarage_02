@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -37,6 +37,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import HistoryIcon from '@mui/icons-material/History';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SettingsIcon from '@mui/icons-material/Settings';
 import InputAdornment from '@mui/material/InputAdornment';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -89,7 +90,7 @@ interface Complex {
   status: string;
 }
 
-const COMPLEX_TYPES = [
+const DEFAULT_COMPLEX_TYPES = [
   { value: 'APT', label: '아파트 (APT)' },
   { value: 'OFC', label: '오피스 (OFC)' },
   { value: 'COM', label: '상업시설 (COM)' },
@@ -210,12 +211,20 @@ export default function ComplexManagement() {
   const [historyDialog, setHistoryDialog] = useState<Complex | null>(null);
   const [history, setHistory] = useState<Array<{ id: string; action: string; changes: Record<string, unknown>; created_at: string }>>([]);
 
+  // Complex types state
+  const [complexTypes, setComplexTypes] = useState<Array<{ value: string; label: string }>>([...DEFAULT_COMPLEX_TYPES]);
+  const [typesDialogOpen, setTypesDialogOpen] = useState(false);
+  const [typesAll, setTypesAll] = useState<Array<{ id: string; code: string; label: string; description: string; is_active: boolean; sort_order: number }>>([]);
+  const [newTypeCode, setNewTypeCode] = useState('');
+  const [newTypeLabel, setNewTypeLabel] = useState('');
+  const [typesSaving, setTypesSaving] = useState(false);
+
   // Address search state
   const [addrQuery, setAddrQuery] = useState('');
   const [addrResults, setAddrResults] = useState<Array<{ roadAddr: string; jibunAddr: string; zipNo: string; bdNm: string; siNm: string; sggNm: string; emdNm: string; admCd: string }>>([]);
   const [addrSearching, setAddrSearching] = useState(false);
   const [addrDropdownOpen, setAddrDropdownOpen] = useState(false);
-  const addrTimerRef = { current: null as ReturnType<typeof setTimeout> | null };
+  const addrTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const searchAddress = async (keyword: string) => {
     if (keyword.trim().length < 2) { setAddrResults([]); setAddrDropdownOpen(false); return; }
@@ -273,7 +282,15 @@ export default function ComplexManagement() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  const loadComplexTypes = useCallback(async () => {
+    const { data } = await supabase.from('complex_types').select('*').order('sort_order');
+    if (data && data.length > 0) {
+      setComplexTypes(data.filter(t => t.is_active).map(t => ({ value: t.code, label: `${t.label} (${t.code})` })));
+      setTypesAll(data);
+    }
+  }, []);
+
+  useEffect(() => { loadData(); loadComplexTypes(); }, [loadData, loadComplexTypes]);
 
   useEffect(() => {
     const channel = supabase.channel('complexes-realtime')
@@ -438,6 +455,31 @@ export default function ComplexManagement() {
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddType = async () => {
+    if (!newTypeCode.trim() || !newTypeLabel.trim()) return;
+    setTypesSaving(true);
+    const maxOrder = typesAll.reduce((max, t) => Math.max(max, t.sort_order), 0);
+    const { error } = await supabase.from('complex_types').insert({
+      code: newTypeCode.trim().toUpperCase(),
+      label: newTypeLabel.trim(),
+      sort_order: maxOrder + 1,
+    });
+    if (error) { showToast('추가 실패: ' + error.message, 'error'); }
+    else { setNewTypeCode(''); setNewTypeLabel(''); await loadComplexTypes(); showToast('단지 유형이 추가되었습니다.', 'success'); }
+    setTypesSaving(false);
+  };
+
+  const handleToggleType = async (id: string, isActive: boolean) => {
+    await supabase.from('complex_types').update({ is_active: !isActive }).eq('id', id);
+    await loadComplexTypes();
+  };
+
+  const handleDeleteType = async (id: string) => {
+    const { error } = await supabase.from('complex_types').delete().eq('id', id);
+    if (error) { showToast('삭제 실패: ' + error.message, 'error'); }
+    else { await loadComplexTypes(); showToast('삭제되었습니다.', 'success'); }
   };
 
   const canProceed = (step: number): boolean => {
@@ -650,16 +692,23 @@ export default function ComplexManagement() {
                   </TextField>
                 </Grid>
                 <Grid size={{ xs: 4 }}>
-                  <TextField
-                    label="단지 유형"
-                    select value={form.complex_type}
-                    onChange={e => updateField('complex_type', e.target.value)}
-                    fullWidth size="small" required
-                  >
-                    {COMPLEX_TYPES.map(t => (
-                      <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                    ))}
-                  </TextField>
+                  <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'flex-start' }}>
+                    <TextField
+                      label="단지 유형"
+                      select value={form.complex_type}
+                      onChange={e => updateField('complex_type', e.target.value)}
+                      fullWidth size="small" required
+                    >
+                      {complexTypes.map(t => (
+                        <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                      ))}
+                    </TextField>
+                    <Tooltip title="유형 관리">
+                      <IconButton size="small" onClick={() => setTypesDialogOpen(true)} sx={{ mt: 0.5 }}>
+                        <SettingsIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Grid>
                 <Grid size={{ xs: 4 }}>
                   <TextField
@@ -916,7 +965,7 @@ export default function ComplexManagement() {
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="caption" color="text.secondary">유형</Typography>
-                      <Typography variant="body2">{COMPLEX_TYPES.find(t => t.value === form.complex_type)?.label}</Typography>
+                      <Typography variant="body2">{complexTypes.find(t => t.value === form.complex_type)?.label}</Typography>
                     </Grid>
                     <Grid size={{ xs: 6 }}>
                       <Typography variant="caption" color="text.secondary">주소</Typography>
@@ -1003,6 +1052,69 @@ export default function ComplexManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setHistoryDialog(null)}>닫기</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Complex Types Management Dialog */}
+      <Dialog open={typesDialogOpen} onClose={() => setTypesDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Typography variant="h6">단지 유형 관리</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>유형을 추가, 활성/비활성, 삭제할 수 있습니다.</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', gap: 1, mb: 2, mt: 1 }}>
+            <TextField
+              label="코드"
+              value={newTypeCode}
+              onChange={e => setNewTypeCode(e.target.value.toUpperCase())}
+              size="small"
+              sx={{ width: 100 }}
+              placeholder="예: APT"
+              slotProps={{ htmlInput: { maxLength: 4 } }}
+            />
+            <TextField
+              label="명칭"
+              value={newTypeLabel}
+              onChange={e => setNewTypeLabel(e.target.value)}
+              size="small"
+              sx={{ flex: 1 }}
+              placeholder="예: 아파트"
+            />
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleAddType}
+              disabled={!newTypeCode.trim() || !newTypeLabel.trim() || typesSaving}
+              startIcon={<AddIcon />}
+            >
+              추가
+            </Button>
+          </Box>
+          <Divider sx={{ mb: 1 }} />
+          <List dense disablePadding>
+            {typesAll.map(t => (
+              <Box key={t.id} sx={{ display: 'flex', alignItems: 'center', py: 0.8, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Chip label={t.code} size="small" sx={{ mr: 1, minWidth: 50, fontWeight: 700 }} />
+                <Typography variant="body2" sx={{ flex: 1 }}>{t.label}</Typography>
+                <FormControlLabel
+                  control={<Switch size="small" checked={t.is_active} onChange={() => handleToggleType(t.id, t.is_active)} />}
+                  label={<Typography variant="caption">{t.is_active ? '활성' : '비활성'}</Typography>}
+                  sx={{ mr: 0.5 }}
+                />
+                <Tooltip title="삭제">
+                  <IconButton size="small" onClick={() => handleDeleteType(t.id)} sx={{ color: 'error.main' }}>
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            ))}
+            {typesAll.length === 0 && (
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 3 }}>등록된 유형이 없습니다.</Typography>
+            )}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTypesDialogOpen(false)}>닫기</Button>
         </DialogActions>
       </Dialog>
     </Box>
