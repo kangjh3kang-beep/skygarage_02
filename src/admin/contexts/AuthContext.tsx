@@ -47,13 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setRole(data.role as UserRole);
     } else {
       const { count } = await supabase.from('user_roles').select('*', { count: 'exact', head: true });
-      if (count === 0 || count === null) {
-        await supabase.from('user_roles').insert({ user_id: userId, role: 'super_admin' });
-        setRole('super_admin');
-      } else {
-        await supabase.from('user_roles').insert({ user_id: userId, role: 'super_admin' });
-        setRole('super_admin');
-      }
+      const assignedRole = (count === 0 || count === null) ? 'super_admin' : 'viewer';
+      await supabase.from('user_roles').insert({ user_id: userId, role: assignedRole });
+      setRole(assignedRole);
     }
     setLoading(false);
   };
