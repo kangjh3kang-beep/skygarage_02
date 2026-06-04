@@ -307,7 +307,7 @@ export default function PatentManagement() {
             <TextField fullWidth select label="기술분야" value={form.technology_area} onChange={e => setForm({ ...form, technology_area: e.target.value })} size="small">
               {TECH_AREA_OPTIONS.map(t => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
             </TextField>
-            <TextField fullWidth label="청구항 수" type="number" value={form.claims_count} onChange={e => setForm({ ...form, claims_count: e.target.value })} size="small" />
+            <TextField fullWidth label="특허출원 수" type="number" value={form.claims_count} onChange={e => setForm({ ...form, claims_count: e.target.value })} size="small" />
             <TextField fullWidth multiline rows={3} label="초록/요약" value={form.abstract} onChange={e => setForm({ ...form, abstract: e.target.value })} size="small" />
             <TextField fullWidth multiline rows={2} label="메모" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} size="small" />
           </Box>
@@ -329,7 +329,7 @@ export default function PatentManagement() {
                 <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">상태</Typography><Typography variant="body2">{STATUS_OPTIONS.find(s => s.value === form.status)?.label}</Typography></Grid>
                 <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">기술분야</Typography><Typography variant="body2">{TECH_AREA_OPTIONS.find(t => t.value === form.technology_area)?.label}</Typography></Grid>
                 <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">출원번호</Typography><Typography variant="body2">{form.application_number || '-'}</Typography></Grid>
-                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">청구항</Typography><Typography variant="body2">{form.claims_count}건</Typography></Grid>
+                <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">특허출원</Typography><Typography variant="body2">{form.claims_count}건</Typography></Grid>
                 <Grid size={{ xs: 6 }}><Typography variant="caption" color="text.secondary">출원인</Typography><Typography variant="body2">{form.assignee || '-'}</Typography></Grid>
               </Grid>
             </Box>

@@ -311,7 +311,7 @@ export default function SafetyPolicy() {
             <CardContent sx={{ p: '20px 24px !important' }}>
               <Typography variant="h3" sx={{ mb: 2.5 }}>Safety Chain 상태</Typography>
               <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary', mb: 2 }}>
-                특허 청구항 14/19: STO [271] - Safety Relay [272] - Drive [270]
+                특허출원 14/19: STO [271] - Safety Relay [272] - Drive [270]
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {[

@@ -23,14 +23,14 @@ const glowAward = keyframes`
 `;
 
 const patents = [
-  { number: '청구항 1', title: 'ATR 자율이송로봇 기본 구조', status: '출원 완료' },
-  { number: '청구항 3', title: '차량 하부 진입 메커니즘', status: '출원 완료' },
-  { number: '청구항 5', title: '세대직입 엘리베이터 연동', status: '출원 완료' },
-  { number: '청구항 9', title: '멀티 로봇 동선 충돌 방지', status: '출원 완료' },
-  { number: '청구항 14', title: 'AI 최적 경로 알고리즘', status: '출원 완료' },
-  { number: '청구항 21', title: '전기차 자동 충전 연동', status: '심사 중' },
-  { number: '청구항 22', title: '교통약자 우선 배차 시스템', status: '출원 완료' },
-  { number: '청구항 23', title: '세대직입 통합 주차 시스템', status: '출원 완료' },
+  { number: '특허출원 1', title: 'ATR 자율이송로봇 기본 구조', status: '출원 완료' },
+  { number: '특허출원 3', title: '차량 하부 진입 메커니즘', status: '출원 완료' },
+  { number: '특허출원 5', title: '세대직입 엘리베이터 연동', status: '출원 완료' },
+  { number: '특허출원 9', title: '멀티 로봇 동선 충돌 방지', status: '출원 완료' },
+  { number: '특허출원 14', title: 'AI 최적 경로 알고리즘', status: '출원 완료' },
+  { number: '특허출원 21', title: '전기차 자동 충전 연동', status: '심사 중' },
+  { number: '특허출원 22', title: '교통약자 우선 배차 시스템', status: '출원 완료' },
+  { number: '특허출원 23', title: '세대직입 통합 주차 시스템', status: '출원 완료' },
 ];
 
 const trustBadges = [
@@ -38,7 +38,7 @@ const trustBadges = [
     id: 'patent',
     icon: <VerifiedIcon sx={{ fontSize: 36 }} />,
     title: '세계 최초 특허 출원',
-    subtitle: '청구항 23항',
+    subtitle: '특허출원 23항',
     desc: '세대직입 자율주차로봇 발렛 시스템 세계 최초 출원',
     color: COLORS.GOLD,
   },
@@ -256,7 +256,7 @@ export default function TrustSection() {
             }}
           >
             {[
-              { icon: <VerifiedIcon />, val: '23항', label: '특허 청구항', color: goldColor },
+              { icon: <VerifiedIcon />, val: '23항', label: '특허출원', color: goldColor },
               { icon: <GroupsIcon />, val: '7+', label: '적용 가능 시장', color: COLORS.TECH_BLUE },
               { icon: <TrendingUpIcon />, val: '100+', label: '목표 단지(1년)', color: '#10b981' },
               { icon: <ScienceIcon />, val: '8분', label: '처리 SLA', color: '#8b5cf6' },
