@@ -93,6 +93,12 @@ const SgpPayPage = lazy(() => import('./sgp/pages/SgpPayPage'));
 const SgpParkingPage = lazy(() => import('./sgp/pages/SgpParkingPage'));
 const SgpVehicleMapPage = lazy(() => import('./sgp/pages/SgpVehicleMapPage'));
 const SgpProfilePage = lazy(() => import('./sgp/pages/SgpProfilePage'));
+const SgpMissionsPage = lazy(() => import('./sgp/pages/SgpMissionsPage'));
+const SgpMissionRequest = lazy(() => import('./sgp/pages/SgpMissionRequest'));
+const SgpPlacesAdd = lazy(() => import('./sgp/pages/SgpPlacesAdd'));
+const SgpVisitorInvite = lazy(() => import('./sgp/pages/SgpVisitorInvite'));
+const SgpNotifications = lazy(() => import('./sgp/pages/SgpNotifications'));
+const SgpPrivacySettings = lazy(() => import('./sgp/pages/SgpPrivacySettings'));
 
 // Parking App (Visitor)
 const VisitorHome = lazy(() => import('./parking/pages/visitor/VisitorHome'));
@@ -160,6 +166,12 @@ function SgpAppGuard() {
           <Route path="parking" element={<SgpParkingPage />} />
           <Route path="map" element={<SgpVehicleMapPage />} />
           <Route path="profile" element={<SgpProfilePage />} />
+          <Route path="missions" element={<SgpMissionsPage />} />
+          <Route path="mission/request" element={<SgpMissionRequest />} />
+          <Route path="places/add" element={<SgpPlacesAdd />} />
+          <Route path="visitor/invite" element={<SgpVisitorInvite />} />
+          <Route path="notifications" element={<SgpNotifications />} />
+          <Route path="privacy" element={<SgpPrivacySettings />} />
         </Route>
       </Routes>
     </Suspense>

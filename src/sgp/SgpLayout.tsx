@@ -7,6 +7,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import NfcIcon from '@mui/icons-material/Nfc';
 import MapIcon from '@mui/icons-material/Map';
 import PersonIcon from '@mui/icons-material/Person';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -21,7 +22,7 @@ import PwaInstallPrompt from './components/PwaInstallPrompt';
 
 const tabs = [
   { label: '홈', icon: <HomeIcon />, path: '/app' },
-  { label: '지갑', icon: <AccountBalanceWalletIcon />, path: '/app/wallet' },
+  { label: '미션', icon: <DirectionsCarIcon />, path: '/app/missions' },
   { label: '결제', icon: <NfcIcon />, path: '/app/pay' },
   { label: '내차위치', icon: <MapIcon />, path: '/app/map' },
   { label: '내정보', icon: <PersonIcon />, path: '/app/profile' },
