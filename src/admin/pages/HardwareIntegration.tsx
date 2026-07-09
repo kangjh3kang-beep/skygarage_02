@@ -42,6 +42,8 @@ import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ArticleIcon from '@mui/icons-material/Article';
 import { supabase } from '../lib/supabase';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 
 interface HardwareAdapter {
   id: string;
@@ -155,6 +157,8 @@ function timeSince(d: string | null): string {
 }
 
 export default function HardwareIntegration() {
+  useDocumentTitle('하드웨어 통합');
+  const { logAction } = useAuditLog();
   const [tab, setTab] = useState(0);
   const [adapters, setAdapters] = useState<HardwareAdapter[]>([]);
   const [devices, setDevices] = useState<DeviceInstance[]>([]);
@@ -184,6 +188,15 @@ export default function HardwareIntegration() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  useEffect(() => {
+    const ch = supabase
+      .channel('hardware_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hardware_device_instances' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hardware_health_events' }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [fetchData]);
+
   const onlineCount = devices.filter(d => d.connection_status === 'online').length;
   const degradedCount = devices.filter(d => d.connection_status === 'degraded').length;
   const offlineCount = devices.filter(d => d.connection_status === 'offline').length;
@@ -199,6 +212,7 @@ export default function HardwareIntegration() {
       status: 'queued',
     });
     if (!error) {
+      logAction('CREATE', 'hardware_commands', undefined, { device_id: commandForm.device_id, command_type: commandForm.command_type });
       setCommandDialog(false);
       setCommandForm({ device_id: '', command_type: 'diagnostics', priority: 3, payload: '{}' });
       fetchData();

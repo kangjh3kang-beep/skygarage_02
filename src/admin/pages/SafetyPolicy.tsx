@@ -35,6 +35,7 @@ import { supabase } from '../../lib/supabase';
 import { useTenant } from '../contexts/TenantContext';
 import { useToast } from '../contexts/ToastContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 import { useNavigate } from 'react-router-dom';
 
 interface SafetyEvent {
@@ -88,6 +89,7 @@ export default function SafetyPolicy() {
   const navigate = useNavigate();
   const { selectedComplex: tenantComplex } = useTenant();
   const { showToast } = useToast();
+  const { logAction } = useAuditLog();
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<SafetyEvent[]>([]);
   const [complexes, setComplexes] = useState<Complex[]>([]);
@@ -171,10 +173,12 @@ export default function SafetyPolicy() {
     if (editingEvent) {
       const { error } = await supabase.from('safety_events').update(payload).eq('id', editingEvent.id);
       if (error) { showToast('수정 실패: ' + error.message, 'error'); return; }
+      logAction('UPDATE', 'safety_events', editingEvent.id, { event_type: form.event_type });
       showToast('안전 이벤트가 수정되었습니다.', 'success');
     } else {
-      const { error } = await supabase.from('safety_events').insert(payload);
+      const { data, error } = await supabase.from('safety_events').insert(payload).select('id').single();
       if (error) { showToast('등록 실패: ' + error.message, 'error'); return; }
+      logAction('CREATE', 'safety_events', data?.id, { event_type: form.event_type });
       showToast('안전 이벤트가 등록되었습니다.', 'success');
     }
     setDialogOpen(false);
@@ -185,6 +189,7 @@ export default function SafetyPolicy() {
     if (!deleteTarget) return;
     const { error } = await supabase.from('safety_events').delete().eq('id', deleteTarget.id);
     if (error) { showToast('삭제 실패: ' + error.message, 'error'); return; }
+    logAction('DELETE', 'safety_events', deleteTarget.id, { event_type: deleteTarget.event_type });
     showToast('안전 이벤트가 삭제되었습니다.', 'success');
     setDeleteTarget(null);
     loadData();

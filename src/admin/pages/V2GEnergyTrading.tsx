@@ -46,6 +46,7 @@ import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 import { useTenant } from '../contexts/TenantContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -77,6 +78,7 @@ export default function V2GEnergyTrading() {
   const theme = useTheme();
   const { selectedComplex } = useTenant();
   const { showToast } = useToast();
+  const { logAction } = useAuditLog();
   const [v2gEnabled, setV2gEnabled] = useState(true);
   const [evSchedules, setEvSchedules] = useState<EVSchedule[]>([]);
   const [peakHours, setPeakHours] = useState<PeakHour[]>([]);
@@ -142,8 +144,10 @@ export default function V2GEnergyTrading() {
     };
     if (editing) {
       await supabase.from('ev_charging_schedules').update(payload).eq('id', editing.id);
+      logAction('UPDATE', 'ev_charging_schedules', editing.id, { action: payload.action });
     } else {
-      await supabase.from('ev_charging_schedules').insert(payload);
+      const { data } = await supabase.from('ev_charging_schedules').insert(payload).select('id').single();
+      if (data) logAction('CREATE', 'ev_charging_schedules', data.id, { action: payload.action });
     }
     setDialogOpen(false);
     setEditing(null);
@@ -153,6 +157,7 @@ export default function V2GEnergyTrading() {
 
   const handleDelete = async (id: string) => {
     await supabase.from('ev_charging_schedules').delete().eq('id', id);
+    logAction('DELETE', 'ev_charging_schedules', id, {});
     fetchData();
   };
 

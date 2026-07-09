@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -14,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 
 interface AnomalyDetection {
   id: string;
@@ -86,11 +89,14 @@ const STATUS_COLORS: Record<string, 'default' | 'warning' | 'primary' | 'success
 
 export default function AIOpsMonitoring() {
   useDocumentTitle('AIOps 모니터링');
+  const { logAction } = useAuditLog();
 
   const [anomalies, setAnomalies] = useState<AnomalyDetection[]>([]);
   const [actions, setActions] = useState<AIOpsAction[]>([]);
   const [models, setModels] = useState<AIModel[]>([]);
   const [currentAutonomy] = useState<'L0' | 'L1' | 'L2' | 'L3'>('L0');
+  const [aiAnalysis, setAiAnalysis] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
   const loadAnomalies = useCallback(async () => {
     const { data, error } = await supabase
@@ -132,6 +138,36 @@ export default function AIOpsMonitoring() {
   }, [loadAnomalies, loadActions, loadModels]);
 
   const activeAnomalies = anomalies.filter(a => a.status === 'active').length;
+
+  const handleAIAnalysis = async () => {
+    setAiLoading(true);
+    setAiAnalysis('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setAiAnalysis('인증 필요'); return; }
+
+      const activeList = anomalies.filter(a => a.status === 'active');
+      const message = `현재 ${activeList.length}건의 활성 이상이 감지되었습니다. 심각도별: P0=${activeList.filter(a=>a.severity==='P0').length}, P1=${activeList.filter(a=>a.severity==='P1').length}, P2=${activeList.filter(a=>a.severity==='P2').length}. 카테고리: ${activeList.map(a=>a.category).join(', ')}. 근본 원인 분석과 자동 치유 권장 조치를 제안해주세요.`;
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-agent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ message, agent_id: null }),
+      });
+
+      if (!res.ok) throw new Error(`${res.status}`);
+      const data = await res.json();
+      setAiAnalysis(data.response || '분석 결과 없음');
+      logAction('CREATE', 'ai_ops_actions', undefined, { action_type: 'ai_analysis', anomaly_count: activeList.length });
+    } catch (err) {
+      setAiAnalysis('AI 분석 호출 실패: ' + (err instanceof Error ? err.message : '알 수 없는 오류'));
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -233,6 +269,31 @@ export default function AIOpsMonitoring() {
               </TableBody>
             </Table>
           </TableContainer>
+        </CardContent>
+      </Card>
+
+      <Card sx={{ mb: 3, bgcolor: '#111827', border: '1px solid #c9a84c' }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ color: '#c9a84c', fontWeight: 600 }}>AI 근본 원인 분석</Typography>
+            <Button
+              variant="contained"
+              onClick={handleAIAnalysis}
+              disabled={aiLoading || activeAnomalies === 0}
+              sx={{ bgcolor: '#c9a84c', color: '#0a0a0f', fontWeight: 600, '&:hover': { bgcolor: '#b8973f' } }}
+            >
+              {aiLoading ? <CircularProgress size={20} sx={{ color: '#0a0a0f' }} /> : '분석 실행'}
+            </Button>
+          </Box>
+          {aiAnalysis ? (
+            <Box sx={{ p: 2, bgcolor: '#0a0a0f', border: '1px solid #333', borderRadius: 1, whiteSpace: 'pre-wrap' }}>
+              <Typography variant="body2" sx={{ color: '#e5e7eb', lineHeight: 1.8 }}>{aiAnalysis}</Typography>
+            </Box>
+          ) : (
+            <Typography sx={{ color: '#666', textAlign: 'center', py: 2 }}>
+              {activeAnomalies === 0 ? '활성 이상 없음 - 분석 불필요' : '분석 실행 버튼을 클릭하세요'}
+            </Typography>
+          )}
         </CardContent>
       </Card>
 

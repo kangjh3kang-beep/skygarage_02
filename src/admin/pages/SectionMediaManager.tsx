@@ -40,6 +40,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 import { useToast } from '../contexts/ToastContext';
 import FocalPointPicker from '../components/FocalPointPicker';
 
@@ -132,6 +133,7 @@ export default function SectionMediaManager() {
   useDocumentTitle('섹션 미디어 관리');
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { logAction } = useAuditLog();
   const [mediaList, setMediaList] = useState<SectionMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -208,10 +210,12 @@ export default function SectionMediaManager() {
     if (editingId) {
       const { error } = await supabase.from('section_media').update(payload).eq('id', editingId);
       if (error) { showToast('수정 실패: ' + error.message, 'error'); return; }
+      logAction('UPDATE', 'section_media', editingId, { position: payload.position });
       showToast('미디어가 수정되었습니다.', 'success');
     } else {
-      const { error } = await supabase.from('section_media').insert(payload);
+      const { data, error } = await supabase.from('section_media').insert(payload).select('id').single();
       if (error) { showToast('등록 실패: ' + error.message, 'error'); return; }
+      logAction('CREATE', 'section_media', data?.id, { position: payload.position });
       showToast('미디어가 등록되었습니다.', 'success');
     }
     setDialogOpen(false);

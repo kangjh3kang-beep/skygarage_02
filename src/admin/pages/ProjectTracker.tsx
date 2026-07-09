@@ -35,6 +35,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useTheme } from '@mui/material/styles';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 import { useNavigate } from 'react-router-dom';
 
 interface Project {
@@ -82,6 +83,7 @@ export default function ProjectTracker() {
   useDocumentTitle('T4 Project Tracker');
   const navigate = useNavigate();
   const theme = useTheme();
+  const { logAction } = useAuditLog();
   const [projects, setProjects] = useState<Project[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
@@ -93,6 +95,14 @@ export default function ProjectTracker() {
   const [editingMs, setEditingMs] = useState<Milestone | null>(null);
 
   useEffect(() => { fetchProjects(); }, []);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel('projects_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => fetchProjects())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   useEffect(() => {
     if (selectedProject) fetchMilestones(selectedProject);
@@ -122,12 +132,14 @@ export default function ProjectTracker() {
     };
     if (editingProject) {
       await supabase.from('projects').update(payload).eq('id', editingProject.id);
+      logAction('UPDATE', 'projects', editingProject.id, { name: payload.name });
     } else {
-      await supabase.from('projects').insert({
+      const { data } = await supabase.from('projects').insert({
         ...payload,
         start_date: new Date().toISOString().split('T')[0],
         target_date: new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
-      });
+      }).select('id').single();
+      if (data) logAction('CREATE', 'projects', data.id, { name: payload.name });
     }
     setDialogOpen(false);
     setEditingProject(null);
@@ -138,6 +150,7 @@ export default function ProjectTracker() {
   const handleDeleteProject = async (id: string) => {
     await supabase.from('project_milestones').delete().eq('project_id', id);
     await supabase.from('projects').delete().eq('id', id);
+    logAction('DELETE', 'projects', id, {});
     setSelectedProject('');
     fetchProjects();
   };

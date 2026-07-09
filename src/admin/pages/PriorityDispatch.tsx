@@ -40,6 +40,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import SpeedIcon from '@mui/icons-material/Speed';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 
 const CATEGORIES = [
   { value: 'elderly', label: '노약자', icon: <ElderlyIcon /> },
@@ -114,6 +115,7 @@ function getCategoryColor(category: string): 'warning' | 'error' | 'secondary' |
 
 export default function PriorityDispatch() {
   useDocumentTitle('교통약자 우선배차');
+  const { logAction } = useAuditLog();
   const [tab, setTab] = useState(0);
   const [profiles, setProfiles] = useState<AccessibilityProfile[]>([]);
   const [rules, setRules] = useState<DispatchRule[]>([]);
@@ -192,6 +194,7 @@ export default function PriorityDispatch() {
       .from('priority_dispatch_rules')
       .update({ enabled: !rule.enabled, updated_at: new Date().toISOString() })
       .eq('id', rule.id);
+    logAction('UPDATE', 'priority_dispatch_rules', rule.id, { enabled: !rule.enabled });
     fetchData();
   };
 
@@ -200,6 +203,7 @@ export default function PriorityDispatch() {
       .from('resident_accessibility_profiles')
       .update({ verified: !profile.verified, verified_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq('id', profile.id);
+    logAction('UPDATE', 'resident_accessibility_profiles', profile.id, { verified: !profile.verified });
     fetchData();
   };
 
@@ -208,6 +212,7 @@ export default function PriorityDispatch() {
       .from('resident_accessibility_profiles')
       .update({ active: !profile.active, updated_at: new Date().toISOString() })
       .eq('id', profile.id);
+    logAction('UPDATE', 'resident_accessibility_profiles', profile.id, { active: !profile.active });
     fetchData();
   };
 
@@ -217,8 +222,10 @@ export default function PriorityDispatch() {
         .from('priority_dispatch_rules')
         .update({ ...ruleData, updated_at: new Date().toISOString() })
         .eq('id', editingRule.id);
+      logAction('UPDATE', 'priority_dispatch_rules', editingRule.id, {});
     } else {
       await supabase.from('priority_dispatch_rules').insert(ruleData);
+      logAction('CREATE', 'priority_dispatch_rules', undefined, {});
     }
     setRuleDialog(false);
     setEditingRule(null);
@@ -237,6 +244,7 @@ export default function PriorityDispatch() {
 
   const handleSaveProfile = async (profileData: Partial<AccessibilityProfile>) => {
     await supabase.from('resident_accessibility_profiles').insert(profileData);
+    logAction('CREATE', 'resident_accessibility_profiles', undefined, {});
     setProfileDialog(false);
     fetchData();
   };
