@@ -56,6 +56,10 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import RouteIcon from '@mui/icons-material/Route';
+import TuneIcon from '@mui/icons-material/Tune';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import MemoryIcon from '@mui/icons-material/Memory';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const DRAWER_WIDTH = 260;
@@ -99,6 +103,9 @@ const menuGroups: MenuGroup[] = [
       { label: '에너지/V2G', icon: <BoltIcon />, path: '/admin/energy', minScope: 'complex' },
       { label: '차량 추적', icon: <GpsFixedIcon />, path: '/admin/fleet', minScope: 'complex' },
       { label: '우선배차', icon: <AccessibleIcon />, path: '/admin/priority-dispatch', minScope: 'complex' },
+      { label: '미션 파이프라인', icon: <RouteIcon />, path: '/admin/mission-pipeline', minScope: 'complex' },
+      { label: '병목 워크벤치', icon: <TuneIcon />, path: '/admin/bottleneck', minScope: 'complex' },
+      { label: '하드웨어', icon: <MemoryIcon />, path: '/admin/hardware', minScope: 'complex' },
       { label: '정비', icon: <BuildIcon />, path: '/admin/maintenance', minScope: 'complex' },
     ],
   },
@@ -122,6 +129,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { label: '분석', icon: <BarChartIcon />, path: '/admin/analytics', minScope: 'complex' },
       { label: '관측성', icon: <MonitorHeartIcon />, path: '/admin/observability', minScope: 'region' },
+      { label: 'AIOps', icon: <PsychologyIcon />, path: '/admin/aiops', minScope: 'region' },
       { label: '보안 감사', icon: <SecurityIcon />, path: '/admin/security', minScope: 'region' },
       { label: '출입 관리', icon: <VpnKeyIcon />, path: '/admin/access' },
       { label: 'ESG', icon: <EnergySavingsLeafIcon />, path: '/admin/esg', minScope: 'region' },

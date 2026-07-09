@@ -59,6 +59,10 @@ const PatentManagement = lazy(() => import('./admin/pages/PatentManagement'));
 const LicenseManagement = lazy(() => import('./admin/pages/LicenseManagement'));
 const PriorityDispatch = lazy(() => import('./admin/pages/PriorityDispatch'));
 const SettlementManagement = lazy(() => import('./admin/pages/SettlementManagement'));
+const HardwareIntegration = lazy(() => import('./admin/pages/HardwareIntegration'));
+const AIOpsMonitoring = lazy(() => import('./admin/pages/AIOpsMonitoring'));
+const MissionPipeline = lazy(() => import('./admin/pages/MissionPipeline'));
+const BottleneckWorkbench = lazy(() => import('./admin/pages/BottleneckWorkbench'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
 const BrandGuidePage = lazy(() => import('./components/BrandGuidePage'));
@@ -264,6 +268,10 @@ function ProtectedRoutes() {
             <Route path="licenses" element={<LicenseManagement />} />
             <Route path="priority-dispatch" element={<PriorityDispatch />} />
             <Route path="settlement" element={<SettlementManagement />} />
+            <Route path="hardware" element={<HardwareIntegration />} />
+            <Route path="aiops" element={<AIOpsMonitoring />} />
+            <Route path="mission-pipeline" element={<MissionPipeline />} />
+            <Route path="bottleneck" element={<BottleneckWorkbench />} />
             <Route path="fleet" element={<FleetManagement />} />
             <Route path="settings" element={<Settings />} />
           </Route>

@@ -37,6 +37,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import { useTheme } from '@mui/material/styles';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useAuditLog } from '../../hooks/useAuditLog';
 import { useNavigate } from 'react-router-dom';
 
 interface Zone {
@@ -65,6 +66,7 @@ export default function ZoneConsole() {
   useDocumentTitle('T2 Zone Console');
   const navigate = useNavigate();
   const theme = useTheme();
+  const { logAction } = useAuditLog();
   const [zones, setZones] = useState<Zone[]>([]);
   const [selectedZone, setSelectedZone] = useState('');
   const [complexes, setComplexes] = useState<ComplexDetail[]>([]);
@@ -84,6 +86,14 @@ export default function ZoneConsole() {
   }, [selectedZone]);
 
   useEffect(() => { fetchZones(); }, [fetchZones]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel('zone_console_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'zones' }, () => fetchZones())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [fetchZones]);
 
   const fetchZoneData = useCallback(async (zoneId: string) => {
     const [complexesRes, atrRes, elevatorsRes, maintenanceRes, workflowRes, unassignedRes] = await Promise.all([
@@ -130,9 +140,11 @@ export default function ZoneConsole() {
   const handleSaveZone = async () => {
     if (editingZone) {
       await supabase.from('zones').update({ name: zoneForm.name, code: zoneForm.code, status: zoneForm.status }).eq('id', editingZone.id);
+      logAction('UPDATE', 'zones', editingZone.id, { name: zoneForm.name });
     } else {
       const region = zones.length > 0 ? zones[0].region_id : null;
-      await supabase.from('zones').insert({ ...zoneForm, region_id: region });
+      const { data } = await supabase.from('zones').insert({ ...zoneForm, region_id: region }).select('id').single();
+      if (data) logAction('CREATE', 'zones', data.id, { name: zoneForm.name });
     }
     setZoneDialog(false);
     setEditingZone(null);
@@ -143,17 +155,20 @@ export default function ZoneConsole() {
   const handleDeleteZone = async (id: string) => {
     await supabase.from('complexes').update({ zone_id: null }).eq('zone_id', id);
     await supabase.from('zones').delete().eq('id', id);
+    logAction('DELETE', 'zones', id, {});
     setSelectedZone('');
     fetchZones();
   };
 
   const handleAssignComplex = async (complexId: string) => {
     await supabase.from('complexes').update({ zone_id: selectedZone }).eq('id', complexId);
+    logAction('UPDATE', 'complexes', complexId, { zone_id: selectedZone });
     fetchZoneData(selectedZone);
   };
 
   const handleUnassignComplex = async (complexId: string) => {
     await supabase.from('complexes').update({ zone_id: null }).eq('id', complexId);
+    logAction('UPDATE', 'complexes', complexId, { zone_id: null });
     fetchZoneData(selectedZone);
   };
 
