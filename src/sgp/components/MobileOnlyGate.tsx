@@ -1,14 +1,9 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
 import DesktopWindowsIcon from '@mui/icons-material/DesktopWindows';
-import LanguageIcon from '@mui/icons-material/Language';
-import { useNavigate } from 'react-router-dom';
 
 export default function MobileOnlyGate() {
-  const navigate = useNavigate();
-
   return (
     <Box sx={{
       minHeight: '100dvh',
@@ -40,7 +35,6 @@ export default function MobileOnlyGate() {
         bgcolor: 'rgba(255,255,255,0.03)',
         border: '1px solid rgba(255,255,255,0.08)',
         maxWidth: 280, width: '100%',
-        mb: 3,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
           <DesktopWindowsIcon sx={{ fontSize: 20, color: 'rgba(255,255,255,0.3)' }} />
@@ -53,26 +47,6 @@ export default function MobileOnlyGate() {
           동일한 URL을 입력해 접속하세요.
         </Typography>
       </Box>
-      <Button
-        variant="outlined"
-        startIcon={<LanguageIcon />}
-        onClick={() => navigate('/')}
-        sx={{
-          color: '#00d4aa',
-          borderColor: 'rgba(0,212,170,0.3)',
-          borderRadius: 2,
-          px: 3,
-          py: 1,
-          fontWeight: 700,
-          textTransform: 'none',
-          '&:hover': {
-            borderColor: '#00d4aa',
-            bgcolor: 'rgba(0,212,170,0.08)',
-          },
-        }}
-      >
-        웹사이트로 이동
-      </Button>
     </Box>
   );
 }

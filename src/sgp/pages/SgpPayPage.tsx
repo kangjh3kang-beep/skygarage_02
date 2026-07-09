@@ -112,7 +112,6 @@ export default function SgpPayPage() {
       balance_after: newBalance,
       description: '주차 요금 결제 (NFC)',
       reference_type: 'parking',
-      reference_id: crypto.randomUUID(),
     });
 
     if (!txError) {

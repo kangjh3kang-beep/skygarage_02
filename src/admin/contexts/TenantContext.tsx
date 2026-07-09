@@ -88,12 +88,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const roleLevel = getRoleLevel(role);
 
   useEffect(() => {
-    supabase.from('complexes').select('id, name, code, region_id').order('name').then(({ data, error }) => {
-      if (error) {
-        console.error('Failed to load complexes:', error.message);
-        return;
-      }
-      if (data) setComplexes(data.map(c => ({ ...c, region_id: c.region_id ?? '' })));
+    supabase.from('complexes').select('id, name, code').order('name').then(({ data }) => {
+      if (data) setComplexes(data.map(c => ({ ...c, region_id: '' })));
     });
   }, []);
 

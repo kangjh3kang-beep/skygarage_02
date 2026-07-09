@@ -91,8 +91,6 @@ export default function Dashboard() {
   const scopeComplexId = scope.complex?.id || null;
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
     let cQuery = supabase.from('complexes').select('id', { count: 'exact', head: true });
     let rQuery = supabase.from('resident_accounts').select('id', { count: 'exact', head: true });
     let sQuery = supabase.from('parking_sessions').select('id', { count: 'exact', head: true }).is('exit_at', null);
@@ -208,11 +206,8 @@ export default function Dashboard() {
       verified: profs.filter(p => p.verified).length,
       avgWait: 0,
     });
-    } catch (err) {
-      console.error('Dashboard load error:', err);
-    } finally {
-      setLoading(false);
-    }
+
+    setLoading(false);
   }, [isGlobal, scopeComplexId]);
 
   useEffect(() => { loadData(); }, [loadData]);

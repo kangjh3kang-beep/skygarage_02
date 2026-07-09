@@ -18,12 +18,6 @@ import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NfcIcon from '@mui/icons-material/Nfc';
 import PersonIcon from '@mui/icons-material/Person';
-import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { useNavigate } from 'react-router-dom';
 import { useSgpAuth } from '../contexts/SgpAuthContext';
 import { supabase } from '../../lib/supabase';
 import type { SgpComplexMembership } from '../types';
@@ -36,7 +30,6 @@ interface Complex {
 
 export default function SgpProfilePage() {
   const { user, signOut } = useSgpAuth();
-  const navigate = useNavigate();
   const [memberships, setMemberships] = useState<SgpComplexMembership[]>([]);
   const [complexes, setComplexes] = useState<Complex[]>([]);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -204,33 +197,6 @@ export default function SgpProfilePage() {
       )}
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)', my: 3 }} />
-
-      {/* Quick Links */}
-      <Card sx={{ bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3, mb: 3 }}>
-        <CardContent sx={{ p: 0 }}>
-          {[
-            { label: '내 차량', icon: <DirectionsCarIcon sx={{ fontSize: 20, color: '#0ea5e9' }} />, path: '/app/vehicles' },
-            { label: '알림', icon: <NotificationsIcon sx={{ fontSize: 20, color: '#3b82f6' }} />, path: '/app/notifications' },
-            { label: '방문자 초대', icon: <PersonAddIcon sx={{ fontSize: 20, color: '#f59e0b' }} />, path: '/app/visitor/invite' },
-            { label: '개인정보 설정', icon: <PrivacyTipIcon sx={{ fontSize: 20, color: '#00d4aa' }} />, path: '/app/privacy' },
-          ].map((item, idx) => (
-            <Box key={item.path}>
-              {idx > 0 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />}
-              <Box
-                onClick={() => navigate(item.path)}
-                sx={{
-                  px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5,
-                  cursor: 'pointer', '&:active': { bgcolor: 'rgba(255,255,255,0.05)' },
-                }}
-              >
-                {item.icon}
-                <Typography variant="body2" sx={{ flex: 1, color: '#fff', fontWeight: 500 }}>{item.label}</Typography>
-                <ChevronRightIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.3)' }} />
-              </Box>
-            </Box>
-          ))}
-        </CardContent>
-      </Card>
 
       <Button
         variant="outlined"

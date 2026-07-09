@@ -29,12 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        (async () => {
-          try { await fetchRole(session.user.id); }
-          catch { setLoading(false); }
-        })();
-      } else { setRole(null); setLoading(false); }
+      if (session?.user) fetchRole(session.user.id);
+      else { setRole(null); setLoading(false); }
     });
 
     return () => subscription.unsubscribe();

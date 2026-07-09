@@ -168,34 +168,29 @@ export default function ResidentManagement() {
   // ─────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      let rQuery = supabase.from('resident_accounts').select('*').order('name');
-      let smQuery = supabase.from('resident_service_modes').select('*');
-      let wQuery = supabase.from('palatria_wallets').select('*');
-      let vsQuery = supabase.from('visitor_billing_sessions').select('*').order('entry_at', { ascending: false }).limit(50);
+    let rQuery = supabase.from('resident_accounts').select('*').order('name');
+    let smQuery = supabase.from('resident_service_modes').select('*');
+    let wQuery = supabase.from('palatria_wallets').select('*');
+    let vsQuery = supabase.from('visitor_billing_sessions').select('*').order('entry_at', { ascending: false }).limit(50);
 
-      if (!isGlobal && scopeComplexId) {
-        rQuery = rQuery.eq('complex_id', scopeComplexId);
-        vsQuery = vsQuery.eq('complex_id', scopeComplexId);
-      }
-
-      const [rRes, smRes, wRes, vsRes] = await Promise.all([rQuery, smQuery, wQuery, vsQuery]);
-
-      let residentData = rRes.data || [];
-      if (!isGlobal && scopeComplexId && smRes.data) {
-        const residentIds = new Set(residentData.map(r => r.id));
-        setServiceModes(smRes.data.filter(sm => residentIds.has(sm.resident_id)));
-        if (wRes.data) setWallets(wRes.data.filter(w => residentIds.has(w.resident_id)));
-      } else {
-        if (smRes.data) setServiceModes(smRes.data);
-        if (wRes.data) setWallets(wRes.data);
-      }
-      setResidents(residentData);
-      if (vsRes.data) setVisitorSessions(vsRes.data);
-    } catch (err) {
-      console.error('Failed to load resident data:', err);
+    if (!isGlobal && scopeComplexId) {
+      rQuery = rQuery.eq('complex_id', scopeComplexId);
+      vsQuery = vsQuery.eq('complex_id', scopeComplexId);
     }
+
+    const [rRes, smRes, wRes, vsRes] = await Promise.all([rQuery, smQuery, wQuery, vsQuery]);
+
+    let residentData = rRes.data || [];
+    if (!isGlobal && scopeComplexId && smRes.data) {
+      const residentIds = new Set(residentData.map(r => r.id));
+      setServiceModes(smRes.data.filter(sm => residentIds.has(sm.resident_id)));
+      if (wRes.data) setWallets(wRes.data.filter(w => residentIds.has(w.resident_id)));
+    } else {
+      if (smRes.data) setServiceModes(smRes.data);
+      if (wRes.data) setWallets(wRes.data);
+    }
+    setResidents(residentData);
+    if (vsRes.data) setVisitorSessions(vsRes.data);
     setLoading(false);
   }, [isGlobal, scopeComplexId]);
 
