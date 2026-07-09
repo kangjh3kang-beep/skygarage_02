@@ -59,14 +59,6 @@ const PatentManagement = lazy(() => import('./admin/pages/PatentManagement'));
 const LicenseManagement = lazy(() => import('./admin/pages/LicenseManagement'));
 const PriorityDispatch = lazy(() => import('./admin/pages/PriorityDispatch'));
 const SettlementManagement = lazy(() => import('./admin/pages/SettlementManagement'));
-const BottleneckWorkbench = lazy(() => import('./admin/pages/BottleneckWorkbench'));
-const IncidentManagement = lazy(() => import('./admin/pages/IncidentManagement'));
-const MissionControl = lazy(() => import('./admin/pages/MissionControl'));
-const HandoverPage = lazy(() => import('./admin/pages/HandoverPage'));
-const HardwareIntegration = lazy(() => import('./admin/pages/HardwareIntegration'));
-const ComplexControl = lazy(() => import('./admin/pages/ComplexControl'));
-const PartnerHub = lazy(() => import('./admin/pages/PartnerHub'));
-const SiteOnboarding = lazy(() => import('./admin/pages/SiteOnboarding'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
 const BrandGuidePage = lazy(() => import('./components/BrandGuidePage'));
@@ -273,14 +265,6 @@ function ProtectedRoutes() {
             <Route path="priority-dispatch" element={<PriorityDispatch />} />
             <Route path="settlement" element={<SettlementManagement />} />
             <Route path="fleet" element={<FleetManagement />} />
-            <Route path="bottleneck-workbench" element={<BottleneckWorkbench />} />
-            <Route path="incidents" element={<IncidentManagement />} />
-            <Route path="missions" element={<MissionControl />} />
-            <Route path="handover" element={<HandoverPage />} />
-            <Route path="hardware" element={<HardwareIntegration />} />
-            <Route path="control-center" element={<ComplexControl />} />
-            <Route path="control-center/site-onboarding" element={<SiteOnboarding />} />
-            <Route path="partner-hub" element={<PartnerHub />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
