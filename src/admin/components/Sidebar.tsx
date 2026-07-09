@@ -56,6 +56,11 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import TroubleshootIcon from '@mui/icons-material/Troubleshoot';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import NightsStayIcon from '@mui/icons-material/NightsStay';
+import MemoryIcon from '@mui/icons-material/Memory';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const DRAWER_WIDTH = 260;
@@ -83,6 +88,9 @@ const menuGroups: MenuGroup[] = [
     items: [
       { label: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
       { label: '운영 현황', icon: <SpeedIcon />, path: '/admin/operations', minScope: 'complex' },
+      { label: '미션 관제', icon: <RocketLaunchIcon />, path: '/admin/missions', minScope: 'complex' },
+      { label: '병목 워크벤치', icon: <TroubleshootIcon />, path: '/admin/bottleneck-workbench', minScope: 'complex' },
+      { label: '인시던트', icon: <ReportProblemIcon />, path: '/admin/incidents', minScope: 'complex' },
       { label: 'NOC', icon: <PublicIcon />, path: '/admin/noc', minScope: 'global' },
       { label: '시스템', icon: <ShieldIcon />, path: '/admin/system', minScope: 'region' },
     ],
@@ -100,6 +108,8 @@ const menuGroups: MenuGroup[] = [
       { label: '차량 추적', icon: <GpsFixedIcon />, path: '/admin/fleet', minScope: 'complex' },
       { label: '우선배차', icon: <AccessibleIcon />, path: '/admin/priority-dispatch', minScope: 'complex' },
       { label: '정비', icon: <BuildIcon />, path: '/admin/maintenance', minScope: 'complex' },
+      { label: '하드웨어', icon: <MemoryIcon />, path: '/admin/hardware', minScope: 'complex' },
+      { label: '교대/인계', icon: <NightsStayIcon />, path: '/admin/handover', minScope: 'complex' },
     ],
   },
   {
