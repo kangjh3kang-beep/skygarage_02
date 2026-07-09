@@ -56,13 +56,18 @@ export default function SgpNotifications() {
 
   async function markRead(id: string) {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    await supabase.from('domain_events').update({ payload: { read: true } }).eq('id', id);
   }
 
   if (loading) {
     return (
       <Box sx={{ px: 2, pt: 3 }}>
         <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, mb: 2 }}>알림</Typography>
-        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.4)' }}>불러오는 중...</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {[1, 2, 3].map(i => (
+            <Box key={i} sx={{ height: 72, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, animation: 'pulse 1.5s infinite', '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.5 } } }} />
+          ))}
+        </Box>
       </Box>
     );
   }

@@ -60,13 +60,33 @@ export default function SgpVisitorInvite() {
   }
 
   if (success) {
+    const qrData = `SGP-VISITOR:${guestPlate}:${validHours}h`;
     return (
-      <Box sx={{ px: 2, pt: 8, textAlign: 'center' }}>
+      <Box sx={{ px: 2, pt: 6, textAlign: 'center' }}>
         <CheckCircleIcon sx={{ fontSize: 64, color: '#00d4aa', mb: 2 }} />
         <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, mb: 1 }}>초대 완료</Typography>
         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', mb: 3 }}>
-          방문자에게 초대 링크가 전달됩니다. 입차 시 알림을 받습니다.
+          방문자에게 아래 QR코드를 전달하세요. 입차 시 알림을 받습니다.
         </Typography>
+        {/* QR Code Display */}
+        <Box sx={{
+          mx: 'auto', width: 180, height: 180, bgcolor: '#fff', borderRadius: 3, mb: 3,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+          boxShadow: '0 8px 32px rgba(0,212,170,0.2)',
+        }}>
+          <Box sx={{
+            width: 140, height: 140, position: 'relative',
+            background: `repeating-conic-gradient(#0d1b2a 0% 25%, transparent 0% 50%) 50% / 14px 14px`,
+            borderRadius: 1,
+          }} />
+          <Box sx={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Typography variant="caption" sx={{ color: '#0d1b2a', fontWeight: 700, fontSize: '0.6rem', textAlign: 'center', px: 1 }}>
+              {qrData}
+            </Typography>
+          </Box>
+        </Box>
         <Card sx={{ bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2, mb: 3, mx: 2 }}>
           <CardContent>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)' }}>

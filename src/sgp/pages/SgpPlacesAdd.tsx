@@ -18,9 +18,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import BusinessIcon from '@mui/icons-material/Business';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import SignalWifiOffIcon from '@mui/icons-material/SignalWifiOff';
 import { useNavigate } from 'react-router-dom';
 import { useSgpAuth } from '../contexts/SgpAuthContext';
 import { addPlace, verifyOfficeCode, searchSites } from '../services/placeService';
+import { getConnectionState } from '../services/realtimeSdk';
 import type { PlaceType } from '../types';
 
 export default function SgpPlacesAdd() {
@@ -84,6 +86,16 @@ export default function SgpPlacesAdd() {
       <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, mb: 2 }}>
         장소 추가
       </Typography>
+
+      {getConnectionState() !== 'connected' && (
+        <Alert
+          severity="warning"
+          icon={<SignalWifiOffIcon />}
+          sx={{ mb: 2, borderRadius: 2, bgcolor: 'rgba(255,152,0,0.1)', color: '#ffb74d' }}
+        >
+          오프라인 상태에서는 장소 추가가 제한됩니다.
+        </Alert>
+      )}
 
       <Tabs
         value={tab}

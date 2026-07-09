@@ -99,6 +99,7 @@ const SgpPlacesAdd = lazy(() => import('./sgp/pages/SgpPlacesAdd'));
 const SgpVisitorInvite = lazy(() => import('./sgp/pages/SgpVisitorInvite'));
 const SgpNotifications = lazy(() => import('./sgp/pages/SgpNotifications'));
 const SgpPrivacySettings = lazy(() => import('./sgp/pages/SgpPrivacySettings'));
+const SgpVehiclesPage = lazy(() => import('./sgp/pages/SgpVehiclesPage'));
 
 // Parking App (Visitor)
 const VisitorHome = lazy(() => import('./parking/pages/visitor/VisitorHome'));
@@ -172,6 +173,7 @@ function SgpAppGuard() {
           <Route path="visitor/invite" element={<SgpVisitorInvite />} />
           <Route path="notifications" element={<SgpNotifications />} />
           <Route path="privacy" element={<SgpPrivacySettings />} />
+          <Route path="vehicles" element={<SgpVehiclesPage />} />
         </Route>
       </Routes>
     </Suspense>
