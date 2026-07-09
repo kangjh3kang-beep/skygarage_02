@@ -64,6 +64,9 @@ const IncidentManagement = lazy(() => import('./admin/pages/IncidentManagement')
 const MissionControl = lazy(() => import('./admin/pages/MissionControl'));
 const HandoverPage = lazy(() => import('./admin/pages/HandoverPage'));
 const HardwareIntegration = lazy(() => import('./admin/pages/HardwareIntegration'));
+const ComplexControl = lazy(() => import('./admin/pages/ComplexControl'));
+const PartnerHub = lazy(() => import('./admin/pages/PartnerHub'));
+const SiteOnboarding = lazy(() => import('./admin/pages/SiteOnboarding'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
 const BrandGuidePage = lazy(() => import('./components/BrandGuidePage'));
@@ -275,6 +278,9 @@ function ProtectedRoutes() {
             <Route path="missions" element={<MissionControl />} />
             <Route path="handover" element={<HandoverPage />} />
             <Route path="hardware" element={<HardwareIntegration />} />
+            <Route path="control-center" element={<ComplexControl />} />
+            <Route path="control-center/site-onboarding" element={<SiteOnboarding />} />
+            <Route path="partner-hub" element={<PartnerHub />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>

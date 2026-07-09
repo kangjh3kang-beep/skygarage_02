@@ -5,7 +5,8 @@ import { isCommandApproved } from '../../domain';
 export async function evaluateCommandGuard(
   siteId: string,
   deviceId: string,
-  commandType: string
+  commandType: string,
+  elevatorId?: string
 ): Promise<{ approved: boolean; check: CommandGuardCheck; reasonCode?: string }> {
   const check: CommandGuardCheck = {
     allowTrue: true,
@@ -20,6 +21,7 @@ export async function evaluateCommandGuard(
     motionTokenValid: true,
   };
 
+  // Evaluate safety chain state
   const { data: safetyState } = await supabase
     .from('safety_chain_states')
     .select('*')
@@ -34,6 +36,7 @@ export async function evaluateCommandGuard(
     }
   }
 
+  // Evaluate resource lock uniqueness
   const { data: locks } = await supabase
     .from('resource_locks')
     .select('id')
@@ -43,6 +46,34 @@ export async function evaluateCommandGuard(
 
   if (locks && locks.length > 1) {
     check.resourceLockUnique = false;
+  }
+  if (locks && locks.length === 0) {
+    check.resourceLockValid = false;
+  }
+
+  // Evaluate sensorConsistent: all sensors for this device must report consistent readings
+  const { data: sensors } = await supabase
+    .from('device_sensors')
+    .select('is_consistent')
+    .eq('site_id', siteId)
+    .eq('device_id', deviceId);
+
+  if (sensors && sensors.length > 0) {
+    check.sensorConsistent = sensors.every((s: { is_consistent: boolean }) => s.is_consistent);
+  }
+
+  // Evaluate elevatorAligned and doorZoneClear from elevator state
+  const targetElevatorId = elevatorId ?? deviceId;
+  const { data: elevatorState } = await supabase
+    .from('elevator_states')
+    .select('is_aligned, door_zone_clear, status')
+    .eq('site_id', siteId)
+    .eq('elevator_id', targetElevatorId)
+    .maybeSingle();
+
+  if (elevatorState) {
+    check.elevatorAligned = elevatorState.is_aligned;
+    check.doorZoneClear = elevatorState.door_zone_clear;
   }
 
   const approved = isCommandApproved(check);

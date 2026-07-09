@@ -61,6 +61,8 @@ import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import NightsStayIcon from '@mui/icons-material/NightsStay';
 import MemoryIcon from '@mui/icons-material/Memory';
+import DeviceHubIcon from '@mui/icons-material/DeviceHub';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const DRAWER_WIDTH = 260;
@@ -147,6 +149,8 @@ const menuGroups: MenuGroup[] = [
       { label: 'AI', icon: <SmartToyIcon />, path: '/admin/ai' },
       { label: '워크플로', icon: <AutoFixHighIcon />, path: '/admin/workflows', minScope: 'region' },
       { label: '지역 허브', icon: <HubIcon />, path: '/admin/regions', minScope: 'global' },
+      { label: '단지 제어', icon: <DeviceHubIcon />, path: '/admin/control-center', minScope: 'global' },
+      { label: '파트너 허브', icon: <StorefrontIcon />, path: '/admin/partner-hub', minScope: 'region' },
       { label: '프로젝트', icon: <AccountTreeIcon />, path: '/admin/projects', minScope: 'region' },
       { label: '안전 정책', icon: <ShieldIcon />, path: '/admin/safety' },
       { label: '콘텐츠', icon: <ImageIcon />, path: '/admin/images' },

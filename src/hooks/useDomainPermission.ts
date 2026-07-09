@@ -1,12 +1,15 @@
 import { useCallback } from 'react';
 import { useAuth } from '../admin/contexts/AuthContext';
+import { useTenant } from '../admin/contexts/TenantContext';
 import { checkPermission, mapLegacyRole, findClosestRouteAccess } from '../domain';
 import type { AdminRole, MenuGroup, PermissionLevel } from '../domain';
 import { appendAuditEvent } from '../admin/services/auditChain';
 
 export function useDomainPermission() {
   const { role, user } = useAuth();
+  const { scope } = useTenant();
 
+  const siteId = scope.complex?.id ?? scope.region?.id ?? 'PLATFORM';
   const adminRole: AdminRole = role ? mapLegacyRole(role) : 'OPERATOR';
 
   const hasPermission = useCallback((group: MenuGroup, level: PermissionLevel): boolean => {
@@ -28,7 +31,7 @@ export function useDomainPermission() {
     if (!user) return;
     try {
       await appendAuditEvent({
-        siteId: 'default',
+        siteId,
         actorId: user.id,
         action,
         resource,
@@ -38,7 +41,7 @@ export function useDomainPermission() {
     } catch {
       // Audit failure should not block the operation
     }
-  }, [user]);
+  }, [user, siteId]);
 
-  return { adminRole, hasPermission, canAccessRoute, emitAudit };
+  return { adminRole, hasPermission, canAccessRoute, emitAudit, siteId };
 }

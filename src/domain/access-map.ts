@@ -116,6 +116,20 @@ export const ROUTE_ACCESS: Record<string, RouteAccessEntry | { public: true }> =
   '/admin/handover': { group: 'A', level: 'W' },
   '/admin/search': { group: 'A', level: 'R' },
   '/admin/runbooks': { group: 'A', level: 'R' },
+
+  // Additional existing App.tsx routes
+  '/admin/access': { group: 'D!', level: 'W' },
+  '/admin/notifications': { group: 'K2', level: 'R' },
+  '/admin/zones': { group: 'B', level: 'W' },
+  '/admin/v2g': { group: 'C', level: 'R' },
+  '/admin/events': { group: 'H', level: 'R' },
+  '/admin/policy': { group: 'K2', level: 'W' },
+  '/admin/policy/publish': { group: 'CC', level: 'W', stepUp: true },
+
+  // Partner Hub
+  '/admin/partner-hub': { group: 'I', level: 'R' },
+  '/admin/partner-hub/settlements': { group: 'I', level: 'R' },
+  '/admin/partner-hub/reports': { group: 'I', level: 'R' },
 };
 
 export function isPublicRoute(path: string): boolean {
