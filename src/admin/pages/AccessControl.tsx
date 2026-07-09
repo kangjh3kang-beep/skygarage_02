@@ -25,6 +25,7 @@ import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useAuditLog } from '../../hooks/useAuditLog';
+import { useToast } from '../contexts/ToastContext';
 
 interface AccessLog {
   id: string;
@@ -54,6 +55,7 @@ const authMethodLabels: Record<string, string> = {
 export default function AccessControl() {
   useDocumentTitle('출입 관리');
   const { logAction } = useAuditLog();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<AccessLog[]>([]);
@@ -64,19 +66,25 @@ export default function AccessControl() {
   const [dateTo, setDateTo] = useState('');
 
   const loadData = useCallback(async () => {
-    let query = supabase
-      .from('access_logs')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(500);
-    if (directionFilter !== 'all') query = query.eq('direction', directionFilter);
-    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
-    if (dateFrom) query = query.gte('timestamp', `${dateFrom}T00:00:00`);
-    if (dateTo) query = query.lte('timestamp', `${dateTo}T23:59:59`);
-    const { data } = await query;
-    if (data) setLogs(data);
-    setLoading(false);
-  }, [directionFilter, statusFilter, dateFrom, dateTo]);
+    try {
+      let query = supabase
+        .from('access_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(500);
+      if (directionFilter !== 'all') query = query.eq('direction', directionFilter);
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+      if (dateFrom) query = query.gte('timestamp', `${dateFrom}T00:00:00`);
+      if (dateTo) query = query.lte('timestamp', `${dateTo}T23:59:59`);
+      const { data, error } = await query;
+      if (error) { showToast('로드 실패: ' + error.message, 'error'); return; }
+      if (data) setLogs(data);
+    } catch (err) {
+      showToast('로드 실패: ' + (err as Error).message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [directionFilter, statusFilter, dateFrom, dateTo, showToast]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

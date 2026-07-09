@@ -83,13 +83,19 @@ export default function TeamManagement() {
   const [deleteTarget, setDeleteTarget] = useState<TeamMember | null>(null);
 
   const loadData = useCallback(async () => {
-    let query = supabase.from('team_members').select('*').order('name');
-    if (departmentFilter !== 'all') query = query.eq('department', departmentFilter);
-    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
-    const { data } = await query;
-    if (data) setMembers(data);
-    setLoading(false);
-  }, [departmentFilter, statusFilter]);
+    try {
+      let query = supabase.from('team_members').select('*').order('name');
+      if (departmentFilter !== 'all') query = query.eq('department', departmentFilter);
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+      const { data, error } = await query;
+      if (error) { showToast('로드 실패: ' + error.message, 'error'); return; }
+      if (data) setMembers(data);
+    } catch (err) {
+      showToast('로드 실패: ' + (err as Error).message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [departmentFilter, statusFilter, showToast]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
