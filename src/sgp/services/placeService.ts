@@ -143,7 +143,7 @@ export async function setDefaultPlace(userId: string, placeId: string): Promise<
 export async function searchSites(query: string): Promise<Array<{ id: string; name: string; address: string; available: number }>> {
   const { data } = await supabase
     .from('complexes')
-    .select('id, name, address')
+    .select('id, name, address, total_slots, occupied_slots')
     .or(`name.ilike.%${query}%,address.ilike.%${query}%`)
     .limit(20);
 
@@ -151,6 +151,6 @@ export async function searchSites(query: string): Promise<Array<{ id: string; na
     id: s.id,
     name: s.name,
     address: s.address ?? '',
-    available: Math.floor(Math.random() * 50),
+    available: Math.max(0, (s.total_slots ?? 0) - (s.occupied_slots ?? 0)),
   }));
 }

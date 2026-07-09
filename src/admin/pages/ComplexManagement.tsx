@@ -239,13 +239,20 @@ export default function ComplexManagement() {
   };
 
   const loadData = useCallback(async () => {
-    const { data } = await supabase.from('complexes').select('*').order('name');
-    if (data) setComplexes(data);
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('complexes').select('*').order('name');
+      if (error) throw error;
+      if (data) setComplexes(data);
+    } catch (err) {
+      console.error('Failed to load complexes:', err);
+    }
     setLoading(false);
   }, []);
 
   const loadComplexTypes = useCallback(async () => {
-    const { data } = await supabase.from('complex_types').select('*').order('sort_order');
+    const { data, error } = await supabase.from('complex_types').select('*').order('sort_order');
+    if (error) { console.error('Failed to load complex types:', error.message); return; }
     if (data && data.length > 0) {
       setComplexTypes(data.filter(t => t.is_active).map(t => ({ value: t.code, label: `${t.label} (${t.code})` })));
       setTypesAll(data);

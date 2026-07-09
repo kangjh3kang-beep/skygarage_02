@@ -16,6 +16,7 @@ export default function SgpPrivacySettings() {
   const { user } = useSgpAuth();
   const [consents, setConsents] = useState<ConsentRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -24,19 +25,28 @@ export default function SgpPrivacySettings() {
 
   async function loadConsents() {
     if (!user) return;
-    const data = await getConsents(user.id);
-    setConsents(data);
+    setError('');
+    try {
+      const data = await getConsents(user.id);
+      setConsents(data);
+    } catch {
+      setError('개인정보 설정을 불러올 수 없습니다.');
+    }
     setLoading(false);
   }
 
   async function handleToggle(category: ConsentCategory, currentlyGranted: boolean) {
     if (!user) return;
-    if (currentlyGranted) {
-      await revokeConsent(user.id, category);
-    } else {
-      await grantConsent(user.id, category);
+    try {
+      if (currentlyGranted) {
+        await revokeConsent(user.id, category);
+      } else {
+        await grantConsent(user.id, category);
+      }
+      await loadConsents();
+    } catch {
+      setError('설정 변경에 실패했습니다.');
     }
-    await loadConsents();
   }
 
   const categories: ConsentCategory[] = ['location', 'vehicle_pii', 'marketing', 'third_party', 'analytics'];
@@ -51,6 +61,8 @@ export default function SgpPrivacySettings() {
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2, '& .MuiAlert-message': { fontSize: '0.78rem' } }}>
         각 항목은 개별적으로 동의/철회할 수 있습니다. 필수 항목을 철회하면 관련 기능이 비활성화됩니다.
       </Alert>
+
+      {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
 
       <Card sx={{ bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 3 }}>
         <CardContent sx={{ p: 0 }}>

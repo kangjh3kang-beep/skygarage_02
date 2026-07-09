@@ -46,19 +46,26 @@ export default function EnergyDashboard() {
   const { logAction } = useAuditLog();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [metrics, setMetrics] = useState<EnergyMetric[]>([]);
   const [aiRecs, setAiRecs] = useState<{ id: string; title: string; priority: string; type: string }[]>([]);
 
   const loadData = useCallback(async () => {
-    const [metricsRes, recsRes] = await Promise.all([
-      supabase.from('energy_metrics').select('*').order('date', { ascending: false }).limit(200),
-      supabase.from('ai_recommendations').select('id, title, priority, type')
-        .in('status', ['pending', 'acknowledged'])
-        .eq('entity_type', 'energy')
-        .order('created_at', { ascending: false }).limit(5),
-    ]);
-    if (metricsRes.data) setMetrics(metricsRes.data);
-    if (recsRes.data) setAiRecs(recsRes.data);
+    setLoadError('');
+    try {
+      const [metricsRes, recsRes] = await Promise.all([
+        supabase.from('energy_metrics').select('*').order('date', { ascending: false }).limit(200),
+        supabase.from('ai_recommendations').select('id, title, priority, type')
+          .in('status', ['pending', 'acknowledged'])
+          .eq('entity_type', 'energy')
+          .order('created_at', { ascending: false }).limit(5),
+      ]);
+      if (metricsRes.data) setMetrics(metricsRes.data);
+      if (recsRes.data) setAiRecs(recsRes.data);
+    } catch (err) {
+      console.error('Energy dashboard load error:', err);
+      setLoadError('에너지 데이터를 불러올 수 없습니다.');
+    }
     setLoading(false);
   }, []);
 
@@ -88,6 +95,16 @@ export default function EnergyDashboard() {
   const maxConsumption = Math.max(...metrics.map(m => m.total_consumption_kwh || 0), 1);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
+
+  if (loadError) return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>에너지 대시보드</Typography>
+      <Box sx={{ p: 3, borderRadius: 2, bgcolor: 'error.main', color: 'error.contrastText', mb: 2 }}>
+        <Typography>{loadError}</Typography>
+      </Box>
+      <Button variant="outlined" onClick={loadData}>다시 시도</Button>
+    </Box>
+  );
 
   return (
     <Box>

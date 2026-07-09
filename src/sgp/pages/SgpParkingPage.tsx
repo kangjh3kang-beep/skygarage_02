@@ -6,6 +6,9 @@ import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import Skeleton from '@mui/material/Skeleton';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { useSgpAuth } from '../contexts/SgpAuthContext';
@@ -16,20 +19,56 @@ export default function SgpParkingPage() {
   const { user } = useSgpAuth();
   const [tab, setTab] = useState(0);
   const [payments, setPayments] = useState<SgpParkingPayment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user) return;
-    supabase
+    loadPayments();
+  }, [user]);
+
+  async function loadPayments() {
+    if (!user) return;
+    setLoading(true);
+    setError('');
+    const { data, error: fetchError } = await supabase
       .from('sgp_parking_payments')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(50)
-      .then(({ data }) => setPayments(data || []));
-  }, [user]);
+      .limit(50);
+
+    if (fetchError) {
+      setError('주차 내역을 불러올 수 없습니다.');
+    } else {
+      setPayments(data || []);
+    }
+    setLoading(false);
+  }
 
   const activePayments = payments.filter(p => p.status === 'pending');
   const completedPayments = payments.filter(p => p.status === 'completed');
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, mb: 2 }}>주차 내역</Typography>
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} variant="rounded" height={80} sx={{ mb: 1.5, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }} />
+        ))}
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, mb: 2 }}>주차 내역</Typography>
+        <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>
+        <Button onClick={loadPayments} sx={{ mt: 2, color: '#00d4aa' }}>다시 시도</Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 2 }}>

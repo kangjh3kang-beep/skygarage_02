@@ -71,18 +71,24 @@ export default function ParkingOperations() {
   const [modeDistribution, setModeDistribution] = useState<ModeDistribution>({ direct: 0, valet: 0, tower: 0, hybrid: 0 });
 
   const loadData = useCallback(async () => {
-    let query = supabase.from('parking_sessions').select('*').order('entry_at', { ascending: false }).limit(200);
-    if (complexFilter !== 'all') query = query.eq('complex_id', complexFilter);
-    if (modeFilter !== 'all') query = query.eq('operating_mode', modeFilter);
-    const { data } = await query;
-    if (data) {
-      setSessions(data);
-      const dist: ModeDistribution = { direct: 0, valet: 0, tower: 0, hybrid: 0 };
-      for (const s of data) {
-        const mode = (s.operating_mode || 'direct') as keyof ModeDistribution;
-        if (mode in dist) dist[mode]++;
+    setLoading(true);
+    try {
+      let query = supabase.from('parking_sessions').select('*').order('entry_at', { ascending: false }).limit(200);
+      if (complexFilter !== 'all') query = query.eq('complex_id', complexFilter);
+      if (modeFilter !== 'all') query = query.eq('operating_mode', modeFilter);
+      const { data, error } = await query;
+      if (error) throw error;
+      if (data) {
+        setSessions(data);
+        const dist: ModeDistribution = { direct: 0, valet: 0, tower: 0, hybrid: 0 };
+        for (const s of data) {
+          const mode = (s.operating_mode || 'direct') as keyof ModeDistribution;
+          if (mode in dist) dist[mode]++;
+        }
+        setModeDistribution(dist);
       }
-      setModeDistribution(dist);
+    } catch (err) {
+      console.error('Failed to load parking sessions:', err);
     }
     setLoading(false);
   }, [complexFilter, modeFilter]);
