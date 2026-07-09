@@ -31,6 +31,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import CloseIcon from '@mui/icons-material/Close';
 import { supabase } from '../../lib/supabase';
@@ -176,6 +178,19 @@ export default function AtrManagement() {
     loadData();
   };
 
+  const dispatchAtrCommand = async (unitId: string, commandType: string, priority = 3) => {
+    const { error } = await supabase.from('hardware_commands').insert({
+      device_id: unitId,
+      command_type: commandType,
+      priority,
+      payload: {},
+      status: 'queued',
+    });
+    if (error) { showToast('명령 전송 실패: ' + error.message, 'error'); return; }
+    logAction('CREATE', 'hardware_commands', undefined, { device_id: unitId, command_type: commandType });
+    showToast(`${commandType} 명령이 전송되었습니다`, 'success');
+  };
+
   const openNew = () => { setEditing(null); setForm(emptyForm); setActiveStep(0); setDialogOpen(true); };
   const openEdit = (u: AtrUnit) => {
     setEditing(u);
@@ -279,6 +294,8 @@ export default function AtrManagement() {
                       : <WarningIcon sx={{ fontSize: 14, color: 'warning.main' }} />}
                   </TableCell>
                   <TableCell align="center" onClick={e => e.stopPropagation()}>
+                    <IconButton size="small" onClick={() => dispatchAtrCommand(u.id, 'dispatch')} title="배차"><PlayArrowIcon sx={{ fontSize: 16, color: '#00d4ff' }} /></IconButton>
+                    <IconButton size="small" onClick={() => dispatchAtrCommand(u.id, 'emergency_stop', 1)} title="비상정지"><StopIcon sx={{ fontSize: 16, color: '#ff5252' }} /></IconButton>
                     <IconButton size="small" onClick={() => openEdit(u)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
                     <IconButton size="small" onClick={() => setDeleteTarget(u)} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
                   </TableCell>

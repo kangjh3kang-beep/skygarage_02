@@ -219,6 +219,19 @@ export default function HardwareIntegration() {
     }
   };
 
+  const dispatchDeviceCommand = async (deviceId: string, commandType: string, priority: number = 3) => {
+    const { error } = await supabase.from('hardware_commands').insert({
+      device_id: deviceId,
+      command_type: commandType,
+      priority,
+      payload: {},
+      status: 'queued',
+    });
+    if (error) return;
+    logAction('CREATE', 'hardware_commands', undefined, { device_id: deviceId, command_type: commandType });
+    fetchData();
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -886,9 +899,9 @@ export default function HardwareIntegration() {
               </Grid>
               <Divider sx={{ my: 2 }} />
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button size="small" variant="outlined" startIcon={<SpeedIcon />}>진단 실행</Button>
-                <Button size="small" variant="outlined" startIcon={<SyncIcon />}>펌웨어 확인</Button>
-                <Button size="small" variant="outlined" color="error" startIcon={<WarningIcon />}>비상정지</Button>
+                <Button size="small" variant="outlined" startIcon={<SpeedIcon />} onClick={() => selectedDevice && dispatchDeviceCommand(selectedDevice.id, 'diagnostics')}>진단 실행</Button>
+                <Button size="small" variant="outlined" startIcon={<SyncIcon />} onClick={() => selectedDevice && dispatchDeviceCommand(selectedDevice.id, 'firmware_check')}>펌웨어 확인</Button>
+                <Button size="small" variant="outlined" color="error" startIcon={<WarningIcon />} onClick={() => selectedDevice && dispatchDeviceCommand(selectedDevice.id, 'emergency_stop', 1)}>비상정지</Button>
               </Box>
             </DialogContent>
           </>
