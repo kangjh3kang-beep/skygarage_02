@@ -41,6 +41,8 @@ import TerminalIcon from '@mui/icons-material/Terminal';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ArticleIcon from '@mui/icons-material/Article';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { supabase } from '../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useAuditLog } from '../../hooks/useAuditLog';
@@ -166,6 +168,18 @@ export default function HardwareIntegration() {
   const [commands, setCommands] = useState<Command[]>([]);
   const [loading, setLoading] = useState(true);
   const [adapterDialog, setAdapterDialog] = useState(false);
+  const [editingAdapter, setEditingAdapter] = useState<HardwareAdapter | null>(null);
+  const [adapterForm, setAdapterForm] = useState({
+    vendor_name: '',
+    device_type: 'atr_robot',
+    protocol_type: 'rest_api',
+    api_endpoint: '',
+    api_version: 'v1',
+    auth_method: 'api_key',
+    heartbeat_interval_sec: 30,
+    timeout_ms: 5000,
+  });
+  const [adapterSaving, setAdapterSaving] = useState(false);
   const [commandDialog, setCommandDialog] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceInstance | null>(null);
   const [deviceDetailOpen, setDeviceDetailOpen] = useState(false);
@@ -232,6 +246,92 @@ export default function HardwareIntegration() {
     fetchData();
   };
 
+  const openAdapterDialog = (adapter?: HardwareAdapter) => {
+    if (adapter) {
+      setEditingAdapter(adapter);
+      setAdapterForm({
+        vendor_name: adapter.vendor_name,
+        device_type: adapter.device_type,
+        protocol_type: adapter.protocol_type,
+        api_endpoint: adapter.api_endpoint,
+        api_version: adapter.api_version || 'v1',
+        auth_method: adapter.auth_method,
+        heartbeat_interval_sec: adapter.heartbeat_interval_sec,
+        timeout_ms: adapter.timeout_ms,
+      });
+    } else {
+      setEditingAdapter(null);
+      setAdapterForm({
+        vendor_name: '',
+        device_type: 'atr_robot',
+        protocol_type: 'rest_api',
+        api_endpoint: '',
+        api_version: 'v1',
+        auth_method: 'api_key',
+        heartbeat_interval_sec: 30,
+        timeout_ms: 5000,
+      });
+    }
+    setAdapterDialog(true);
+  };
+
+  const handleSaveAdapter = async () => {
+    if (!adapterForm.vendor_name.trim() || !adapterForm.api_endpoint.trim()) return;
+    setAdapterSaving(true);
+    try {
+      if (editingAdapter) {
+        const { error } = await supabase
+          .from('hardware_adapters')
+          .update({
+            vendor_name: adapterForm.vendor_name.trim(),
+            device_type: adapterForm.device_type,
+            protocol_type: adapterForm.protocol_type,
+            api_endpoint: adapterForm.api_endpoint.trim(),
+            api_version: adapterForm.api_version,
+            auth_method: adapterForm.auth_method,
+            heartbeat_interval_sec: adapterForm.heartbeat_interval_sec,
+            timeout_ms: adapterForm.timeout_ms,
+          })
+          .eq('id', editingAdapter.id);
+        if (!error) {
+          logAction('UPDATE', 'hardware_adapters', editingAdapter.id, { vendor_name: adapterForm.vendor_name });
+        }
+      } else {
+        const { error } = await supabase
+          .from('hardware_adapters')
+          .insert({
+            vendor_name: adapterForm.vendor_name.trim(),
+            device_type: adapterForm.device_type,
+            protocol_type: adapterForm.protocol_type,
+            api_endpoint: adapterForm.api_endpoint.trim(),
+            api_version: adapterForm.api_version,
+            auth_method: adapterForm.auth_method,
+            heartbeat_interval_sec: adapterForm.heartbeat_interval_sec,
+            timeout_ms: adapterForm.timeout_ms,
+            retry_policy: { max_retries: 3, backoff_type: 'exponential', base_delay_ms: 1000 },
+            capability_map: { commands: [], telemetry: [], features: [] },
+            status: 'testing',
+          });
+        if (!error) {
+          logAction('CREATE', 'hardware_adapters', undefined, { vendor_name: adapterForm.vendor_name });
+        }
+      }
+      setAdapterDialog(false);
+      fetchData();
+    } finally {
+      setAdapterSaving(false);
+    }
+  };
+
+  const handleDeleteAdapter = async (adapterId: string, vendorName: string) => {
+    if (!confirm(`"${vendorName}" 어댑터를 삭제하시겠습니까?`)) return;
+    const { error } = await supabase.from('hardware_adapters').delete().eq('id', adapterId);
+    if (!error) {
+      logAction('DELETE', 'hardware_adapters', adapterId, { vendor_name: vendorName });
+      fetchData();
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -263,7 +363,7 @@ export default function HardwareIntegration() {
           <Button variant="outlined" size="small" startIcon={<RefreshIcon />} onClick={fetchData}>
             새로고침
           </Button>
-          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => setAdapterDialog(true)}>
+          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => openAdapterDialog()}>
             어댑터 추가
           </Button>
         </Box>
@@ -352,11 +452,12 @@ export default function HardwareIntegration() {
                 <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Heartbeat</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>상태</TableCell>
                 <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }}>마지막 연결</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem' }} align="right">관리</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {adapters.map(a => (
-                <TableRow key={a.id} hover sx={{ cursor: 'pointer' }}>
+                <TableRow key={a.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {a.device_type === 'atr_robot' ? <SmartToyIcon sx={{ fontSize: 16, color: 'info.main' }} /> : <ElevatorIcon sx={{ fontSize: 16, color: 'warning.main' }} />}
@@ -387,11 +488,25 @@ export default function HardwareIntegration() {
                   <TableCell>
                     <Typography variant="caption" color="text.secondary">{timeSince(a.last_connected_at)}</Typography>
                   </TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                      <Tooltip title="수정">
+                        <IconButton size="small" onClick={() => openAdapterDialog(a)}>
+                          <EditIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="삭제">
+                        <IconButton size="small" color="error" onClick={() => handleDeleteAdapter(a.id, a.vendor_name)}>
+                          <DeleteIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
                 </TableRow>
               ))}
               {adapters.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} sx={{ textAlign: 'center', py: 4 }}>
+                  <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4 }}>
                     <Typography variant="body2" color="text.secondary">등록된 어댑터가 없습니다</Typography>
                   </TableCell>
                 </TableRow>
@@ -908,26 +1023,34 @@ export default function HardwareIntegration() {
         )}
       </Dialog>
 
-      {/* Adapter Add Dialog */}
+      {/* Adapter Add/Edit Dialog */}
       <Dialog open={adapterDialog} onClose={() => setAdapterDialog(false)} maxWidth="sm" fullWidth
         slotProps={{ paper: { sx: { borderRadius: 2 } } }}>
-        <DialogTitle sx={{ fontWeight: 700 }}>새 어댑터 등록</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>{editingAdapter ? '어댑터 수정' : '새 어댑터 등록'}</DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2, fontSize: '0.8rem' }}>
-            협력업체의 장비 연동을 위한 프로토콜 어댑터를 등록합니다.
+            협력업체의 장비 연동을 위한 프로토콜 어댑터를 {editingAdapter ? '수정' : '등록'}합니다.
           </Alert>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12 }}>
-              <TextField fullWidth size="small" label="업체명" placeholder="예: RoboParking Co." />
+              <TextField fullWidth size="small" label="업체명" placeholder="예: RoboParking Co."
+                value={adapterForm.vendor_name}
+                onChange={e => setAdapterForm(f => ({ ...f, vendor_name: e.target.value }))}
+                error={!adapterForm.vendor_name.trim() && adapterSaving}
+              />
             </Grid>
             <Grid size={{ xs: 6 }}>
-              <TextField fullWidth size="small" select label="장비 유형" defaultValue="atr_robot">
+              <TextField fullWidth size="small" select label="장비 유형"
+                value={adapterForm.device_type}
+                onChange={e => setAdapterForm(f => ({ ...f, device_type: e.target.value }))}>
                 <MenuItem value="atr_robot">ATR 자율주행로봇</MenuItem>
                 <MenuItem value="vehicle_elevator">차량 엘리베이터</MenuItem>
               </TextField>
             </Grid>
             <Grid size={{ xs: 6 }}>
-              <TextField fullWidth size="small" select label="프로토콜" defaultValue="rest_api">
+              <TextField fullWidth size="small" select label="프로토콜"
+                value={adapterForm.protocol_type}
+                onChange={e => setAdapterForm(f => ({ ...f, protocol_type: e.target.value }))}>
                 <MenuItem value="rest_api">REST API</MenuItem>
                 <MenuItem value="mqtt">MQTT</MenuItem>
                 <MenuItem value="grpc">gRPC</MenuItem>
@@ -936,10 +1059,16 @@ export default function HardwareIntegration() {
               </TextField>
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField fullWidth size="small" label="API 엔드포인트" placeholder="https://api.vendor.example/v1" />
+              <TextField fullWidth size="small" label="API 엔드포인트" placeholder="https://api.vendor.example/v1"
+                value={adapterForm.api_endpoint}
+                onChange={e => setAdapterForm(f => ({ ...f, api_endpoint: e.target.value }))}
+                error={!adapterForm.api_endpoint.trim() && adapterSaving}
+              />
             </Grid>
             <Grid size={{ xs: 6 }}>
-              <TextField fullWidth size="small" select label="인증 방식" defaultValue="api_key">
+              <TextField fullWidth size="small" select label="인증 방식"
+                value={adapterForm.auth_method}
+                onChange={e => setAdapterForm(f => ({ ...f, auth_method: e.target.value }))}>
                 <MenuItem value="api_key">API Key</MenuItem>
                 <MenuItem value="oauth2">OAuth2</MenuItem>
                 <MenuItem value="mtls">mTLS</MenuItem>
@@ -947,16 +1076,24 @@ export default function HardwareIntegration() {
               </TextField>
             </Grid>
             <Grid size={{ xs: 3 }}>
-              <TextField fullWidth size="small" label="Heartbeat(초)" type="number" defaultValue={30} />
+              <TextField fullWidth size="small" label="Heartbeat(초)" type="number"
+                value={adapterForm.heartbeat_interval_sec}
+                onChange={e => setAdapterForm(f => ({ ...f, heartbeat_interval_sec: Number(e.target.value) || 30 }))}
+              />
             </Grid>
             <Grid size={{ xs: 3 }}>
-              <TextField fullWidth size="small" label="Timeout(ms)" type="number" defaultValue={5000} />
+              <TextField fullWidth size="small" label="Timeout(ms)" type="number"
+                value={adapterForm.timeout_ms}
+                onChange={e => setAdapterForm(f => ({ ...f, timeout_ms: Number(e.target.value) || 5000 }))}
+              />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setAdapterDialog(false)} color="inherit">취소</Button>
-          <Button variant="contained" onClick={() => setAdapterDialog(false)}>등록</Button>
+          <Button variant="contained" onClick={handleSaveAdapter} disabled={adapterSaving}>
+            {adapterSaving ? '저장 중...' : editingAdapter ? '수정' : '등록'}
+          </Button>
         </DialogActions>
       </Dialog>
 
