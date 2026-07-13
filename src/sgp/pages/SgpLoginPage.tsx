@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -9,22 +9,40 @@ import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import LinearProgress from '@mui/material/LinearProgress';
+import MenuItem from '@mui/material/MenuItem';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import SmsIcon from '@mui/icons-material/Sms';
+import CakeIcon from '@mui/icons-material/Cake';
+import HomeIcon from '@mui/icons-material/Home';
 import { useSgpAuth } from '../contexts/SgpAuthContext';
-import { supabase } from '../../lib/supabase';
 
-const REGISTER_STEPS = ['본인인증', '정보입력'];
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const REGISTER_STEPS = ['본인인증', '정보입력', '주소등록'];
+
+const textFieldStyles = {
+  '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 },
+  '& input': { color: '#fff' },
+  '& .MuiSelect-select': { color: '#fff' },
+};
+
+const labelStyles = { sx: { color: 'rgba(255,255,255,0.6)' } };
 
 export default function SgpLoginPage() {
   const { signIn, signUp } = useSgpAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [genderCode, setGenderCode] = useState('');
+  const [address, setAddress] = useState('');
+  const [addressDetail, setAddressDetail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,7 +69,7 @@ export default function SgpLoginPage() {
     }
   };
 
-  const startCooldown = () => {
+  const startCooldown = useCallback(() => {
     setOtpCooldown(180);
     const interval = setInterval(() => {
       setOtpCooldown(prev => {
@@ -59,7 +77,7 @@ export default function SgpLoginPage() {
         return prev - 1;
       });
     }, 1000);
-  };
+  }, []);
 
   const sendOtp = async () => {
     const cleanPhone = phone.replace(/[^0-9]/g, '');
@@ -71,27 +89,31 @@ export default function SgpLoginPage() {
     setError('');
     setSuccess('');
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const { data, error: insertError } = await supabase
-      .from('sgp_phone_verifications')
-      .insert({
-        phone: cleanPhone,
-        code,
-        expires_at: new Date(Date.now() + 3 * 60 * 1000).toISOString(),
-      })
-      .select('id')
-      .single();
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/sms-verify/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ phone: cleanPhone }),
+      });
 
-    if (insertError) {
-      setError('인증코드 발송에 실패했습니다.');
-      setLoading(false);
-      return;
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || '인증코드 발송에 실패했습니다.');
+        setLoading(false);
+        return;
+      }
+
+      setVerificationId(result.verification_id);
+      setOtpSent(true);
+      setSuccess(`인증코드가 ${phone}로 발송되었습니다.`);
+      startCooldown();
+    } catch {
+      setError('네트워크 오류. 다시 시도해주세요.');
     }
-
-    setVerificationId(data.id);
-    setOtpSent(true);
-    setSuccess(`인증코드가 ${phone}로 발송되었습니다.`);
-    startCooldown();
     setLoading(false);
   };
 
@@ -104,52 +126,30 @@ export default function SgpLoginPage() {
     setError('');
     setSuccess('');
 
-    const { data, error: fetchError } = await supabase
-      .from('sgp_phone_verifications')
-      .select('*')
-      .eq('id', verificationId)
-      .maybeSingle();
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/sms-verify/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ verification_id: verificationId, code: otpCode }),
+      });
 
-    if (fetchError || !data) {
-      setError('인증 정보를 찾을 수 없습니다.');
-      setLoading(false);
-      return;
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || '인증에 실패했습니다.');
+        setLoading(false);
+        return;
+      }
+
+      setOtpVerified(true);
+      setRegisterStep(1);
+      setSuccess('본인인증이 완료되었습니다.');
+    } catch {
+      setError('네트워크 오류. 다시 시도해주세요.');
     }
-
-    if (data.attempts >= 5) {
-      setError('시도 횟수 초과. 새 코드를 요청하세요.');
-      setOtpSent(false);
-      setLoading(false);
-      return;
-    }
-
-    if (new Date(data.expires_at) < new Date()) {
-      setError('인증코드가 만료되었습니다.');
-      setOtpSent(false);
-      setLoading(false);
-      return;
-    }
-
-    await supabase
-      .from('sgp_phone_verifications')
-      .update({ attempts: data.attempts + 1 })
-      .eq('id', verificationId);
-
-    if (data.code !== otpCode) {
-      setError(`인증코드 불일치 (${4 - data.attempts}회 남음)`);
-      setLoading(false);
-      return;
-    }
-
-    await supabase
-      .from('sgp_phone_verifications')
-      .update({ verified: true })
-      .eq('id', verificationId);
-
-    setOtpVerified(true);
-    setRegisterStep(1);
-    setSuccess('본인인증 완료');
-    setError('');
     setLoading(false);
   };
 
@@ -165,38 +165,60 @@ export default function SgpLoginPage() {
     setLoading(false);
   };
 
+  const handleNextToAddress = () => {
+    setError('');
+    if (!displayName.trim()) { setError('이름을 입력하세요.'); return; }
+    if (birthDate.length !== 6 || !/^\d{6}$/.test(birthDate)) {
+      setError('생년월일 6자리를 정확히 입력하세요. (예: 901225)');
+      return;
+    }
+    if (!genderCode) { setError('성별을 선택하세요.'); return; }
+    if (password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return; }
+    if (password !== passwordConfirm) { setError('비밀번호가 일치하지 않습니다.'); return; }
+    setSuccess('');
+    setRegisterStep(2);
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!otpVerified) { setError('전화번호 본인인증을 완료해주세요.'); return; }
-    if (!displayName.trim()) { setError('이름을 입력하세요.'); return; }
-    if (password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return; }
+    if (!address.trim()) { setError('주소를 입력하세요.'); return; }
     setLoading(true);
     const cleanPhone = phone.replace(/[^0-9]/g, '');
-    const result = await signUp(cleanPhone, password, displayName.trim());
+    const result = await signUp({
+      phone: cleanPhone,
+      password,
+      displayName: displayName.trim(),
+      birthDate,
+      genderCode,
+      address: address.trim(),
+      addressDetail: addressDetail.trim(),
+    });
     if (result.error) setError(result.error);
     setLoading(false);
   };
 
-  const switchToLogin = () => {
+  const resetRegistration = () => {
     setMode('login');
     setRegisterStep(0);
     setOtpSent(false);
     setOtpVerified(false);
     setOtpCode('');
+    setPassword('');
+    setPasswordConfirm('');
+    setDisplayName('');
+    setBirthDate('');
+    setGenderCode('');
+    setAddress('');
+    setAddressDetail('');
     setError('');
     setSuccess('');
   };
 
-  const switchToRegister = () => {
-    setMode('register');
-    setRegisterStep(0);
-    setOtpSent(false);
-    setOtpVerified(false);
-    setOtpCode('');
+  useEffect(() => {
     setError('');
     setSuccess('');
-  };
+  }, [registerStep]);
 
   return (
     <Box sx={{
@@ -229,7 +251,7 @@ export default function SgpLoginPage() {
         onSubmit={mode === 'login' ? handleLogin : handleRegister}
         sx={{
           width: '100%',
-          maxWidth: 360,
+          maxWidth: 380,
           bgcolor: 'rgba(255,255,255,0.04)',
           borderRadius: 4,
           p: 3,
@@ -251,10 +273,10 @@ export default function SgpLoginPage() {
               onChange={e => handlePhoneChange(e.target.value)}
               fullWidth size="small"
               placeholder="010-1234-5678"
-              sx={{ mb: 2, '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }, '& input': { color: '#fff' } }}
+              sx={{ mb: 2, ...textFieldStyles }}
               slotProps={{
                 input: { startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
-                inputLabel: { sx: { color: 'rgba(255,255,255,0.6)' } },
+                inputLabel: labelStyles,
               }}
             />
             <TextField
@@ -263,10 +285,10 @@ export default function SgpLoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               fullWidth size="small"
-              sx={{ mb: 3, '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }, '& input': { color: '#fff' } }}
+              sx={{ mb: 3, ...textFieldStyles }}
               slotProps={{
                 input: { startAdornment: <InputAdornment position="start"><LockIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
-                inputLabel: { sx: { color: 'rgba(255,255,255,0.6)' } },
+                inputLabel: labelStyles,
               }}
             />
             <Button
@@ -276,7 +298,7 @@ export default function SgpLoginPage() {
               로그인
             </Button>
             <Box sx={{ textAlign: 'center', mt: 2.5 }}>
-              <Button size="small" onClick={switchToRegister} sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+              <Button size="small" onClick={() => { setMode('register'); setError(''); }} sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
                 계정이 없으신가요? <Box component="span" sx={{ color: '#00d4aa', ml: 0.5, fontWeight: 600 }}>회원가입</Box>
               </Button>
             </Box>
@@ -290,7 +312,7 @@ export default function SgpLoginPage() {
               {REGISTER_STEPS.map(label => (
                 <Step key={label}>
                   <StepLabel sx={{
-                    '& .MuiStepLabel-label': { color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem', '&.Mui-active': { color: '#00d4aa' }, '&.Mui-completed': { color: '#4caf50' } },
+                    '& .MuiStepLabel-label': { color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', '&.Mui-active': { color: '#00d4aa' }, '&.Mui-completed': { color: '#4caf50' } },
                     '& .MuiStepIcon-root': { color: 'rgba(255,255,255,0.15)', '&.Mui-active': { color: '#00d4aa' }, '&.Mui-completed': { color: '#4caf50' } },
                   }}>
                     {label}
@@ -302,6 +324,7 @@ export default function SgpLoginPage() {
             {error && <Alert severity="error" sx={{ mb: 2, fontSize: '0.78rem', py: 0.5 }}>{error}</Alert>}
             {success && <Alert severity="success" sx={{ mb: 2, fontSize: '0.78rem', py: 0.5 }}>{success}</Alert>}
 
+            {/* Step 0: Phone Verification */}
             {registerStep === 0 && (
               <Box>
                 <TextField
@@ -311,13 +334,13 @@ export default function SgpLoginPage() {
                   fullWidth size="small"
                   placeholder="010-1234-5678"
                   disabled={otpVerified}
-                  sx={{ mb: 2, '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }, '& input': { color: '#fff' } }}
+                  sx={{ mb: 2, ...textFieldStyles }}
                   slotProps={{
                     input: {
                       startAdornment: <InputAdornment position="start"><PhoneIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment>,
                       endAdornment: otpVerified ? <InputAdornment position="end"><VerifiedIcon sx={{ fontSize: 18, color: '#4caf50' }} /></InputAdornment> : undefined,
                     },
-                    inputLabel: { sx: { color: 'rgba(255,255,255,0.6)' } },
+                    inputLabel: labelStyles,
                   }}
                 />
 
@@ -342,7 +365,7 @@ export default function SgpLoginPage() {
                           '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 },
                           '& input': { color: '#fff', letterSpacing: 6, textAlign: 'center', fontSize: '1.2rem', fontWeight: 700 },
                         }}
-                        slotProps={{ inputLabel: { sx: { color: 'rgba(255,255,255,0.6)' } } }}
+                        slotProps={{ inputLabel: labelStyles }}
                       />
                       <Button
                         variant="contained" onClick={verifyOtp}
@@ -354,7 +377,7 @@ export default function SgpLoginPage() {
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="caption" sx={{ color: otpCooldown < 30 ? '#ff7043' : 'rgba(255,255,255,0.4)' }}>
-                        {otpCooldown > 0 ? `${Math.floor(otpCooldown / 60)}:${String(otpCooldown % 60).padStart(2, '0')}` : '만료'}
+                        {otpCooldown > 0 ? `${Math.floor(otpCooldown / 60)}:${String(otpCooldown % 60).padStart(2, '0')}` : '만료됨'}
                       </Typography>
                       <Button size="small" onClick={sendOtp} disabled={loading || otpCooldown > 150} sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>
                         재발송
@@ -365,25 +388,61 @@ export default function SgpLoginPage() {
               </Box>
             )}
 
+            {/* Step 1: Personal Info */}
             {registerStep === 1 && (
               <Box>
-                <Box sx={{ p: 1.5, mb: 2.5, bgcolor: 'rgba(76,175,80,0.06)', borderRadius: 2, border: '1px solid rgba(76,175,80,0.2)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ p: 1.5, mb: 2, bgcolor: 'rgba(76,175,80,0.06)', borderRadius: 2, border: '1px solid rgba(76,175,80,0.2)', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <VerifiedIcon sx={{ fontSize: 16, color: '#4caf50' }} />
                   <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 600, fontSize: '0.8rem' }}>{phone}</Typography>
                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', ml: 'auto' }}>인증완료</Typography>
                 </Box>
+
                 <TextField
-                  label="이름"
+                  label="이름 (실명)"
                   value={displayName}
                   onChange={e => setDisplayName(e.target.value)}
                   fullWidth size="small"
                   placeholder="홍길동"
-                  sx={{ mb: 2, '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }, '& input': { color: '#fff' } }}
+                  sx={{ mb: 2, ...textFieldStyles }}
                   slotProps={{
                     input: { startAdornment: <InputAdornment position="start"><PersonIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
-                    inputLabel: { sx: { color: 'rgba(255,255,255,0.6)' } },
+                    inputLabel: labelStyles,
                   }}
                 />
+
+                <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+                  <TextField
+                    label="생년월일"
+                    value={birthDate}
+                    onChange={e => setBirthDate(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                    size="small"
+                    placeholder="901225"
+                    sx={{ flex: 2, ...textFieldStyles }}
+                    slotProps={{
+                      input: { startAdornment: <InputAdornment position="start"><CakeIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
+                      inputLabel: labelStyles,
+                    }}
+                  />
+                  <TextField
+                    label="성별"
+                    value={genderCode}
+                    onChange={e => setGenderCode(e.target.value)}
+                    select
+                    size="small"
+                    sx={{ flex: 1, ...textFieldStyles, '& .MuiSvgIcon-root': { color: 'rgba(255,255,255,0.4)' } }}
+                    slotProps={{ inputLabel: labelStyles }}
+                  >
+                    <MenuItem value="1">남(1)</MenuItem>
+                    <MenuItem value="2">여(2)</MenuItem>
+                    <MenuItem value="3">남(3)</MenuItem>
+                    <MenuItem value="4">여(4)</MenuItem>
+                  </TextField>
+                </Box>
+
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', display: 'block', mb: 2, ml: 0.5 }}>
+                  * 주민번호 앞6자리(생년월일) + 뒷자리 첫번째(성별)만 수집합니다.
+                </Typography>
+
                 <TextField
                   label="비밀번호"
                   type="password"
@@ -391,23 +450,91 @@ export default function SgpLoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   fullWidth size="small"
                   placeholder="6자 이상"
-                  sx={{ mb: 3, '& .MuiInputBase-root': { bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 2 }, '& input': { color: '#fff' } }}
+                  sx={{ mb: 1.5, ...textFieldStyles }}
                   slotProps={{
                     input: { startAdornment: <InputAdornment position="start"><LockIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
-                    inputLabel: { sx: { color: 'rgba(255,255,255,0.6)' } },
+                    inputLabel: labelStyles,
                   }}
                 />
+                <TextField
+                  label="비밀번호 확인"
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={e => setPasswordConfirm(e.target.value)}
+                  fullWidth size="small"
+                  sx={{ mb: 3, ...textFieldStyles }}
+                  slotProps={{
+                    input: { startAdornment: <InputAdornment position="start"><LockIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
+                    inputLabel: labelStyles,
+                  }}
+                />
+
                 <Button
-                  type="submit" variant="contained" fullWidth disabled={loading}
-                  sx={{ py: 1.3, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#00d4aa', color: '#0d1b2a', '&:hover': { bgcolor: '#00b894' }, boxShadow: '0 4px 14px rgba(0,212,170,0.3)' }}
+                  variant="contained" fullWidth onClick={handleNextToAddress}
+                  disabled={loading}
+                  sx={{ py: 1.3, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#00d4aa', color: '#0d1b2a', '&:hover': { bgcolor: '#00b894' } }}
                 >
-                  가입완료
+                  다음 단계
                 </Button>
               </Box>
             )}
 
+            {/* Step 2: Address */}
+            {registerStep === 2 && (
+              <Box>
+                <Box sx={{ p: 1.5, mb: 2, bgcolor: 'rgba(76,175,80,0.06)', borderRadius: 2, border: '1px solid rgba(76,175,80,0.2)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <VerifiedIcon sx={{ fontSize: 14, color: '#4caf50' }} />
+                    <Typography variant="caption" sx={{ color: '#4caf50', fontWeight: 600 }}>{displayName}</Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)' }}>|</Typography>
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>{phone}</Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.68rem' }}>
+                    {birthDate.slice(0, 2)}년생 / {genderCode === '1' || genderCode === '3' ? '남' : '여'}
+                  </Typography>
+                </Box>
+
+                <TextField
+                  label="주소"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  fullWidth size="small"
+                  placeholder="서울특별시 강남구 역삼동"
+                  sx={{ mb: 2, ...textFieldStyles }}
+                  slotProps={{
+                    input: { startAdornment: <InputAdornment position="start"><HomeIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
+                    inputLabel: labelStyles,
+                  }}
+                />
+                <TextField
+                  label="상세주소 (선택)"
+                  value={addressDetail}
+                  onChange={e => setAddressDetail(e.target.value)}
+                  fullWidth size="small"
+                  placeholder="아파트 동/호수"
+                  sx={{ mb: 3, ...textFieldStyles }}
+                  slotProps={{ inputLabel: labelStyles }}
+                />
+
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  <Button
+                    variant="outlined" onClick={() => setRegisterStep(1)}
+                    sx={{ flex: 1, py: 1.2, fontWeight: 600, borderRadius: 2, color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.2)', '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}
+                  >
+                    이전
+                  </Button>
+                  <Button
+                    type="submit" variant="contained" disabled={loading}
+                    sx={{ flex: 2, py: 1.2, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#00d4aa', color: '#0d1b2a', '&:hover': { bgcolor: '#00b894' }, boxShadow: '0 4px 14px rgba(0,212,170,0.3)' }}
+                  >
+                    가입완료
+                  </Button>
+                </Box>
+              </Box>
+            )}
+
             <Box sx={{ textAlign: 'center', mt: 2.5 }}>
-              <Button size="small" onClick={switchToLogin} sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+              <Button size="small" onClick={resetRegistration} sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
                 이미 계정이 있으신가요? <Box component="span" sx={{ color: '#00d4aa', ml: 0.5, fontWeight: 600 }}>로그인</Box>
               </Button>
             </Box>

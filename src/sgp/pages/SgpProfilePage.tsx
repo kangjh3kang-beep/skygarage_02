@@ -18,6 +18,7 @@ import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NfcIcon from '@mui/icons-material/Nfc';
 import PersonIcon from '@mui/icons-material/Person';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import { useSgpAuth } from '../contexts/SgpAuthContext';
 import { supabase } from '../../lib/supabase';
 import type { SgpComplexMembership } from '../types';
@@ -111,14 +112,24 @@ export default function SgpProfilePage() {
           <Box sx={{ flex: 1 }}>
             <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>{user?.display_name}</Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>{user?.phone}</Typography>
-            {user?.nfc_token && (
-              <Chip
-                icon={<NfcIcon sx={{ fontSize: 14, color: '#00d4aa !important' }} />}
-                label={user.nfc_token}
-                size="small"
-                sx={{ mt: 0.5, bgcolor: 'rgba(0,212,170,0.1)', color: '#00d4aa', fontSize: '0.65rem', height: 20 }}
-              />
-            )}
+            <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5, flexWrap: 'wrap' }}>
+              {user?.kyc_level !== undefined && user.kyc_level >= 1 && (
+                <Chip
+                  icon={<VerifiedUserIcon sx={{ fontSize: 12, color: '#4caf50 !important' }} />}
+                  label={`KYC Lv.${user.kyc_level}`}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(76,175,80,0.1)', color: '#4caf50', fontSize: '0.65rem', height: 20 }}
+                />
+              )}
+              {user?.nfc_token && (
+                <Chip
+                  icon={<NfcIcon sx={{ fontSize: 14, color: '#00d4aa !important' }} />}
+                  label={user.nfc_token}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(0,212,170,0.1)', color: '#00d4aa', fontSize: '0.65rem', height: 20 }}
+                />
+              )}
+            </Box>
           </Box>
         </CardContent>
       </Card>

@@ -6,6 +6,13 @@ export interface SgpUser {
   nfc_token: string | null;
   is_verified: boolean;
   status: 'active' | 'suspended' | 'dormant';
+  birth_date: string | null;
+  gender_code: string | null;
+  address: string;
+  address_detail: string;
+  kyc_level: number;
+  ci_hash: string | null;
+  phone_verified_at: string | null;
   created_at: string;
 }
 

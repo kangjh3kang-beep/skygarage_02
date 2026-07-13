@@ -7,7 +7,15 @@ interface SgpAuthState {
   wallet: SgpCoinWallet | null;
   loading: boolean;
   isAuthenticated: boolean;
-  signUp: (phone: string, password: string, displayName: string) => Promise<{ error?: string }>;
+  signUp: (params: {
+    phone: string;
+    password: string;
+    displayName: string;
+    birthDate?: string;
+    genderCode?: string;
+    address?: string;
+    addressDetail?: string;
+  }) => Promise<{ error?: string }>;
   signIn: (phone: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   refreshWallet: () => Promise<void>;
@@ -60,7 +68,16 @@ export function SgpAuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (phone: string, password: string, displayName: string) => {
+  const signUp = async (params: {
+    phone: string;
+    password: string;
+    displayName: string;
+    birthDate?: string;
+    genderCode?: string;
+    address?: string;
+    addressDetail?: string;
+  }) => {
+    const { phone, password, displayName, birthDate, genderCode, address, addressDetail } = params;
     const email = `${phone.replace(/[^0-9]/g, '')}@sgp.skygarage.app`;
 
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -76,6 +93,13 @@ export function SgpAuthProvider({ children }: { children: ReactNode }) {
       id: authData.user.id,
       phone,
       display_name: displayName,
+      birth_date: birthDate || null,
+      gender_code: genderCode || null,
+      address: address || '',
+      address_detail: addressDetail || '',
+      kyc_level: 1,
+      is_verified: true,
+      phone_verified_at: new Date().toISOString(),
     });
 
     if (profileError) return { error: profileError.message };
