@@ -10,9 +10,9 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ALIGO_API_KEY = Deno.env.get("ALIGO_API_KEY") || "";
-const ALIGO_USER_ID = Deno.env.get("ALIGO_USER_ID") || "";
-const ALIGO_SENDER = Deno.env.get("ALIGO_SENDER") || "";
+const COOLSMS_API_KEY = Deno.env.get("COOLSMS_API_KEY") || "";
+const COOLSMS_API_SECRET = Deno.env.get("COOLSMS_API_SECRET") || "";
+const COOLSMS_SENDER = Deno.env.get("COOLSMS_SENDER") || "";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -20,36 +20,65 @@ function generateCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-async function sendAligoSms(
+function generateHmacSignature(date: string, salt: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = encoder.encode(secret);
+  const msg = encoder.encode(date + salt);
+  return crypto.subtle.importKey(
+    "raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  ).then(async (cryptoKey) => {
+    const signature = await crypto.subtle.sign("HMAC", cryptoKey, msg);
+    return Array.from(new Uint8Array(signature))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  });
+}
+
+function generateSalt(length = 32): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array).map((b) => chars[b % chars.length]).join("");
+}
+
+async function sendCoolSms(
   phone: string,
   message: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  if (!ALIGO_API_KEY || !ALIGO_USER_ID || !ALIGO_SENDER) {
-    console.log("[DEV MODE] Aligo credentials not configured, skipping SMS send");
+  if (!COOLSMS_API_KEY || !COOLSMS_API_SECRET || !COOLSMS_SENDER) {
+    console.log("[DEV MODE] CoolSMS credentials not configured, skipping SMS send");
     return { success: true, messageId: "dev-mode-no-send" };
   }
 
   try {
-    const formData = new URLSearchParams();
-    formData.append("key", ALIGO_API_KEY);
-    formData.append("user_id", ALIGO_USER_ID);
-    formData.append("sender", ALIGO_SENDER);
-    formData.append("receiver", phone);
-    formData.append("msg", message);
-    formData.append("msg_type", "SMS");
+    const date = new Date().toISOString();
+    const salt = generateSalt();
+    const signature = await generateHmacSignature(date, salt, COOLSMS_API_SECRET);
 
-    const response = await fetch("https://apis.aligo.in/send/", {
+    const authorization = `HMAC-SHA256 apiKey=${COOLSMS_API_KEY}, date=${date}, salt=${salt}, signature=${signature}`;
+
+    const response = await fetch("https://api.coolsms.co.kr/messages/v4/send", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formData.toString(),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authorization,
+      },
+      body: JSON.stringify({
+        message: {
+          to: phone,
+          from: COOLSMS_SENDER,
+          text: message,
+          type: "SMS",
+        },
+      }),
     });
 
     const result = await response.json();
 
-    if (result.result_code === "1") {
-      return { success: true, messageId: result.msg_id || "" };
+    if (response.ok && result.groupId) {
+      return { success: true, messageId: result.messageId || result.groupId };
     }
-    return { success: false, error: result.message || "SMS 발송 실패" };
+    return { success: false, error: result.errorMessage || result.message || "SMS 발송 실패" };
   } catch (err) {
     return { success: false, error: (err as Error).message };
   }
@@ -87,9 +116,9 @@ async function handleSend(body: {
   const code = generateCode();
   const expiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString();
 
-  // Send SMS via Aligo
+  // Send SMS via CoolSMS
   const smsMessage = `[SGP] 인증코드: ${code}\n3분 이내 입력해주세요.`;
-  const smsResult = await sendAligoSms(cleanPhone, smsMessage);
+  const smsResult = await sendCoolSms(cleanPhone, smsMessage);
 
   if (!smsResult.success) {
     return new Response(
@@ -105,7 +134,7 @@ async function handleSend(body: {
       phone: cleanPhone,
       code,
       expires_at: expiresAt,
-      sent_via: "aligo",
+      sent_via: "coolsms",
       message_id: smsResult.messageId || null,
     })
     .select("id")
