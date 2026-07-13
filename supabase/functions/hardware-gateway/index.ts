@@ -380,51 +380,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // POST /bay-occupancy - Parking bay sensor reports occupancy change
-    if (req.method === "POST" && path === "/bay-occupancy") {
-      const { device_serial, spot_id, event_type, confidence, detected_plate } = await req.json();
-
-      const { data: device } = await supabase
-        .from("hardware_device_registry")
-        .select("id")
-        .eq("device_serial", device_serial)
-        .maybeSingle();
-
-      if (!device) {
-        return new Response(
-          JSON.stringify({ error: "Sensor device not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Record occupancy event
-      await supabase.from("parking_bay_occupancy_events").insert({
-        spot_id,
-        device_id: device.id,
-        event_type: event_type || "occupied",
-        confidence: confidence ?? 1.0,
-        detected_plate: detected_plate || null,
-      });
-
-      // Update parking_spots is_occupied status
-      const isOccupied = event_type === "occupied";
-      await supabase
-        .from("parking_spots")
-        .update({ is_occupied: isOccupied })
-        .eq("id", spot_id);
-
-      // Update device heartbeat
-      await supabase
-        .from("hardware_device_registry")
-        .update({ last_heartbeat_at: new Date().toISOString(), connection_status: "online" })
-        .eq("id", device.id);
-
-      return new Response(
-        JSON.stringify({ success: true, spot_id, is_occupied: isOccupied }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // GET /device-status/:serial - Get current device status
     if (req.method === "GET" && path.startsWith("/device-status/")) {
       const serial = path.replace("/device-status/", "");

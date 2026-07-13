@@ -155,13 +155,11 @@ export default function RegionHub() {
     if (!payload.name || !payload.code) return;
 
     if (editingRegion) {
-      const { error } = await supabase.from('regions').update(payload).eq('id', editingRegion.id);
-      if (error) { console.error(error); return; }
-      logAction('UPDATE', 'regions', editingRegion.id, { name: payload.name });
+      await supabase.from('regions').update(payload).eq('id', editingRegion.id);
+      logAction('update', `region:${editingRegion.id}`, editingRegion.id, { name: payload.name });
     } else {
-      const { data, error } = await supabase.from('regions').insert(payload).select('id').single();
-      if (error) { console.error(error); return; }
-      logAction('CREATE', 'regions', data?.id, { name: payload.name });
+      await supabase.from('regions').insert(payload);
+      logAction('create', `region:${payload.code}`, payload.code, { name: payload.name });
     }
     setDialogOpen(false);
     setEditingRegion(null);
@@ -172,9 +170,8 @@ export default function RegionHub() {
   const handleDelete = async () => {
     if (!editingRegion) return;
     if (!confirm('이 리전을 삭제하시겠습니까? 연결된 존과 단지 배정은 유지됩니다.')) return;
-    const { error } = await supabase.from('regions').delete().eq('id', editingRegion.id);
-    if (error) { console.error(error); return; }
-    logAction('DELETE', 'regions', editingRegion.id, { name: editingRegion.name });
+    await supabase.from('regions').delete().eq('id', editingRegion.id);
+    logAction('delete', `region:${editingRegion.id}`, editingRegion.id, { name: editingRegion.name });
     setDialogOpen(false);
     setEditingRegion(null);
     setSelectedRegion('');

@@ -31,8 +31,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
-import VerticalAlignTopIcon from '@mui/icons-material/VerticalAlignTop';
-import StopIcon from '@mui/icons-material/Stop';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import CloseIcon from '@mui/icons-material/Close';
 import { supabase } from '../../lib/supabase';
@@ -196,19 +194,6 @@ export default function ElevatorManagement() {
     loadData();
   };
 
-  const dispatchElevatorCommand = async (elevatorId: string, commandType: string, priority = 3) => {
-    const { error } = await supabase.from('hardware_commands').insert({
-      device_id: elevatorId,
-      command_type: commandType,
-      priority,
-      payload: {},
-      status: 'queued',
-    });
-    if (error) { showToast('명령 전송 실패: ' + error.message, 'error'); return; }
-    logAction('CREATE', 'hardware_commands', undefined, { device_id: elevatorId, command_type: commandType });
-    showToast(`${commandType} 명령이 전송되었습니다`, 'success');
-  };
-
   const openNew = async () => {
     setEditing(null);
     setForm(emptyForm);
@@ -316,8 +301,6 @@ export default function ElevatorManagement() {
                       {(e.completeness_score || 0) >= 80 ? <CheckCircleIcon sx={{ fontSize: 14, color: 'success.main' }} /> : <WarningIcon sx={{ fontSize: 14, color: 'warning.main' }} />}
                     </TableCell>
                     <TableCell align="center" onClick={ev => ev.stopPropagation()}>
-                      <IconButton size="small" onClick={() => dispatchElevatorCommand(e.id, 'call_floor')} title="호출"><VerticalAlignTopIcon sx={{ fontSize: 16, color: '#00d4ff' }} /></IconButton>
-                      <IconButton size="small" onClick={() => dispatchElevatorCommand(e.id, 'emergency_stop', 1)} title="비상정지"><StopIcon sx={{ fontSize: 16, color: '#ff5252' }} /></IconButton>
                       <IconButton size="small" onClick={() => openEdit(e)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
                       <IconButton size="small" onClick={() => setDeleteTarget(e)} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
                     </TableCell>

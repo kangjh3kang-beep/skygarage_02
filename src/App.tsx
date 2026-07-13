@@ -59,10 +59,6 @@ const PatentManagement = lazy(() => import('./admin/pages/PatentManagement'));
 const LicenseManagement = lazy(() => import('./admin/pages/LicenseManagement'));
 const PriorityDispatch = lazy(() => import('./admin/pages/PriorityDispatch'));
 const SettlementManagement = lazy(() => import('./admin/pages/SettlementManagement'));
-const HardwareIntegration = lazy(() => import('./admin/pages/HardwareIntegration'));
-const AIOpsMonitoring = lazy(() => import('./admin/pages/AIOpsMonitoring'));
-const MissionPipeline = lazy(() => import('./admin/pages/MissionPipeline'));
-const BottleneckWorkbench = lazy(() => import('./admin/pages/BottleneckWorkbench'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
 const BrandGuidePage = lazy(() => import('./components/BrandGuidePage'));
@@ -95,7 +91,6 @@ const SgpHomePage = lazy(() => import('./sgp/pages/SgpHomePage'));
 const SgpWalletPage = lazy(() => import('./sgp/pages/SgpWalletPage'));
 const SgpPayPage = lazy(() => import('./sgp/pages/SgpPayPage'));
 const SgpParkingPage = lazy(() => import('./sgp/pages/SgpParkingPage'));
-const SgpAvailableSpotsPage = lazy(() => import('./sgp/pages/SgpAvailableSpotsPage'));
 const SgpVehicleMapPage = lazy(() => import('./sgp/pages/SgpVehicleMapPage'));
 const SgpProfilePage = lazy(() => import('./sgp/pages/SgpProfilePage'));
 
@@ -163,7 +158,6 @@ function SgpAppGuard() {
           <Route path="wallet" element={<SgpWalletPage />} />
           <Route path="pay" element={<SgpPayPage />} />
           <Route path="parking" element={<SgpParkingPage />} />
-          <Route path="spots" element={<SgpAvailableSpotsPage />} />
           <Route path="map" element={<SgpVehicleMapPage />} />
           <Route path="profile" element={<SgpProfilePage />} />
         </Route>
@@ -270,10 +264,6 @@ function ProtectedRoutes() {
             <Route path="licenses" element={<LicenseManagement />} />
             <Route path="priority-dispatch" element={<PriorityDispatch />} />
             <Route path="settlement" element={<SettlementManagement />} />
-            <Route path="hardware" element={<HardwareIntegration />} />
-            <Route path="aiops" element={<AIOpsMonitoring />} />
-            <Route path="mission-pipeline" element={<MissionPipeline />} />
-            <Route path="bottleneck" element={<BottleneckWorkbench />} />
             <Route path="fleet" element={<FleetManagement />} />
             <Route path="settings" element={<Settings />} />
           </Route>

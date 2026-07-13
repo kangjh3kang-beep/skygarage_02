@@ -729,24 +729,23 @@ async function executeStep(
   step: WorkflowStep,
   _context: Record<string, unknown>
 ): Promise<{ success: boolean; data?: unknown; error?: string }> {
-  const HARDWARE_ACTIONS = [
-    "atr_dispatch", "vehicle_transport", "emergency_stop",
-    "vehicle_retrieve", "exit_preparation",
-  ];
-
-  if (HARDWARE_ACTIONS.includes(step.action)) {
-    return await dispatchHardwareCommand(step);
-  }
-
   switch (step.action) {
     case "rfid_auth":
       return { success: true, data: { authenticated: true, method: "rfid" } };
     case "slot_assignment":
       return { success: true, data: { slot_id: `S-${Math.floor(Math.random() * 200) + 1}`, floor: Math.floor(Math.random() * 10) + 1 } };
+    case "atr_dispatch":
+      return { success: true, data: { atr_id: `ATR-${Math.floor(Math.random() * 10) + 1}`, eta_seconds: 45 } };
+    case "vehicle_transport":
+      return { success: true, data: { transport_time: 120, distance_meters: 85 } };
     case "parking_confirm":
       return { success: true, data: { parked: true, timestamp: new Date().toISOString() } };
     case "request_validation":
       return { success: true, data: { valid: true } };
+    case "vehicle_retrieve":
+      return { success: true, data: { retrieved: true } };
+    case "exit_preparation":
+      return { success: true, data: { gate: "A1", ready: true } };
     case "exit_confirm":
       return { success: true, data: { exited: true, fee: Math.floor(Math.random() * 5000) + 2000 } };
     case "notification_create":
@@ -769,6 +768,8 @@ async function executeStep(
       return { success: true, data: { optimized: true, vehicles: 8 } };
     case "event_detection":
       return { success: true, data: { detected: true, severity: "warning" } };
+    case "emergency_stop":
+      return { success: true, data: { systems_halted: true } };
     case "situation_assessment":
       return { success: true, data: { assessment: "minor", requires_intervention: false } };
     case "corrective_action":
@@ -809,89 +810,5 @@ async function executeStep(
       return { success: true, data: { auto_action: "system_restart" } };
     default:
       return { success: true, data: { action: step.action, simulated: true } };
-  }
-}
-
-async function dispatchHardwareCommand(
-  step: WorkflowStep
-): Promise<{ success: boolean; data?: unknown; error?: string }> {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-  const commandTypeMap: Record<string, string> = {
-    atr_dispatch: "dispatch",
-    vehicle_transport: "transport",
-    emergency_stop: "emergency_stop",
-    vehicle_retrieve: "retrieve",
-    exit_preparation: "prepare_exit",
-  };
-
-  const deviceType = step.action === "atr_dispatch" || step.action === "vehicle_retrieve"
-    ? "atr"
-    : "vehicle_elevator";
-
-  const { data: device } = await supabase
-    .from("hardware_device_registry")
-    .select("id, device_serial, adapter_id, connection_status")
-    .eq("device_type", deviceType)
-    .eq("connection_status", "online")
-    .order("last_heartbeat_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!device) {
-    return { success: false, error: `No online ${deviceType} device available` };
-  }
-
-  const { data: command, error: insertError } = await supabase
-    .from("hardware_commands")
-    .insert({
-      device_id: device.id,
-      command_type: commandTypeMap[step.action] || step.action,
-      priority: step.action === "emergency_stop" ? 1 : 3,
-      payload: step.config || {},
-      status: "queued",
-    })
-    .select("id")
-    .single();
-
-  if (insertError) {
-    return { success: false, error: insertError.message };
-  }
-
-  try {
-    const gatewayRes = await fetch(`${supabaseUrl}/functions/v1/hardware-gateway`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${serviceRoleKey}`,
-      },
-      body: JSON.stringify({
-        action: "dispatch-command",
-        command_id: command.id,
-        device_serial: device.device_serial,
-      }),
-    });
-
-    if (!gatewayRes.ok) {
-      const errBody = await gatewayRes.text();
-      await supabase.from("hardware_commands").update({ status: "failed", error_code: `HTTP_${gatewayRes.status}` }).eq("id", command.id);
-      return { success: false, error: `Gateway returned ${gatewayRes.status}: ${errBody}` };
-    }
-
-    const result = await gatewayRes.json();
-    return {
-      success: true,
-      data: {
-        command_id: command.id,
-        device_serial: device.device_serial,
-        device_type: deviceType,
-        gateway_response: result,
-      },
-    };
-  } catch (err) {
-    await supabase.from("hardware_commands").update({ status: "failed", error_code: "GATEWAY_UNREACHABLE" }).eq("id", command.id);
-    return { success: false, error: `Gateway call failed: ${String(err)}` };
   }
 }
