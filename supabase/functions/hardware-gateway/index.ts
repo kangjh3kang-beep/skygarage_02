@@ -372,6 +372,139 @@ Deno.serve(async (req: Request) => {
             success: true,
           });
         }
+
+        // For OPC UA adapters (Vehicle Elevators) - forward via REST bridge to OPC UA gateway
+        if (adapter.protocol_type === "opc_ua" && adapter.api_endpoint) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), adapter.timeout_ms);
+
+            const opcNodeId = `ns=2;s=Device.${device.device_serial}.Command`;
+            const opcPayload = {
+              node_id: opcNodeId,
+              method: "Call",
+              input_arguments: [
+                { type: "String", value: command.id },
+                { type: "String", value: command_type },
+                { type: "Int32", value: priority },
+                { type: "String", value: JSON.stringify(payload) },
+              ],
+            };
+
+            const response = await fetch(`${adapter.api_endpoint}/opc/method-call`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(opcPayload),
+              signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            await supabase.from("hardware_protocol_logs").insert({
+              device_id,
+              direction: "outbound",
+              method: "OPC_UA_CALL",
+              endpoint: `${adapter.api_endpoint}/opc/method-call`,
+              request_body: opcPayload,
+              response_body: response.ok ? { status: "forwarded" } : { error: "opc_call_failed" },
+              status_code: response.status,
+              latency_ms: 0,
+              success: response.ok,
+            });
+
+            if (response.ok) {
+              await supabase
+                .from("hardware_commands")
+                .update({ status: "sent", sent_at: new Date().toISOString() })
+                .eq("id", command.id);
+            }
+          } catch (e) {
+            await supabase.from("hardware_protocol_logs").insert({
+              device_id,
+              direction: "outbound",
+              method: "OPC_UA_CALL",
+              endpoint: `${adapter.api_endpoint}/opc/method-call`,
+              request_body: { command_type, payload },
+              response_body: {},
+              status_code: 0,
+              latency_ms: 0,
+              success: false,
+              error_detail: e instanceof Error ? e.message : "Unknown error",
+            });
+          }
+        }
+
+        // For Modbus TCP adapters (Mechanical Parking Towers) - forward via REST bridge to Modbus gateway
+        if (adapter.protocol_type === "modbus_tcp" && adapter.api_endpoint) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), adapter.timeout_ms);
+
+            const commandRegisterMap: Record<string, number> = {
+              move_pallet: 100,
+              retrieve_vehicle: 110,
+              emergency_stop: 1,
+              status_query: 200,
+              door_open: 120,
+              door_close: 121,
+            };
+
+            const registerAddr = commandRegisterMap[command_type] ?? 999;
+            const modbusPayload = {
+              unit_id: parseInt(device.network_address?.split(":")[1] || "1"),
+              function_code: 16, // Write Multiple Registers
+              register_address: registerAddr,
+              values: [
+                1, // execute flag
+                priority,
+                ...(payload?.floor ? [payload.floor as number] : [0]),
+                ...(payload?.slot ? [payload.slot as number] : [0]),
+              ],
+              metadata: { command_id: command.id, command_type },
+            };
+
+            const response = await fetch(`${adapter.api_endpoint}/modbus/write-registers`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(modbusPayload),
+              signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            await supabase.from("hardware_protocol_logs").insert({
+              device_id,
+              direction: "outbound",
+              method: "MODBUS_WRITE",
+              endpoint: `${adapter.api_endpoint}/modbus/write-registers`,
+              request_body: modbusPayload,
+              response_body: response.ok ? { status: "registers_written" } : { error: "modbus_write_failed" },
+              status_code: response.status,
+              latency_ms: 0,
+              success: response.ok,
+            });
+
+            if (response.ok) {
+              await supabase
+                .from("hardware_commands")
+                .update({ status: "sent", sent_at: new Date().toISOString() })
+                .eq("id", command.id);
+            }
+          } catch (e) {
+            await supabase.from("hardware_protocol_logs").insert({
+              device_id,
+              direction: "outbound",
+              method: "MODBUS_WRITE",
+              endpoint: `${adapter.api_endpoint}/modbus/write-registers`,
+              request_body: { command_type, payload },
+              response_body: {},
+              status_code: 0,
+              latency_ms: 0,
+              success: false,
+              error_detail: e instanceof Error ? e.message : "Unknown error",
+            });
+          }
+        }
       }
 
       return new Response(
@@ -411,6 +544,51 @@ Deno.serve(async (req: Request) => {
 
       return new Response(
         JSON.stringify({ device, telemetry }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /bay-occupancy - Parking bay sensor reports occupancy change
+    if (req.method === "POST" && path === "/bay-occupancy") {
+      const { device_serial, spot_id, event_type, confidence, detected_plate } = await req.json();
+
+      const { data: device } = await supabase
+        .from("hardware_device_registry")
+        .select("id")
+        .eq("device_serial", device_serial)
+        .maybeSingle();
+
+      if (!device) {
+        return new Response(
+          JSON.stringify({ error: "Device not found", serial: device_serial }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Record the occupancy event
+      await supabase.from("parking_bay_occupancy_events").insert({
+        spot_id,
+        device_id: device.id,
+        event_type,
+        confidence: confidence ?? 1.0,
+        detected_plate: detected_plate ?? null,
+      });
+
+      // Update parking spot occupancy
+      const isOccupied = event_type === "vehicle_entered" || event_type === "occupied";
+      await supabase
+        .from("parking_spots")
+        .update({ is_occupied: isOccupied })
+        .eq("id", spot_id);
+
+      // Update device heartbeat
+      await supabase
+        .from("hardware_device_registry")
+        .update({ last_heartbeat_at: new Date().toISOString(), connection_status: "online" })
+        .eq("id", device.id);
+
+      return new Response(
+        JSON.stringify({ success: true, spot_id, is_occupied: isOccupied }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

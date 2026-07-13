@@ -11,6 +11,7 @@ import ApartmentIcon from '@mui/icons-material/Apartment';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import MapIcon from '@mui/icons-material/Map';
 import EvStationIcon from '@mui/icons-material/EvStation';
+import LocalParkingIcon from '@mui/icons-material/LocalParking';
 import HistoryIcon from '@mui/icons-material/History';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -108,7 +109,7 @@ export default function SgpHomePage() {
           {[
             { icon: <NfcIcon />, label: 'NFC결제', color: '#00d4aa', path: '/app/pay' },
             { icon: <MapIcon />, label: '내차위치', color: '#2196f3', path: '/app/map' },
-            { icon: <DirectionsCarIcon />, label: '주차내역', color: '#ff9800', path: '/app/parking' },
+            { icon: <LocalParkingIcon />, label: '빈주차면', color: '#ff9800', path: '/app/spots' },
             { icon: <EvStationIcon />, label: 'EV충전', color: '#66bb6a', path: '/app/parking' },
           ].map(item => (
             <Box
