@@ -51,13 +51,18 @@ async function sendCoolSms(
   }
 
   try {
+    const cleanSender = COOLSMS_SENDER.replace(/[^0-9]/g, "");
+    const cleanTo = phone.replace(/[^0-9]/g, "");
+
+    console.log(`[SMS] Sending from: ${cleanSender}, to: ${cleanTo}`);
+
     const date = new Date().toISOString();
     const salt = generateSalt();
     const signature = await generateHmacSignature(date, salt, COOLSMS_API_SECRET);
 
     const authorization = `HMAC-SHA256 apiKey=${COOLSMS_API_KEY}, date=${date}, salt=${salt}, signature=${signature}`;
 
-    const response = await fetch("https://api.coolsms.co.kr/messages/v4/send", {
+    const response = await fetch("https://api.solapi.com/messages/v4/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -65,8 +70,8 @@ async function sendCoolSms(
       },
       body: JSON.stringify({
         message: {
-          to: phone,
-          from: COOLSMS_SENDER,
+          to: cleanTo,
+          from: cleanSender,
           text: message,
           type: "SMS",
         },
@@ -74,6 +79,7 @@ async function sendCoolSms(
     });
 
     const result = await response.json();
+    console.log(`[SMS] Response status: ${response.status}, body:`, JSON.stringify(result));
 
     if (response.ok && result.groupId) {
       return { success: true, messageId: result.messageId || result.groupId };
