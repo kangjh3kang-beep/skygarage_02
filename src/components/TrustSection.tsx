@@ -414,6 +414,48 @@ export default function TrustSection() {
               }}
             />
           </Box>
+
+          <Box
+            component="a"
+            href="http://mrplan.co.kr/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="미래환경플랜 건축사사무소 홈페이지 방문"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 72,
+              px: { xs: 3, sm: 4 },
+              py: 2,
+              ml: 2,
+              mt: { xs: 2, sm: 0 },
+              background: '#ffffff',
+              border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.1)',
+              borderRadius: 2,
+              textDecoration: 'none',
+              verticalAlign: 'top',
+              transition: 'all 0.25s ease',
+              '&:hover': {
+                transform: 'translateY(-3px)',
+                borderColor: isDark ? 'rgba(201,168,76,0.55)' : 'rgba(158,127,48,0.55)',
+                boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.3)' : '0 8px 24px rgba(0,0,0,0.12)',
+              },
+            }}
+          >
+            <Box
+              component="img"
+              src="/foot_logo.png"
+              alt="미래환경플랜 건축사사무소"
+              sx={{
+                display: 'block',
+                width: 'auto',
+                height: { xs: 32, sm: 42 },
+                maxWidth: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
         </Box>
 
         {/* Patent list */}
