@@ -7,6 +7,7 @@ import PainPointSection from '../components/PainPointSection';
 import SolutionSection from '../components/SolutionSection';
 import ATRSection from '../components/ATRSection';
 import ThreeModesSection from '../components/ThreeModesSection';
+import LawReformSection from '../components/LawReformSection';
 import ProcessSection from '../components/ProcessSection';
 import ComparisonSection from '../components/ComparisonSection';
 import BenefitsSection from '../components/BenefitsSection';
@@ -45,6 +46,7 @@ export default function LandingPage() {
         <SectionMediaStrip position="after_atr" />
         <ThreeModesSection />
         <SectionMediaStrip position="after_three_modes" />
+        <LawReformSection />
         <ProcessSection />
         <SectionMediaStrip position="after_process" />
         <ComparisonSection />
