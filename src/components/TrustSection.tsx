@@ -365,6 +365,57 @@ export default function TrustSection() {
           ))}
         </Grid>
 
+        {/* Technology partner */}
+        <Box
+          sx={{
+            mb: { xs: 6, md: 8 },
+            opacity: visible ? 1 : 0,
+            transition: 'opacity 0.6s 0.45s ease',
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 3, fontSize: '1rem', color: goldColor }}>
+            기술 파트너
+          </Typography>
+          <Box
+            component="a"
+            href="https://www.hlrobotics.co.kr/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="HL Robotics 홈페이지 방문"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 72,
+              px: { xs: 3, sm: 4 },
+              py: 2,
+              background: '#ffffff',
+              border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(0,0,0,0.1)',
+              borderRadius: 2,
+              textDecoration: 'none',
+              transition: 'all 0.25s ease',
+              '&:hover': {
+                transform: 'translateY(-3px)',
+                borderColor: isDark ? 'rgba(201,168,76,0.55)' : 'rgba(158,127,48,0.55)',
+                boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.3)' : '0 8px 24px rgba(0,0,0,0.12)',
+              },
+            }}
+          >
+            <Box
+              component="img"
+              src="/HL_Robotics_CI_basic(영문)%20copy.png"
+              alt="HL Robotics"
+              sx={{
+                display: 'block',
+                width: 'auto',
+                height: { xs: 32, sm: 42 },
+                maxWidth: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
+        </Box>
+
         {/* Patent list */}
         <Box
           sx={{
