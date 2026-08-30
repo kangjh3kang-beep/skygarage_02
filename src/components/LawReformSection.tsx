@@ -160,7 +160,7 @@ export default function LawReformSection() {
             }}
           >
             2026년 7월 29일 시행된 <strong style={{ color: goldColor }}>주택법·주차장법 개정</strong>으로
-            자가주차와 발렛주차가 법적으로 도입되었습니다.
+            공동주택 등 주거시설에 기계식주차와 자율주행 배송로봇 기반 발렛주차가 법적으로 허용되었습니다.
             <br />
             이를 반영하여 지하주차공간 효율을 <strong style={{ color: goldColor }}>20%~30% 절감</strong>함으로써
             법정주차대수는 더 넉넉하게 확보하고, 지하주차장 공사비는 절감하는 황금비를 실현합니다.
@@ -375,7 +375,7 @@ export default function LawReformSection() {
                 justifyContent: 'center',
               }}
             >
-              {['자가주차 도입', '발렛주차 도입', '법정주차대수 여유 확보', '지하공사비 절감'].map((tag) => (
+              {['기계식주차 허용', '발렛주차 허용', '법정주차대수 여유 확보', '지하공사비 절감'].map((tag) => (
                 <Chip
                   key={tag}
                   label={tag}
