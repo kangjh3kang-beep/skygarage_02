@@ -31,6 +31,7 @@ const navItems = [
   { label: '시스템', href: '#process' },
   { label: '장점', href: '#benefits' },
   { label: '시장', href: '#market' },
+  { label: '컨설팅', href: '#consulting' },
   { label: '문의', href: '#contact' },
 ];
 

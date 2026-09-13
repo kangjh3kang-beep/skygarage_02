@@ -301,7 +301,7 @@ export default function PalatriaLanding() {
               lineHeight: 1.8,
             }}
           >
-            세계 최초 특허 AI 자율운반로봇(ATR) 기술 기반의 완전 자동 발렛 주차 시스템.
+            특허 출원 AI 자율운반로봇(ATR) 기술 기반의 상시 자동 발렛 주차 시스템.
             <br />
             병원부터 스마트시티까지 — 어디서나 적용 가능한 무한 확장 솔루션.
           </Typography>

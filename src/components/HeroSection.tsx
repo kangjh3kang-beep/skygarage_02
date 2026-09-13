@@ -227,9 +227,9 @@ export default function HeroSection() {
                 variant="h1"
                 sx={{
                   position: 'relative',
-                  fontSize: { xs: '2.2rem', sm: '3rem', md: '4.2rem', lg: '5rem' },
+                  fontSize: { xs: '1.8rem', sm: '2.6rem', md: '3.6rem', lg: '4.2rem' },
                   fontWeight: 900,
-                  lineHeight: 1.15,
+                  lineHeight: 1.2,
                   background: `linear-gradient(90deg, #ffd54f 0%, #fff8e1 30%, ${COLORS.GOLD_LIGHT} 50%, #fff8e1 70%, #ffd54f 100%)`,
                   backgroundSize: '200% auto',
                   backgroundClip: 'text',
@@ -239,22 +239,26 @@ export default function HeroSection() {
                   filter: `drop-shadow(0 1px 3px rgba(201,168,76,0.9)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))`,
                 }}
               >
-                저희는 단지를 짓지 않습니다
+                저희는 시스템을 짓습니다
               </Typography>
             </Box>
             <Typography
               variant="h1"
               component="div"
               sx={{
-                fontSize: { xs: '2.2rem', sm: '3rem', md: '4.2rem', lg: '5rem' },
-                fontWeight: 900,
+                fontSize: { xs: '1.3rem', sm: '1.8rem', md: '2.4rem', lg: '2.8rem' },
+                fontWeight: 700,
                 color: '#ffffff',
-                lineHeight: 1.15,
-                mt: { xs: 0.5, md: 0.75 },
+                lineHeight: 1.4,
+                mt: { xs: 1.5, md: 2 },
                 textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.5)',
               }}
             >
-              그래서 어느 단지에나 갑니다
+              건축물에 차세대 모빌리티
+              <br />
+              <Box component="span" sx={{ color: goldLight, textShadow: `0 0 12px ${COLORS.GOLD}60` }}>
+                맞춤형 주차 시스템
+              </Box>을 제공합니다.
             </Typography>
           </Box>
 
@@ -265,7 +269,7 @@ export default function HeroSection() {
               color: 'rgba(255,255,255,0.92)',
               mb: 4,
               fontWeight: 400,
-              fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.2rem' },
+              fontSize: { xs: '0.9rem', sm: '1rem', md: '1.15rem' },
               lineHeight: 1.7,
               animation: `${fadeInUp} 0.8s 0.35s ease both`,
               textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 0 24px rgba(0,0,0,0.4)',
@@ -276,7 +280,7 @@ export default function HeroSection() {
               },
             }}
           >
-            자율이송 로봇이 주차장을 움직이는 시스템으로 바꿉니다.
+            기존 건축물 리모델링부터 신규 건축물 설계 단계까지
             <br />
             <strong>자율 ATR 발렛</strong> · <strong>자가주차</strong> — 상시 자동 운영 통합 플랫폼
           </Typography>

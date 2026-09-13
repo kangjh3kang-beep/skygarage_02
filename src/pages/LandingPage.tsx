@@ -15,6 +15,7 @@ import SafetyPrinciplesSection from '../components/SafetyPrinciplesSection';
 import TrustSection from '../components/TrustSection';
 import MarketSection from '../components/MarketSection';
 import ContactSection from '../components/ContactSection';
+import ConsultingSection from '../components/ConsultingSection';
 import SectionMediaStrip from '../components/SectionMediaStrip';
 import Footer from '../components/Footer';
 import LoadingScreen from '../components/LoadingScreen';
@@ -59,6 +60,7 @@ export default function LandingPage() {
         <SectionMediaStrip position="after_trust" />
         <MarketSection />
         <SectionMediaStrip position="after_market" />
+        <ConsultingSection />
         <ContactSection />
         <Footer />
       </Box>
