@@ -25,11 +25,6 @@ const glowAward = keyframes`
 const patents = [
   { number: '특허출원', title: 'ATR 자율이송로봇 기본 구조', status: '출원 완료' },
   { number: '특허출원', title: '차량 하부 진입 메커니즘', status: '출원 완료' },
-  { number: '특허출원', title: '세대직입 엘리베이터 연동', status: '출원 완료' },
-  { number: '특허출원', title: '멀티 로봇 동선 충돌 방지', status: '출원 완료' },
-  { number: '특허출원', title: 'AI 최적 경로 알고리즘', status: '출원 완료' },
-  { number: '특허출원', title: '전기차 자동 충전 연동', status: '심사 중' },
-  { number: '특허출원', title: '교통약자 우선 배차 시스템', status: '출원 완료' },
   { number: '특허출원', title: '세대직입 통합 주차 시스템', status: '출원 완료' },
 ];
 
@@ -256,7 +251,7 @@ export default function TrustSection() {
             }}
           >
             {[
-              { icon: <VerifiedIcon />, val: '23항', label: '특허 출원 항목', color: goldColor },
+              { icon: <VerifiedIcon />, val: '13항', label: '특허 출원 항목', color: goldColor },
               { icon: <GroupsIcon />, val: '7+', label: '적용 가능 시장', color: COLORS.TECH_BLUE },
               { icon: <TrendingUpIcon />, val: '도입 확대', label: '단지 도입 추진 중', color: '#10b981' },
               { icon: <ScienceIcon />, val: '≤8분', label: '출차 응답 목표', color: '#8b5cf6' },
