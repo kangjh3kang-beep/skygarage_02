@@ -47,57 +47,57 @@ const comparisonData: ComparisonRow[] = [
     label: '운영 방식',
     icon: <SmartToyIcon fontSize="small" />,
     mechanical: { value: '무인 기계 (단일 동작)', status: 'neutral' },
-    valet: { value: '사람 16~22명 교대', status: 'bad' },
-    skygarage: { value: 'AI 자율주행 + ATR 로봇', status: 'best' },
+    valet: { value: '인력 기반 교대 운영', status: 'bad' },
+    skygarage: { value: 'AI + ATR 자율이송로봇', status: 'best' },
   },
   {
     label: '운영 시간',
     icon: <AccessTimeIcon fontSize="small" />,
     mechanical: { value: '24h (고장 시 전체 정지)', status: 'neutral' },
     valet: { value: '한정 (06~24시)', status: 'bad' },
-    skygarage: { value: '24h 365일 무중단', status: 'best' },
+    skygarage: { value: '24h 상시 자동 운영', status: 'best' },
   },
   {
     label: '세대 직입',
     icon: <HomeIcon fontSize="small" />,
     mechanical: { value: '불가', status: 'bad' },
     valet: { value: '불가', status: 'bad' },
-    skygarage: { value: '거실 옆 전시 차고 직입', status: 'best' },
+    skygarage: { value: '세대직입 (개발 예정)', status: 'best' },
   },
   {
     label: '차량 손상 추적',
     icon: <SecurityIcon fontSize="small" />,
     mechanical: { value: '보험 분쟁 빈번', status: 'bad' },
-    valet: { value: '책임 시비 연 8건', status: 'bad' },
-    skygarage: { value: 'Attestation 100% 추적', status: 'best' },
+    valet: { value: '책임 소재 불명확', status: 'bad' },
+    skygarage: { value: 'Attestation 기반 추적', status: 'best' },
   },
   {
     label: '평균 대기시간',
     icon: <SpeedIcon fontSize="small" />,
     mechanical: { value: '5~8분 (단일 큐)', status: 'bad' },
     valet: { value: '10분+ (인력 한정)', status: 'bad' },
-    skygarage: { value: '1~4분 (AI 사전호출)', status: 'best' },
+    skygarage: { value: '≤8분 (AI 배차)', status: 'best' },
   },
   {
     label: '모드 선택권',
     icon: <VerifiedIcon fontSize="small" />,
     mechanical: { value: '없음 (단일)', status: 'bad' },
     valet: { value: '없음 (사람만)', status: 'bad' },
-    skygarage: { value: '3 모드 자유 선택', status: 'best' },
+    skygarage: { value: '2 모드 + 세대직입(예정)', status: 'best' },
   },
   {
     label: '운영 인건비',
     icon: <SavingsIcon fontSize="small" />,
     mechanical: { value: '관리 1~2명', status: 'good' },
-    valet: { value: '22명 / 연 12억원', status: 'bad' },
-    skygarage: { value: '8명 / 연 70% 절감', status: 'best' },
+    valet: { value: '다수 인력 / 높은 인건비', status: 'bad' },
+    skygarage: { value: 'AI 배차 기반 인력 최적화', status: 'best' },
   },
   {
     label: 'EV 충전 통합',
     icon: <EvStationIcon fontSize="small" />,
     mechanical: { value: '불가', status: 'bad' },
     valet: { value: '불가', status: 'bad' },
-    skygarage: { value: '무선 충전 도크 통합', status: 'best' },
+    skygarage: { value: '충전 연동 지원 (개발 중)', status: 'best' },
   },
   {
     label: '고장 대처',
@@ -111,7 +111,7 @@ const comparisonData: ComparisonRow[] = [
     icon: <GroupsIcon fontSize="small" />,
     mechanical: { value: '지하 도보 200m+', status: 'bad' },
     valet: { value: '현관 50m', status: 'neutral' },
-    skygarage: { value: '도보 0m (거실 직입)', status: 'best' },
+    skygarage: { value: 'ATR 발렛으로 동선 최소화', status: 'best' },
   },
 ];
 
@@ -132,30 +132,30 @@ const scenarios: ScenarioItem[] = [
     subtitle: '일상의 차이가 만드는 삶의 질',
     mechanical: '우산 쓰고 지하 → 기계 단말기 → 5~8분 대기',
     valet: '발렛 호출 → 10분 대기 → 키 인수',
-    skygarage: 'AI 자동 감지 → 거실 옆 차고에서 바로 출발',
+    skygarage: 'AI 배차 → ATR이 차량을 픽업존까지 이송',
     mechanicalTime: '15분',
     valetTime: '18분',
-    skygarageTime: '5분',
+    skygarageTime: '≤8분',
   },
   {
     title: '70대 어머니의 외출',
     subtitle: '도보 거리가 안전을 결정합니다',
     mechanical: '200m 지하 도보 (사고 위험 높음)',
     valet: '현관 50m 이동 (도움 한정)',
-    skygarage: '거실 옆에서 바로 탑승 (도보 0m)',
+    skygarage: 'ATR 발렛 호출 → 가까운 픽업존 탑승',
     mechanicalTime: '도보 200m',
     valetTime: '도보 50m',
-    skygarageTime: '도보 0m',
+    skygarageTime: '최소 동선',
   },
   {
     title: '새벽 3시 응급 외출',
-    subtitle: 'AI는 쉬지 않습니다',
+    subtitle: '상시 자동 운영의 차이',
     mechanical: '기계 야간 오류 → 호출 불가 가능',
     valet: '미운영 또는 대기 30분',
-    skygarage: '즉시 ATR 자율 출동, 3분 내 도착',
+    skygarage: 'ATR 상시 대기 → ≤8분 이내 출차',
     mechanicalTime: '불가~8분',
     valetTime: '30분+',
-    skygarageTime: '3분',
+    skygarageTime: '≤8분',
   },
 ];
 
@@ -377,7 +377,7 @@ export default function ComparisonSection() {
                     휴먼 발렛 / 인력 의존
                   </Typography>
                   <Box sx={{ mt: 2, display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <Chip label="인건비 12억/년" size="small" sx={{ fontSize: '0.65rem', height: 22, background: 'rgba(245,158,11,0.08)', color: '#f59e0b' }} />
+                    <Chip label="높은 인건비" size="small" sx={{ fontSize: '0.65rem', height: 22, background: 'rgba(245,158,11,0.08)', color: '#f59e0b' }} />
                     <Chip label="야간 미운영" size="small" sx={{ fontSize: '0.65rem', height: 22, background: 'rgba(245,158,11,0.08)', color: '#f59e0b' }} />
                   </Box>
                 </CardContent>
@@ -443,10 +443,10 @@ export default function ComparisonSection() {
                     SkyGarage AI
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.72rem' }}>
-                    세계최초 AI 통합주차시스템
+                    AI 통합주차시스템
                   </Typography>
                   <Box sx={{ mt: 2, display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <Chip label="24h 무인" size="small" sx={{ fontSize: '0.65rem', height: 22, background: isDark ? 'rgba(201,168,76,0.1)' : 'rgba(158,127,48,0.08)', color: goldColor }} />
+                    <Chip label="상시 자동" size="small" sx={{ fontSize: '0.65rem', height: 22, background: isDark ? 'rgba(201,168,76,0.1)' : 'rgba(158,127,48,0.08)', color: goldColor }} />
                     <Chip label="세대직입" size="small" sx={{ fontSize: '0.65rem', height: 22, background: isDark ? 'rgba(201,168,76,0.1)' : 'rgba(158,127,48,0.08)', color: goldColor }} />
                     <Chip label="특허 기술" size="small" sx={{ fontSize: '0.65rem', height: 22, background: isDark ? 'rgba(201,168,76,0.1)' : 'rgba(158,127,48,0.08)', color: goldColor }} />
                   </Box>
@@ -750,10 +750,10 @@ export default function ComparisonSection() {
           }}
         >
           {[
-            { value: '70%', label: '인건비 절감', desc: '22명 → 8명' },
-            { value: '0m', label: '노약자 도보', desc: '거실 직입' },
-            { value: '0건', label: '차량 분쟁', desc: 'Attestation 추적' },
-            { value: '5분', label: '총 소요시간', desc: '출근길 기준' },
+            { value: '≤8분', label: '출차 응답 목표', desc: 'AI 배차 기준' },
+            { value: '상시', label: '자동 운영', desc: '24h·365일' },
+            { value: 'ATR', label: 'Attestation', desc: '차량 이력 추적' },
+            { value: '2모드', label: '자유 선택', desc: '발렛 + 자가주차' },
           ].map((stat) => (
             <Box
               key={stat.label}

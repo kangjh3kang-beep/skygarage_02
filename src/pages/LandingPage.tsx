@@ -11,6 +11,7 @@ import LawReformSection from '../components/LawReformSection';
 import ProcessSection from '../components/ProcessSection';
 import ComparisonSection from '../components/ComparisonSection';
 import BenefitsSection from '../components/BenefitsSection';
+import SafetyPrinciplesSection from '../components/SafetyPrinciplesSection';
 import TrustSection from '../components/TrustSection';
 import MarketSection from '../components/MarketSection';
 import ContactSection from '../components/ContactSection';
@@ -53,6 +54,7 @@ export default function LandingPage() {
         <SectionMediaStrip position="after_comparison" />
         <BenefitsSection />
         <SectionMediaStrip position="after_benefits" />
+        <SafetyPrinciplesSection />
         <TrustSection />
         <SectionMediaStrip position="after_trust" />
         <MarketSection />

@@ -36,7 +36,7 @@ const reformStats: ReformStat[] = [
     icon: <TrendingDownIcon sx={{ fontSize: 32 }} />,
     value: '20~30%',
     label: '지하주차공간 절감',
-    description: '자가주차·발렛주차 통합 운영으로 지하주차장 면적을 20~30% 축소',
+    description: '기계식주차·발렛주차 통합 운영으로 지하주차장 면적을 20~30% 축소',
     color: COLORS.GOLD,
   },
   {
@@ -358,12 +358,10 @@ export default function LawReformSection() {
                 mb: 3,
               }}
             >
-              주차공간 효율화와 비용 절감이라는 황금비를 달성하여
+              이를 반영하여 지하주차공간 효율을 <strong style={{ color: goldColor }}>20~30% 절감</strong>하고,
+              법정주차대수는 더 넉넉하게 확보하면서도 지하주차장 공사비를 절감하는 황금비를 실현합니다.
               <br />
-              <strong style={{ color: goldColor }}>차세대 모빌리티 선도단지</strong>의
-              프리미엄·프라이빗 이미지를 부각합니다.
-              <br />
-              법제개정을 선제적으로 반영한 팔라트리아가 제공하는
+              법제개정을 반영한 팔라트리아가 제공하는
               <strong style={{ color: goldColor }}> 차세대 주거 가치</strong>를 경험하세요.
             </Typography>
 

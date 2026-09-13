@@ -104,10 +104,10 @@ export default function HeroSection() {
   }, []);
 
   const stats = [
-    { id: 'sla', value: '≤8분', label: '세대 도착 SLA' },
+    { id: 'sla', value: '≤8분', label: '출차 응답 목표' },
     { id: 'modes', value: '3 모드', label: '자유 선택 통합' },
-    { id: 'ai', value: '24/7', label: '무인 AI 운영' },
-    { id: 'patent', value: '특허', label: '세계 최초 출원' },
+    { id: 'ai', value: '24/7', label: '상시 자동 운영' },
+    { id: 'patent', value: '특허출원', label: '기술 출원 완료' },
   ];
 
   return (
@@ -191,9 +191,9 @@ export default function HeroSection() {
               lineHeight: 1.8,
             }}
           >
-            하늘의 궁전! 나만의 주차공간!
+            차를 세우지 않고, 맡기지도 않습니다.
             <br />
-            주차스트레스에서의 해방일지!
+            부를 때만 움직이는 발렛.
           </Typography>
 
           {/* Main headline */}
@@ -239,7 +239,7 @@ export default function HeroSection() {
                   filter: `drop-shadow(0 1px 3px rgba(201,168,76,0.9)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))`,
                 }}
               >
-                주차의 모든 방식을
+                저희는 단지를 짓지 않습니다
               </Typography>
             </Box>
             <Typography
@@ -254,7 +254,7 @@ export default function HeroSection() {
                 textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.5)',
               }}
             >
-              하나로 통합하다
+              그래서 어느 단지에나 갑니다
             </Typography>
           </Box>
 
@@ -276,9 +276,9 @@ export default function HeroSection() {
               },
             }}
           >
-            AI차세대 주거혁명, <strong>팔라트리아 스카이게러지</strong>가 만듭니다.
+            자율이송 로봇이 주차장을 움직이는 시스템으로 바꿉니다.
             <br />
-            <strong>세대직입</strong> · <strong>공용주차장 발렛</strong> · <strong>자가주차</strong> — 통합 스마트 주차 플랫폼
+            <strong>자율 ATR 발렛</strong> · <strong>자가주차</strong> — 상시 자동 운영 통합 플랫폼
           </Typography>
 
           {/* CTA Buttons */}

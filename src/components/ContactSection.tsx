@@ -335,7 +335,7 @@ export default function ContactSection() {
               transition: 'all 0.6s 0.4s ease',
             }}
           >
-            무료 단지 분석 리포트 + AI 추천 시뮬 데모를 제공합니다.<br />
+            무료 단지 분석 리포트를 제공합니다.<br />
             시공사·시행사·관리주체·정부기관 모두 환영합니다.
           </Typography>
         </Box>

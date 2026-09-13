@@ -109,9 +109,9 @@ const features: FeatureCard[] = [
   },
   {
     icon: <EmojiEventsIcon sx={{ fontSize: 36 }} />,
-    titleKo: '세계 최초 특허 기술',
+    titleKo: '특허 출원 기술',
     titleEn: 'Patent Innovation',
-    descriptionKo: '전 세계 어디에도 없는, 세계 최초로 특허 출원된 AI 자율이송 발렛 주차 시스템입니다. 주거 혁신의 새로운 기준을 제시합니다.',
+    descriptionKo: '특허 출원 완료된 AI 자율이송 발렛 주차 시스템입니다. 주거 혁신의 새로운 기준을 제시합니다.',
     badge: 'Patent Pending',
     color: COLORS.GOLD,
   },
@@ -151,8 +151,8 @@ const processSteps: ProcessStep[] = [
 const benefits: BenefitStat[] = [
   { value: '0분', labelKo: '주차 탐색 시간', labelEn: 'Search Time' },
   { value: '100%', labelKo: '자율 운행', labelEn: 'Autonomous' },
-  { value: '24/7', labelKo: '무인 운영', labelEn: 'Unmanned' },
-  { value: '세계 최초', labelKo: '특허 출원', labelEn: 'Patent Filed' },
+  { value: '24/7', labelKo: '상시 자동', labelEn: 'Always-On' },
+  { value: '특허출원', labelKo: '기술 출원 완료', labelEn: 'Patent Filed' },
 ];
 
 export default function SkyGarageValet() {
@@ -260,7 +260,7 @@ export default function SkyGarageValet() {
             <Box sx={{ animation: `${fadeInUp} 0.8s ease both`, mb: 3 }}>
               <Chip
                 icon={<VerifiedIcon sx={{ color: `${COLORS.GOLD} !important`, fontSize: '1rem' }} />}
-                label="WORLD'S FIRST PATENT-FILED TECHNOLOGY"
+                label="PATENT-FILED ATR VALET TECHNOLOGY"
                 sx={{
                   bgcolor: 'rgba(201,168,76,0.12)',
                   border: `1px solid rgba(201,168,76,0.4)`,
@@ -319,7 +319,7 @@ export default function SkyGarageValet() {
               }}
             >
               건물 입구가 아닌, <Box component="span" sx={{ color: COLORS.GOLD_LIGHT, fontWeight: 700 }}>각 세대 전용 스카이게러지까지</Box> 차량을 자동 배송하는
-              <br />세계 최초 특허 출원 AI 자율이송 발렛 주차 시스템
+              <br />특허 출원 AI 자율이송 발렛 주차 시스템
             </Typography>
 
             {/* English subtitle */}
@@ -816,7 +816,7 @@ export default function SkyGarageValet() {
             />
 
             <Typography variant="h3" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '1.4rem', md: '2rem' } }}>
-              세계 최초 AI 자율이송
+              특허 출원 AI 자율이송
               <br />
               <Box component="span" sx={{ color: goldColor }}>발렛 주차 시스템</Box>
             </Typography>
@@ -826,8 +826,8 @@ export default function SkyGarageValet() {
               sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 4, maxWidth: 520, mx: 'auto', fontSize: '0.95rem' }}
             >
               단순히 건물 앞에 차를 세워주는 기존 발렛을 넘어, AI 자율이송로봇이 각 세대의 전용 스카이게러지까지
-              차량을 직접 배송하는 <strong>세계 유일의 특허 기술</strong>입니다.
-              주차 탐색 시간 제로, 24시간 무인 운영, 앱 기반 예약 출차까지 — 주거 혁신의 새로운 기준.
+              차량을 직접 배송하는 <strong>특허 출원 기술</strong>입니다.
+              주차 탐색 시간 제로, 상시 자동 운영, 앱 기반 예약 출차까지 — 주거 혁신의 새로운 기준.
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap' }}>

@@ -399,10 +399,10 @@ export default function ProcessSection() {
           }}
         >
           {[
-            { val: '≤ 8분', label: '총 처리 SLA' },
+            { val: '≤ 8분', label: '출차 응답 목표' },
             { val: '±2mm', label: '주차 정밀도' },
             { val: '3.5톤', label: '최대 차량 중량' },
-            { val: '99.9%', label: '시스템 가동률' },
+            { val: '24/7', label: '상시 자동 운영' },
           ].map((item) => (
             <Box key={item.label}>
               <Typography

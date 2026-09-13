@@ -46,13 +46,13 @@ export default function SolutionSection() {
   const features = [
     {
       icon: <ApartmentIcon sx={{ fontSize: 28, color: goldColor }} />,
-      title: '세대직입 주차',
-      desc: 'ATR 자율이송로봇이 차량을 각 세대 현관 앞 전용 주차룸까지 자동 이송. 지하주차장에 내려갈 필요 없는 프리미엄 주거 경험',
+      title: '세대직입 주차 (개발 예정)',
+      desc: 'ATR 자율이송로봇이 차량을 각 세대 현관 앞 전용 주차룸까지 자동 이송. 현재 기술 검증 단계이며, 향후 지원 예정',
     },
     {
       icon: <SmartToyIcon sx={{ fontSize: 28, color: COLORS.TECH_BLUE }} />,
-      title: '공용주차장 자동 발렛',
-      desc: 'ATR이 공용 주차구역에서 차량을 픽업·배치하는 완전 무인 발렛 서비스. 방문객·게스트 차량도 자동 처리',
+      title: '자율 ATR 발렛',
+      desc: 'ATR이 공용 주차구역에서 차량을 픽업·배치하는 자동 발렛 서비스. 방문객·게스트 차량도 자동 처리 (24시간 상시 자동 운영)',
     },
     {
       icon: <DirectionsCarIcon sx={{ fontSize: 28, color: '#10b981' }} />,
@@ -62,7 +62,7 @@ export default function SolutionSection() {
     {
       icon: <MergeIcon sx={{ fontSize: 28, color: '#f59e0b' }} />,
       title: '통합 플랫폼',
-      desc: '세 가지 주차 모드를 하나의 스마트 시스템으로 통합 관제. 상황에 맞게 자유롭게 전환하여 주차 스트레스 완전 해소',
+      desc: '두 가지 주차 모드를 하나의 스마트 시스템으로 통합 관제. 상황에 맞게 자유롭게 전환하여 주차 스트레스 해소',
     },
   ];
 
@@ -255,7 +255,7 @@ export default function SolutionSection() {
 
               {/* Label tags */}
               {[
-                { text: '세대직입', angle: -30, color: goldColor },
+                { text: '세대직입(예정)', angle: -30, color: goldColor },
                 { text: '발렛 주차', angle: 150, color: COLORS.TECH_BLUE },
                 { text: '자가주차', angle: 270, color: '#10b981' },
               ].map((tag) => (
@@ -304,11 +304,11 @@ export default function SolutionSection() {
               }}
             >
               <Typography variant="overline" sx={{ color: goldColor, letterSpacing: '0.2em', fontSize: '0.7rem', mb: 2, display: 'block' }}>
-                WORLD'S FIRST AI INTEGRATED PARKING
+                ATR 기반 AI 통합주차 시스템
               </Typography>
 
               <Typography variant="h2" sx={{ fontSize: { xs: '1.6rem', sm: '2rem', md: '2.6rem' }, mb: 2 }}>
-                세계최초{' '}
+                자율이송로봇(ATR) 기반{' '}
                 <Box component="span" sx={{ color: goldColor }}>AI 통합주차</Box>
                 시스템
               </Typography>
@@ -317,18 +317,18 @@ export default function SolutionSection() {
                 variant="body1"
                 sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8, fontSize: { xs: '0.9rem', md: '1rem' } }}
               >
-                세대직입 · 자율 ATR 발렛 · 자가주차 —{' '}
+                자율 ATR 발렛 · 자가주차 —{' '}
                 <Box component="span" sx={{ color: isDark ? COLORS.GOLD_LIGHT : COLORS.GOLD_DARK, fontWeight: 600 }}>
-                  3가지 주차 모드를 하나의 AI가 통합 운영
+                  2가지 주차 모드를 하나의 AI가 통합 운영
                 </Box>
                 합니다. 당신의 라이프스타일을 학습하고, 상황에 맞는 최적의 모드를
-                자동으로 추천하는 세계 최초의 AI 통합주차 플랫폼입니다.
+                자동으로 추천하는 AI 통합주차 플랫폼입니다.
               </Typography>
 
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 4 }}>
                 <Chip
                   icon={<VerifiedIcon sx={{ fontSize: '0.9rem !important' }} />}
-                  label="세계 최초 통합 주차 플랫폼"
+                  label="특허 출원 기술 기반 통합 플랫폼"
                   sx={{
                     bgcolor: isDark ? 'rgba(201,168,76,0.1)' : 'rgba(201,168,76,0.1)',
                     border: isDark ? `1px solid rgba(201,168,76,0.35)` : `1px solid rgba(158,127,48,0.35)`,
@@ -340,7 +340,7 @@ export default function SolutionSection() {
                 />
                 <Chip
                   icon={<LocalParkingIcon sx={{ fontSize: '0.9rem !important' }} />}
-                  label="3-in-1 주차 모드"
+                  label="2-in-1 주차 모드"
                   sx={{
                     bgcolor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.06)',
                     border: isDark ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(59,130,246,0.25)',

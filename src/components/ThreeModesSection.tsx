@@ -220,9 +220,9 @@ export default function ThreeModesSection() {
       id: 'direct',
       index: 0,
       icon: <ApartmentIcon sx={{ fontSize: 30, color: COLORS.GOLD }} />,
-      title: '세대직입',
-      subtitle: 'Direct Unit Access',
-      description: '거실 옆 전용 차고에서 바로 탑승. ATR이 차량을 각 세대 현관 앞까지 자동 이송합니다. 지하주차장을 걸어갈 필요가 없습니다.',
+      title: '세대직입 (개발 예정)',
+      subtitle: 'Direct Unit Access — Coming Soon',
+      description: '거실 옆 전용 차고에서 바로 탑승하는 미래형 모드. ATR이 차량을 각 세대까지 자동 이송합니다. 현재 기술 검증 단계이며 향후 지원 예정입니다.',
       accentColor: isDark ? COLORS.GOLD : COLORS.GOLD_DARK,
       specs: [
         { icon: <AccessTimeIcon sx={{ fontSize: 16 }} />, label: '도보 0m · 대기 0~30초' },
@@ -237,11 +237,11 @@ export default function ThreeModesSection() {
       icon: <SmartToyIcon sx={{ fontSize: 30, color: COLORS.TECH_BLUE }} />,
       title: '자율 ATR 발렛',
       subtitle: 'Autonomous Valet',
-      description: 'ATR 자율이송로봇이 24시간 무인으로 차량을 픽업하고 배치합니다. 출근길 1탭 호출이면 차가 당신에게 옵니다.',
+      description: 'ATR 자율이송로봇이 상시 자동으로 차량을 픽업하고 배치합니다. 출근길 1탭 호출이면 차가 당신에게 옵니다.',
       accentColor: COLORS.TECH_BLUE,
       specs: [
         { icon: <AccessTimeIcon sx={{ fontSize: 16 }} />, label: '1탭 호출 · 4~8분 도착' },
-        { icon: <TouchAppIcon sx={{ fontSize: 16 }} />, label: '24h 무인 · 자동 결제' },
+        { icon: <TouchAppIcon sx={{ fontSize: 16 }} />, label: '상시 자동 운영 · 자동 결제' },
         { icon: <VerifiedIcon sx={{ fontSize: 16 }} />, label: '차체 회전 ±90° · 정밀 배치' },
       ],
       situations: ['출퇴근 피크', '심야 귀가', '게스트 방문', '여행 출발'],
@@ -416,7 +416,7 @@ export default function ThreeModesSection() {
                 상황에 따라 자유롭게 전환
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
-                AI가 학습하여 자동 추천 · 수용률 87%
+                AI가 학습하여 최적 모드 자동 추천
               </Typography>
             </Box>
           </Box>

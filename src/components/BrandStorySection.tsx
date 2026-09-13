@@ -343,14 +343,14 @@ export default function BrandStorySection() {
               mb: 4,
             }}
           >
-            팔라트리아 스카이게러지는 세계 최초 AI 통합주차시스템으로
+            팔라트리아 스카이게러지는 자율이송로봇(ATR) 기반 AI 통합주차시스템으로
             <br />
             <Box component="span" sx={{ fontWeight: 600, color: isDark ? COLORS.GOLD_LIGHT : COLORS.GOLD_DARK }}>
-              세대직입 · 자율 ATR 발렛 · 자가주차
+              자율 ATR 발렛 · 자가주차
             </Box>
-            {' '}3가지 주차 모드를
+            를 하나의 플랫폼으로 통합하여
             <br />
-            하나의 플랫폼으로 통합하여 현대인의 주차 스트레스에서 해방시킵니다.
+            주차난은 관리의 문제가 아니라, 준공연도의 문제라는 사실을 증명합니다.
           </Typography>
 
           {/* Key value props as minimal badges */}
@@ -363,10 +363,10 @@ export default function BrandStorySection() {
             }}
           >
             {[
-              { value: '3 모드', label: '자유 선택' },
-              { value: 'AI', label: '자동 추천' },
-              { value: '24/7', label: '무인 운영' },
-              { value: '특허', label: '세계 최초' },
+              { value: '2 모드', label: '자유 선택' },
+              { value: 'AI', label: '최적 배차' },
+              { value: '24/7', label: '상시 자동' },
+              { value: '특허출원', label: '기술 출원 완료' },
             ].map((item) => (
               <Box key={item.value} sx={{ textAlign: 'center' }}>
                 <Typography

@@ -37,17 +37,17 @@ const trustBadges = [
   {
     id: 'patent',
     icon: <VerifiedIcon sx={{ fontSize: 36 }} />,
-    title: '세계 최초 특허 출원',
-    subtitle: '특허출원',
-    desc: '세대직입 자율주차로봇 발렛 시스템 세계 최초 출원',
+    title: '특허 출원 완료',
+    subtitle: '출원 완료 (등록 심사 중)',
+    desc: 'ATR 자율이송로봇 발렛 주차 시스템 특허 출원 완료',
     color: COLORS.GOLD,
   },
   {
     id: 'platform',
     icon: <EmojiEventsIcon sx={{ fontSize: 36 }} />,
     title: '통합 주차 플랫폼',
-    subtitle: '3-Mode System',
-    desc: '세대직입·공용발렛·자가주차를 하나로 통합한 유일한 시스템',
+    subtitle: '2-Mode + 세대직입(예정)',
+    desc: 'ATR 발렛·자가주차를 하나로 통합, 세대직입은 향후 지원 예정',
     color: '#f59e0b',
   },
   {
@@ -224,9 +224,9 @@ export default function TrustSection() {
               </Box>
             </Box>
             <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-              스카이게러지(SkyGarage) ATR 자율이송주차로봇 및 세대직입 주차시스템을 출원한 기술 기업입니다.
+              스카이게러지(SkyGarage) ATR 자율이송주차로봇 및 통합주차시스템을 출원한 기술 기업입니다.
               주거 환경의 혁신을 통해 모든 입주민의 삶의 질을 높이는 것을 목표로,
-              세계 최초 특허 출원 기반 자율주차 솔루션을 개발하고 있습니다.
+              특허 출원 기반 자율주차 솔루션을 개발하고 있습니다.
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {['특허 출원', '자율이송 기술', 'AI 설계', '다양한 시장'].map((tag) => (
@@ -256,10 +256,10 @@ export default function TrustSection() {
             }}
           >
             {[
-              { icon: <VerifiedIcon />, val: '23항', label: '특허출원', color: goldColor },
+              { icon: <VerifiedIcon />, val: '23항', label: '특허 출원 항목', color: goldColor },
               { icon: <GroupsIcon />, val: '7+', label: '적용 가능 시장', color: COLORS.TECH_BLUE },
-              { icon: <TrendingUpIcon />, val: '100+', label: '목표 단지(1년)', color: '#10b981' },
-              { icon: <ScienceIcon />, val: '8분', label: '처리 SLA', color: '#8b5cf6' },
+              { icon: <TrendingUpIcon />, val: '도입 확대', label: '단지 도입 추진 중', color: '#10b981' },
+              { icon: <ScienceIcon />, val: '≤8분', label: '출차 응답 목표', color: '#8b5cf6' },
             ].map((item) => (
               <Box
                 key={item.label}

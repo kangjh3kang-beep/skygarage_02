@@ -14,16 +14,16 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 const stats = [
   {
-    value: '30분',
-    description: '출퇴근 평균 주차로\n사라지는 시간',
+    value: '2,667만대',
+    description: '국내 자동차 누적 등록대수\n(2026년 6월 기준)',
   },
   {
-    value: '1.78조원',
-    description: '한국이 매년 치르는\n주차 사회적 비용',
+    value: '1.08대',
+    description: '가구당 자동차 보유\n— 주차면은 준공된 해에 멈취 있습니다',
   },
   {
-    value: '65%',
-    description: '입주민 주차 불편\n민원 비율',
+    value: '49.9%',
+    description: '전국 아파트 중\n준공 20년 이상 노후 단지',
   },
 ];
 
@@ -229,7 +229,7 @@ export default function PainPointSection() {
                   textShadow: '0 2px 12px rgba(0,0,0,0.5)',
                 }}
               >
-                차량 보급률 1.2대... 한계에 도달했습니다.
+                준공된 해에 멈췤습니다. 당신의 주차장은.
               </Typography>
             </Box>
           </Box>
@@ -306,7 +306,7 @@ export default function PainPointSection() {
             transition: 'opacity 0.6s 0.5s ease',
           }}
         >
-          그 시간, 돌려드립니다.
+          새로 짓지 않고, 지금 이 단지에서.
         </Typography>
       </Container>
     </Box>

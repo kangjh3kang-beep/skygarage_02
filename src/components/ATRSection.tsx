@@ -65,17 +65,17 @@ const features = [
     number: '05',
     title: '전기차 자동 충전',
     subtitle: 'Auto EV Charging',
-    description: '주차 과정 중 자동 충전 커넥터 연결. 세대별 충전 사용량 정산 시스템 내장. 최대 150kW 급속 충전 모듈 탑재 가능하며 V2G 양방향 충전도 지원합니다.',
-    tags: ['Auto Connect', '150kW 급속', 'V2G 지원'],
+    description: '주차 과정 중 자동 충전 커넥터 연결. 세대별 충전 사용량 정산 시스템 내장. V2G 양방향 충전 지원 예정입니다.',
+    tags: ['Auto Connect', 'EV 충전 연동', 'V2G 지원 예정'],
     color: '#f59e0b',
     gradient: 'rgba(245,158,11,0.08)',
   },
   {
     icon: <AccessTimeIcon sx={{ fontSize: 36 }} />,
     number: '06',
-    title: '24시간 무인 운영',
-    subtitle: '24/7 Unmanned Operation',
-    description: '원격 관제센터와 실시간 연동, 예외상황 자동 대응, OTA 펌웨어 업데이트. 정기 유지보수 외 별도 상주 인력이 필요 없어 관리비를 대폭 절감합니다.',
+    title: '상시 자동 운영',
+    subtitle: '24/7 Automated Operation',
+    description: '원격 관제센터와 실시간 연동, 예외상황 자동 대응, OTA 펌웨어 업데이트. 정기 유지보수 외 상주 인력을 최소화하여 운영 효율을 높입니다.',
     tags: ['원격 관제', 'OTA 업데이트', '자동 복구'],
     color: '#06b6d4',
     gradient: 'rgba(6,182,212,0.08)',
@@ -84,7 +84,7 @@ const features = [
 
 const performanceStats = [
   { value: '3.5톤', label: '최대 적재 중량' },
-  { value: '≤8분', label: '세대 도착 SLA' },
+  { value: '≤8분', label: '출차 응답 목표' },
   { value: '+/-2mm', label: '주차 정밀도' },
 ];
 
