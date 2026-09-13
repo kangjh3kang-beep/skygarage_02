@@ -19,7 +19,7 @@ const stats = [
   },
   {
     value: '1.08대',
-    description: '가구당 자동차 보유\n— 주차면은 준공된 해에 멈취 있습니다',
+    description: '가구당 자동차 보유\n— 주차면은 준공된 해에 멈춰 있습니다',
   },
   {
     value: '49.9%',
@@ -229,7 +229,7 @@ export default function PainPointSection() {
                   textShadow: '0 2px 12px rgba(0,0,0,0.5)',
                 }}
               >
-                준공된 해에 멈췤습니다. 당신의 주차장은.
+                준공된 해에 멈췄습니다. 당신의 주차장은.
               </Typography>
             </Box>
           </Box>

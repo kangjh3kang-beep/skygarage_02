@@ -46,8 +46,8 @@ export default function SolutionSection() {
   const features = [
     {
       icon: <ApartmentIcon sx={{ fontSize: 28, color: goldColor }} />,
-      title: '세대직입 주차 (개발 예정)',
-      desc: 'ATR 자율이송로봇이 차량을 각 세대 현관 앞 전용 주차룸까지 자동 이송. 현재 기술 검증 단계이며, 향후 지원 예정',
+      title: '세대직입 주차',
+      desc: 'ATR 자율이송로봇이 차량을 각 세대 현관 앞 전용 주차룸까지 자동 이송합니다.',
     },
     {
       icon: <SmartToyIcon sx={{ fontSize: 28, color: COLORS.TECH_BLUE }} />,

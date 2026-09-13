@@ -62,7 +62,7 @@ const comparisonData: ComparisonRow[] = [
     icon: <HomeIcon fontSize="small" />,
     mechanical: { value: '불가', status: 'bad' },
     valet: { value: '불가', status: 'bad' },
-    skygarage: { value: '세대직입 (개발 예정)', status: 'best' },
+    skygarage: { value: '세대직입', status: 'best' },
   },
   {
     label: '차량 손상 추적',

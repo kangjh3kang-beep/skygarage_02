@@ -220,8 +220,8 @@ export default function ThreeModesSection() {
       id: 'direct',
       index: 0,
       icon: <ApartmentIcon sx={{ fontSize: 30, color: COLORS.GOLD }} />,
-      title: '세대직입 (개발 예정)',
-      subtitle: 'Direct Unit Access — Coming Soon',
+      title: '세대직입',
+      subtitle: 'Direct Unit Access',
       description: '거실 옆 전용 차고에서 바로 탑승하는 미래형 모드. ATR이 차량을 각 세대까지 자동 이송합니다. 현재 기술 검증 단계이며 향후 지원 예정입니다.',
       accentColor: isDark ? COLORS.GOLD : COLORS.GOLD_DARK,
       specs: [
