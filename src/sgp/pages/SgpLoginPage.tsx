@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -215,15 +215,11 @@ export default function SgpLoginPage() {
     setSuccess('');
   };
 
-  useEffect(() => {
-    setError('');
-    setSuccess('');
-  }, [registerStep]);
 
   return (
     <Box sx={{
       minHeight: '100dvh',
-      bgcolor: '#0d1b2a',
+      background: 'radial-gradient(ellipse at 50% 0%, #23463f 0%, #0d1b2a 60%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -231,29 +227,20 @@ export default function SgpLoginPage() {
       px: 2.5,
       py: 4,
     }}>
-      <Box sx={{ textAlign: 'center', mb: 3 }}>
-        <Box
-          component="img"
-          src="/logo01.png"
-          alt="SGP"
-          sx={{ width: 56, height: 56, mb: 1.5, borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,212,170,0.3)' }}
-        />
-        <Typography variant="h5" sx={{ color: '#fff', fontWeight: 800, letterSpacing: '-0.5px' }}>
-          SGP App
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-          SkyGarage Parking
-        </Typography>
-      </Box>
+      <div className="sg-login-heading" style={{ width: '100%', maxWidth: 420 }}>
+        <div className="sg-brand"><span className="sg-brand-mark">S</span><span>SKY GARAGE<small>EVERYDAY, ELEVATED.</small></span></div>
+        <h1>주차의 새로운 일상,<br /><span>스카이게러지.</span></h1>
+        <p>주차 · 차량 위치 · 결제를 하나로 연결하세요.</p>
+      </div>
 
       <Box
         component="form"
         onSubmit={mode === 'login' ? handleLogin : handleRegister}
         sx={{
           width: '100%',
-          maxWidth: 380,
-          bgcolor: 'rgba(255,255,255,0.04)',
-          borderRadius: 4,
+          maxWidth: 420,
+          bgcolor: '#142739',
+          borderRadius: 2,
           p: 3,
           border: '1px solid rgba(255,255,255,0.08)',
           backdropFilter: 'blur(10px)',
@@ -263,12 +250,14 @@ export default function SgpLoginPage() {
 
         {mode === 'login' ? (
           <>
-            <Typography variant="subtitle1" sx={{ color: '#fff', fontWeight: 700, mb: 2.5, textAlign: 'center' }}>
+            <Typography variant="subtitle1" sx={{ color: '#fff', fontWeight: 700, mb: 2.5 }}>
               로그인
             </Typography>
             {error && <Alert severity="error" sx={{ mb: 2, fontSize: '0.78rem', py: 0.5 }}>{error}</Alert>}
             <TextField
               label="전화번호"
+              autoComplete="username"
+              type="tel"
               value={phone}
               onChange={e => handlePhoneChange(e.target.value)}
               fullWidth size="small"
@@ -281,6 +270,7 @@ export default function SgpLoginPage() {
             />
             <TextField
               label="비밀번호"
+              autoComplete="current-password"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -518,7 +508,7 @@ export default function SgpLoginPage() {
 
                 <Box sx={{ display: 'flex', gap: 1.5 }}>
                   <Button
-                    variant="outlined" onClick={() => setRegisterStep(1)}
+                    variant="outlined" onClick={() => { setError(''); setSuccess(''); setRegisterStep(1); }}
                     sx={{ flex: 1, py: 1.2, fontWeight: 600, borderRadius: 2, color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.2)', '&:hover': { borderColor: 'rgba(255,255,255,0.4)' } }}
                   >
                     이전
