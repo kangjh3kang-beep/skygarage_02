@@ -198,8 +198,17 @@ export default function SgpLoginPage() {
       genderCode,
       address: postcode ? `(${postcode}) ${address.trim()}` : address.trim(),
       addressDetail: addressDetail.trim(),
+      verificationId,
+      verificationCode: otpCode,
     });
-    if (result.error) setError(result.error);
+    if (result.error) {
+      setError(result.error);
+      if (result.code === 'verification_required') {
+        setRegisterStep(0); setOtpVerified(false); setOtpSent(false); setOtpCode(''); setVerificationId('');
+      } else if (result.code === 'already_registered' || result.code === 'registered_login_required') {
+        setMode('login');
+      }
+    }
     setLoading(false);
   };
 
@@ -209,6 +218,7 @@ export default function SgpLoginPage() {
     setOtpSent(false);
     setOtpVerified(false);
     setOtpCode('');
+    setVerificationId('');
     setPassword('');
     setPasswordConfirm('');
     setDisplayName('');
