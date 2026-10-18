@@ -48,7 +48,13 @@ const routeFor = scene => '/app' + (scene === 'home' ? '' : '/' + scene);
     page.on('pageerror', e => errors.push(e.message));
     await page.goto(origin + '/app');
     await page.locator('.doelv-photo.is-loaded').waitFor();
-    assert.equal(await page.locator('svg.doelv-mark').count(), 1);
+    assert.equal(await page.locator('.doelv-approved').count(), 1);
+    for (const logo of await page.locator('.doelv-approved img').all()) {
+      const src = await logo.getAttribute('src');
+      const hash = require('node:crypto').createHash('sha256').update(Buffer.from(src.split(',')[1], 'base64')).digest('hex');
+      assert.ok(['914fddbb899a3bc4fd28cb1addb36fa444f6f8f0a92a109355b98cbe8369ff2e','d17eadcb1dfde1d24d3546ff9292fd57ad731ee30265a68142f54b8ba0454c78','679e55109b5f45c02c92bc62d49c53ba44bec22a8c797b4accd3cdb8a53229e3'].includes(hash),'must be exact user-approved artwork');
+      await logo.evaluate(img => img.decode());
+    }
     const jwt = ['e30', Buffer.from(JSON.stringify({ sub: user.id, exp: Math.floor(Date.now() / 1000) + 3600, role: 'authenticated' })).toString('base64url'), 'local-fixture'].join('.');
     await page.evaluate(({ jwt, user }) => localStorage.setItem('sb-ykmeconwqbathcdejalr-auth-token', JSON.stringify({ access_token: jwt, refresh_token: 'local-fixture', expires_at: Math.floor(Date.now() / 1000) + 3600, expires_in: 3600, token_type: 'bearer', user })), { jwt, user });
     for (const width of [320, 390, 768, 1440]) {
@@ -57,16 +63,17 @@ const routeFor = scene => '/app' + (scene === 'home' ? '' : '/' + scene);
         await page.goto(origin + routeFor(scene));
         await page.locator(`.doelv-photo[data-scene="${scene}"].is-loaded`).waitFor();
         await page.locator('.doelv-photo-image').evaluate(img => img.decode());
+        for (const logo of await page.locator('.doelv-approved img').all()) await logo.evaluate(img => img.decode());
         const observed = await page.evaluate(() => {
           const img = document.querySelector('.doelv-photo-image'), rect = img.getBoundingClientRect();
           return { src: img.currentSrc, width: rect.width, height: rect.height, naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight,
-            opacity: getComputedStyle(img).opacity, overflow: document.documentElement.scrollWidth > innerWidth, logo: document.querySelector('svg.doelv-mark')?.getBoundingClientRect().width,
+            opacity: getComputedStyle(img).opacity, overflow: document.documentElement.scrollWidth > innerWidth, logo: document.querySelector('.doelv-approved')?.getBoundingClientRect().width,
             wordmark: document.querySelector('.doelv-wordmark strong')?.textContent, broken: [...document.images].filter(i => i.complete && !i.naturalWidth).length };
         });
         assert.match(observed.src, new RegExp('/assets/' + scene + '-(?:800|full)-[\\w-]+\\.webp$'));
         assert.equal(observed.opacity, '1'); assert.ok(observed.logo >= 48); assert.equal(observed.wordmark, 'DOELV'); assert.equal(observed.broken, 0); assert.equal(observed.overflow, false);
         assert.ok(Math.abs(observed.width / observed.height - observed.naturalWidth / observed.naturalHeight) < .02, 'no stretching/cropping');
-        matrix.push({ scene, width, loaded: true, logo: 'inline-svg', broken: 0 });
+        matrix.push({ scene, width, loaded: true, logo: 'original-gold-png', broken: 0 });
         if (output && [390, 1440].includes(width)) { await page.evaluate(async () => { await document.fonts.ready; await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); }); await page.screenshot({ path: path.join(output, `${scene}-${width}.png`), fullPage: true }); }
       }
     }
@@ -90,7 +97,7 @@ const routeFor = scene => '/app' + (scene === 'home' ? '' : '/' + scene);
     await context.route('**/assets/*.jpg', r => r.abort());
     await page.goto(origin + '/app/call');
     await page.getByRole('button', { name: '사진 다시 불러오기' }).waitFor();
-    assert.equal(await page.locator('svg.doelv-mark').count(), 1);
+    assert.equal(await page.locator('.doelv-approved').count(), 1);
     assert.equal(await page.locator('.doelv-photo-image').count(), 0);
     assert.equal(await page.getByRole('button', { name: '설비 연동 후 호출 가능' }).isDisabled(), true);
     // A failure on one route must not poison the next route's new image state.
