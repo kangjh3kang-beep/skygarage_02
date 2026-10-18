@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PhotoHero } from "../components/DoelvBrand";
+import { PhotoHero } from "../components/BrandImagery";
 import ServiceRequestForm from "../components/ServiceRequestForm";
 import { requestStatusLabels } from "../request-labels";
 import { useResidentData } from "../contexts/ResidentDataContext";
@@ -21,7 +21,7 @@ export function CallPage() {
   const active = memberships.some((m) => m.status === "active");
   return (
     <>
-      <PhotoHero photo="garage" caption="VEHICLE ELEVATOR / PRIVATE PARKING" />
+      <PhotoHero photo="call" />
       <div className="doelv-content">
         <p className="doelv-eyebrow">CALL YOUR VEHICLE</p>
         <h1>차량 호출</h1>
@@ -65,7 +65,7 @@ export function GaragePage() {
   const { memberships, vehicles, loading, error } = useResidentData();
   return (
     <>
-      <PhotoHero photo="garage" caption="YOUR EXCLUSIVE SPACE" />
+      <PhotoHero photo="garage" />
       <div className="doelv-content">
         <p className="doelv-eyebrow">PRIVATE SKY GARAGE</p>
         <h1>나의 스카이게러지</h1>
@@ -100,7 +100,7 @@ export function GaragePage() {
 export function AccessPage() {
   return (
     <>
-      <PhotoHero photo="lobby" caption="PRIVATE RESIDENCE / SMART ACCESS" />
+      <PhotoHero photo="access" />
       <div className="doelv-content">
         <p className="doelv-eyebrow">YOUR SECURE ARRIVAL</p>
         <h1>출입 · 방문 서비스</h1>
@@ -119,7 +119,7 @@ export function AccessPage() {
 export function RequestsPage() {
   const { requests, loading, error } = useResidentData();
   return (
-    <div className="doelv-content">
+    <><PhotoHero photo="requests" /><div className="doelv-content">
       <p className="doelv-eyebrow">YOUR SERVICE HISTORY</p>
       <h1>내 요청 내역</h1>
       <DataState />
@@ -143,12 +143,12 @@ export function RequestsPage() {
           )}
         </article>
       ))}
-    </div>
+    </div></>
   );
 }
 export function WalletPage() {
   return (
-    <div className="doelv-content">
+    <><PhotoHero photo="wallet" /><div className="doelv-content">
       <p className="doelv-eyebrow">PAYMENTS</p>
       <h1>결제 서비스 준비 중</h1>
       <p className="doelv-notice">
@@ -158,6 +158,6 @@ export function WalletPage() {
       <Link className="doelv-row" to="/app/profile">
         운영센터 문의 <span>›</span>
       </Link>
-    </div>
+    </div></>
   );
 }

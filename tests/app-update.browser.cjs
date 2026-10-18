@@ -29,9 +29,9 @@ const fs=require('fs'), http=require('http'), path=require('path'), assert=requi
   await page.getByRole('button',{name:'최신 앱 불러오기'}).click();
   await page.getByRole('link',{name:/로그인하고 시작하기/}).waitFor();
   assert.match(page.url(),/\/app\?release=/);
-  const storage=await page.evaluate(async()=>({marker:localStorage.getItem('auth-preservation-test'),keys:await caches.keys(),assets:await (await caches.open('sgp-public-install-v4')).keys().then(keys=>keys.map(x=>new URL(x.url).pathname).sort())}));
+  const storage=await page.evaluate(async()=>({marker:localStorage.getItem('auth-preservation-test'),keys:await caches.keys(),assets:await (await caches.open('sgp-public-install-v5')).keys().then(keys=>keys.map(x=>new URL(x.url).pathname).sort())}));
   assert.equal(storage.marker,'keep');assert.ok(storage.keys.includes('unrelated-cache'));assert.ok(!storage.keys.includes('sgp-app-v2'));
-  assert.deepEqual(storage.assets,['/doelv/icon-192.png','/doelv/icon-512.png','/offline.html']);
+  assert.deepEqual(storage.assets,['/doelv/icon-v2-192.png','/doelv/icon-v2-512.png','/offline.html']);
   await page.getByRole('link',{name:/로그인하고 시작하기/}).click();
   const phone=page.locator('input[type="tel"]').first();await phone.fill('01000000000');
   nextRelease=true;

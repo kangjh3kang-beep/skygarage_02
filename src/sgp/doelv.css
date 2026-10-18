@@ -49,11 +49,29 @@
 .doelv-brand {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  text-decoration: none;
 }
-.doelv-brand img {
+.doelv-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #e5c591;
+}
+.doelv-mark {
+  display: block;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
+.doelv-mark-fallback { width:64px; font:52px/1 Georgia,serif; text-align:center; }
+.doelv-wordmark { display:flex; flex-direction:column; gap:4px; text-align:center; }
+.doelv-wordmark strong { font:400 31px/1 Georgia,'Times New Roman',serif; letter-spacing:.16em; padding-left:.16em; }
+.doelv-brand-korean { font-size:10px; letter-spacing:.55em; padding-left:.55em; }
+.doelv-wordmark small { font-size:7px; letter-spacing:.18em; line-height:1.7; }
+.doelv-identity-stacked { flex-direction:column; gap:8px; margin:14px 0 24px; }
+.doelv-identity-stacked .doelv-mark { width:96px; height:96px; }
+.doelv-identity-stacked .doelv-wordmark strong { font-size:34px; }
 .doelv-signature,
 .doelv-badge {
   display: inline-block;
@@ -109,36 +127,28 @@
   padding: 28px 0 36px 30px;
 }
 .doelv-photo {
-  height: 300px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1672 / 941;
+  margin: 0;
+  flex-shrink: 0;
   border: 1px solid #d2ab7666;
   border-radius: 20px;
   position: relative;
   overflow: hidden;
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(135deg, #203748, #081521);
   box-shadow: 0 12px 30px #0002;
 }
 .doelv-photo:after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 40%, #04121ff0);
+  background: linear-gradient(180deg, transparent 62%, #04121fe6);
+  pointer-events: none;
 }
-.doelv-photo-residence {
-  background-image: url("/doelv/residence.webp");
-  background-position: 50% 48%;
-}
-.doelv-photo-garage {
-  background-image: url("/doelv/garage.webp");
-}
-.doelv-photo-lobby {
-  background-image: url("/doelv/lobby.webp");
-  background-position: 55% 68%;
-}
-.doelv-photo-arrival {
-  background-image: url("/doelv/arrival.webp");
-  background-position: center 39%;
-}
+.doelv-photo-image { display:block; width:100%; height:100%; object-fit:contain; }
+.doelv-photo-fallback { position:absolute; inset:0; display:grid; place-items:center; color:#c2cbd2; font-size:13px; padding:20px; }
+.doelv-photo-compact { border-radius:14px; }
 .doelv-photo-tag {
   position: absolute;
   top: 16px;
@@ -401,8 +411,8 @@
 }
 .doelv-welcome {
   display: grid;
-  grid-template-columns: minmax(300px, 460px) 440px;
-  gap: 100px;
+  grid-template-columns: minmax(300px, 460px) 500px;
+  gap: 70px;
   min-height: 100dvh;
   align-items: center;
   justify-content: center;
@@ -444,17 +454,9 @@
 }
 .doelv-welcome-panel {
   min-height: 790px;
-  padding: 35px 30px 26px;
+  padding: 26px 30px;
   text-align: center;
-  background:
-    linear-gradient(
-      180deg,
-      #010a1566,
-      #010a1577 32%,
-      #020b14cc 63%,
-      #081521 100%
-    ),
-    url("/doelv/residence.webp") center/cover;
+  background: linear-gradient(155deg, #1b2b39, #0a1926 60%, #081521);
   border: 1px solid #d2ab7666;
   border-radius: 25px;
   box-shadow: 0 30px 80px #0006;
@@ -469,18 +471,12 @@
   font-size: 10px;
   color: #efce9e;
 }
-.doelv-master-logo {
-  object-fit: contain;
-  margin: 32px 0 24px;
-  width: 210px;
-  height: auto;
-  filter: drop-shadow(0 10px 18px #0008);
-}
 .doelv-welcome-panel h2 {
   font:
     400 22px/1.6 Georgia,
     serif;
   letter-spacing: 0.07em;
+  margin: 22px 0 10px;
 }
 .doelv-welcome-panel h2 span {
   color: #efce9e;
@@ -534,9 +530,6 @@
   .doelv-main {
     max-width: 840px;
   }
-  .doelv-photo {
-    height: 330px;
-  }
   .doelv-content {
     max-width: 800px;
   }
@@ -552,14 +545,12 @@
     height: 96px;
     padding: 12px 19px;
   }
-  .doelv-brand img:first-child {
-    width: 55px;
-    height: 49px;
-  }
-  .doelv-brand img:nth-child(2) {
-    width: 145px;
-    height: 52px;
-  }
+  .doelv-identity { gap:8px; }
+  .doelv-mark { width:48px; height:48px; }
+  .doelv-wordmark strong { font-size:25px; }
+  .doelv-brand-korean { font-size:9px; }
+  .doelv-wordmark small { font-size:6px; }
+  .doelv-signature { font-size:8px; padding:5px 8px; letter-spacing:.05em; }
   .doelv-frame {
     display: block;
     padding: 0;
@@ -569,9 +560,10 @@
     padding: 14px 17px calc(94px + env(safe-area-inset-bottom));
   }
   .doelv-photo {
-    height: 246px;
     border-radius: 18px;
   }
+  .doelv-photo-caption { left:14px; bottom:27px; font-size:9px; letter-spacing:.12em; }
+  .doelv-photo-note { left:14px; font-size:8px; }
   .doelv-content {
     padding: 21px 5px 0;
   }
@@ -639,15 +631,13 @@
     min-height: 100dvh;
     max-width: 480px;
     margin: auto;
-    padding: calc(28px + env(safe-area-inset-top)) 28px
+    padding: calc(22px + env(safe-area-inset-top)) 24px
       calc(22px + env(safe-area-inset-bottom));
     box-shadow: none;
   }
-  .doelv-master-logo {
-    width: 195px;
-    margin-top: 32px;
-    margin-bottom: 20px;
-  }
+  .doelv-identity-stacked { margin:4px 0 20px; }
+  .doelv-identity-stacked .doelv-mark { width:80px; height:80px; }
+  .doelv-identity-stacked .doelv-wordmark strong { font-size:30px; }
   .doelv-welcome-panel h2 {
     font-size: 20px;
   }

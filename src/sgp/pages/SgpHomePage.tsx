@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PhotoHero } from "../components/DoelvBrand";
+import { PhotoHero } from "../components/BrandImagery";
 import { useSgpAuth } from "../contexts/SgpAuthContext";
 import { useResidentData } from "../contexts/ResidentDataContext";
 import { DataState } from "./DoelvServicePages";

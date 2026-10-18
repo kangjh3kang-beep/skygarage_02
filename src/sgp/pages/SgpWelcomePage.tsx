@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import PwaInstallPrompt from "../components/PwaInstallPrompt";
+import { BrandIdentity } from "../components/DoelvBrand";
+import { PhotoHero } from "../components/BrandImagery";
 export default function SgpWelcomePage() {
   return (
     <main className="doelv-welcome">
@@ -20,13 +22,8 @@ export default function SgpWelcomePage() {
       </section>
       <section className="doelv-welcome-panel" aria-label="공식 앱 시작">
         <p className="doelv-eyebrow">PRIVATE RESIDENCE EXPERIENCE</p>
-        <img
-          className="doelv-master-logo"
-          src="/doelv/logo.webp"
-          alt="DOELV 도엘브 · SKY GARAGE SYSTEM"
-          width="220"
-          height="267"
-        />
+        <BrandIdentity stacked />
+        <PhotoHero compact />
         <h2>
           A NEW LAYER OF
           <br />
