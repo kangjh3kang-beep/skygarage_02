@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081521">
+  <title>DOELV 앱 업데이트</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#081521;color:#f3eee4;font:16px/1.8 system-ui,sans-serif}main{max-width:480px;padding:32px;border:1px solid #776443;border-radius:20px;background:#102132}small{color:#d9b879;letter-spacing:2px}h1{font-size:26px;line-height:1.4}p{color:#c1c9d0}button,a{display:block;width:100%;padding:14px;border:0;border-radius:10px;font:inherit;text-align:center}button{background:#d9b879;color:#17202a;cursor:pointer}button:disabled{opacity:.6}a{color:#d9b879;margin-top:12px}#status{min-height:58px}
+  </style>
+</head>
+<body><main>
+  <small>DOELV · SKY GARAGE</small>
+  <h1>최신 디자인으로 업데이트</h1>
+  <p>이 브라우저에 저장된 이전 앱 화면을 정리하고 최신 버전을 불러옵니다. 로그인 정보는 유지됩니다.</p>
+  <p>작성 중인 내용이 있다면 먼저 저장해 주세요.</p>
+  <button id="update" type="button">최신 앱 불러오기</button>
+  <p id="status" role="status" aria-live="polite"></p>
+  <a id="continue" href="/app">앱으로 돌아가기</a>
+</main>
+<script>
+  const button = document.getElementById('update');
+  const status = document.getElementById('status');
+  const requested = new URLSearchParams(location.search).get('returnTo') || '/app';
+  // Only same-origin resident routes. Never accept a host, protocol or encoded redirect.
+  const returnPath = /^\/app(?:\/[a-zA-Z0-9_-]+)*\/?$/.test(requested) ? requested : '/app';
+  document.getElementById('continue').href = returnPath;
+  function activated(worker) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 20000);
+      const cleanup = () => { clearTimeout(timer); worker.removeEventListener('statechange', changed); };
+      const changed = () => {
+        if (worker.state === 'activated') { cleanup(); resolve(); }
+        if (worker.state === 'redundant') { cleanup(); reject(new Error('install')); }
+      };
+      worker.addEventListener('statechange', changed); changed();
+    });
+  }
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    status.textContent = '최신 앱을 확인하고 있습니다…';
+    try {
+      const response = await fetch('/app-version.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) throw new Error('offline');
+      const version = await response.json();
+      if (typeof version.release !== 'string') throw new Error('version');
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+        await registration.update();
+        const worker = registration.installing || registration.waiting || registration.active;
+        if (!worker) throw new Error('worker');
+        await activated(worker);
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(key => key.startsWith('sgp-') && key !== 'sgp-public-install-v4').map(key => caches.delete(key)));
+      }
+      location.replace(returnPath + '?release=' + encodeURIComponent(version.release));
+    } catch {
+      status.textContent = '업데이트하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.';
+      button.disabled = false;
+    }
+  });
+</script></body></html>

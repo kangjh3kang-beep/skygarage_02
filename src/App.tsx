@@ -7,6 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { AuthProvider, useAuth } from './admin/contexts/AuthContext';
 import { ParkingAuthProvider, useParkingAuth } from './parking/contexts/ParkingAuthContext';
 import { SgpAuthProvider } from './sgp/contexts/SgpAuthContext';
+import AppUpdateNotice from './sgp/components/AppUpdateNotice';
 import { TenantProvider } from './admin/contexts/TenantContext';
 import { ToastProvider } from './admin/contexts/ToastContext';
 import { AdminThemeProvider, useAdminTheme } from './admin/contexts/ThemeContext';
@@ -157,7 +158,7 @@ function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onTo
 function SgpAppGuard() {
   const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bgcolor: '#0d1b2a' }}><CircularProgress sx={{ color: '#00d4aa' }} /></Box>;
   return (
-    <Suspense fallback={fallback}>
+    <><AppUpdateNotice /><Suspense fallback={fallback}>
       <Routes>
         <Route element={<SgpLayout />}>
           <Route index element={<SgpHomePage />} />
@@ -175,7 +176,7 @@ function SgpAppGuard() {
           <Route path="profile" element={<SgpProfilePage />} />
         </Route>
       </Routes>
-    </Suspense>
+    </Suspense></>
   );
 }
 

@@ -20,7 +20,7 @@
     <script type="module" src="/src/main.tsx"></script>
     <script>
       if ('serviceWorker' in navigator && (location.pathname === '/app' || location.pathname.startsWith('/app/'))) {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {});
       }
     </script>
   </body>

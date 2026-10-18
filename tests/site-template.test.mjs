@@ -17,5 +17,15 @@ test('marketing remains available while official-domain switch is unverified',()
  assert.equal(domainDestination('www.skygarage.net','/'),null);
  assert.equal(domainDestination('skygarage.app','/'),'/app');
  assert.equal(domainDestination('skygarage.app','/app/profile'),null);
- assert.equal(domainDestination('skygarage.app','/admin/templates'),'https://www.skygarage.net/admin');
+ assert.equal(domainDestination('skygarage.app','/admin/templates'),'https://www.skygarage.net/admin/templates');
+});
+
+test('official app cutover is opt-in, preserves deep routes and cannot redirect other sites',()=>{
+ assert.equal(domainDestination('skygarage.net','/app/profile'),null);
+ assert.equal(domainDestination('skygarage.net','/app/profile','https://skygarage.app'),'https://skygarage.app/app/profile');
+ assert.equal(domainDestination('www.skygarage.net','/app','https://skygarage.app'),'https://skygarage.app/app');
+ assert.equal(domainDestination('www.skygarage.net','/','https://skygarage.app'),null);
+ assert.equal(domainDestination('skygarage.net','/application','https://skygarage.app'),null);
+ assert.equal(domainDestination('preview.pages.dev','/app','https://skygarage.app'),null);
+ assert.equal(domainDestination('skygarage.net','/app','https://untrusted.test'),null);
 });
