@@ -1,6 +1,6 @@
 /* Public install assets only. Never cache authenticated pages, APIs or commands. */
-const CACHE_NAME = 'sgp-public-install-v5';
-const ASSETS = ['/offline.html', '/doelv/icon-v2-192.png', '/doelv/icon-v2-512.png'];
+const CACHE_NAME = 'sgp-public-install-v6';
+const ASSETS = ['/offline.html', '/doelv/icon-v3-192.png', '/doelv/icon-v3-512.png'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('sgp-') && key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', event => {

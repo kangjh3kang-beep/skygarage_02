@@ -1,0 +1,8 @@
+/* The user-approved artwork is a textured raster identity, not a reconstructed glyph. */
+.doelv-approved .doelv-mark{object-fit:contain;filter:none}
+.doelv-approved .doelv-original-wordmark{display:block;object-fit:contain;width:160px;height:auto;max-width:none;filter:none}
+.doelv-approved .doelv-master-logo{display:block;object-fit:contain;width:180px;height:auto;max-width:100%;filter:none}
+.doelv-approved .doelv-original-accessible{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.dc-shell .doelv-approved .doelv-original-wordmark{width:142px}
+.dc-shell .dc-brand-display .doelv-approved .doelv-original-wordmark{width:260px}
+@media(max-width:720px){.doelv-approved .doelv-original-wordmark{width:132px}.doelv-approved .doelv-master-logo{width:155px}.dc-shell .doelv-approved .doelv-original-wordmark{width:125px}.dc-shell .dc-brand-display .doelv-approved .doelv-original-wordmark{width:180px}}

@@ -18,7 +18,7 @@ export default function SgpWelcomePage() {
           <br />
           나의 공간과 이동을 하나의 앱에서 만나세요.
         </p>
-        <a href="https://www.skygarage.net/">스카이게러지 PC 사이트 ↗</a>
+        <a href="https://www.skygarage.net/">도엘브 공식 홈페이지 ↗</a>
       </section>
       <section className="doelv-welcome-panel" aria-label="공식 앱 시작">
         <p className="doelv-eyebrow">PRIVATE RESIDENCE EXPERIENCE</p>
