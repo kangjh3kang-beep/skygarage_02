@@ -18,6 +18,7 @@ test('uses documented endpoint and accepts one registered message', async () => 
     const request = JSON.parse(init.body);
     assert.deepEqual(request.messages, [{ to: phone, from: config.sender, text: body, type: 'SMS' }]);
     assert.equal(request.showMessageList, true);
+    assert.equal(request.allowDuplicates, false);
     assert.ok(init.signal);
     return json({ groupInfo: { count: { registeredSuccess: 1, registeredFailed: 0 } }, messageList: [{ statusCode: '2000', messageId: 'M-test' }] });
   });

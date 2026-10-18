@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { registerResident } from "./signup.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { generateCode, sendSolapi, checkSolapiAuthentication, resolveSolapiSender, readSmsConfig } from "./solapi.ts";
 
@@ -110,76 +111,16 @@ async function handleConfirm(body: {
 }): Promise<Response> {
   const { verification_id, code } = body;
 
-  if (!verification_id || !code || code.length !== 6) {
+  if (typeof verification_id !== "string" || !/^[0-9a-f-]{36}$/i.test(verification_id) || typeof code !== "string" || !/^\d{6}$/.test(code)) {
     return new Response(
       JSON.stringify({ error: "인증 ID와 6자리 코드를 입력하세요." }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  const { data, error: fetchError } = await supabase
-    .from("sgp_phone_verifications")
-    .select("*")
-    .eq("id", verification_id)
-    .maybeSingle();
-
-  if (fetchError || !data) {
-    return new Response(
-      JSON.stringify({ error: "인증 정보를 찾을 수 없습니다." }),
-      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  if (data.verified) {
-    return new Response(
-      JSON.stringify({ error: "이미 인증 완료된 코드입니다." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  if (data.attempts >= 5) {
-    return new Response(
-      JSON.stringify({ error: "시도 횟수를 초과했습니다. 새 코드를 요청하세요." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  if (new Date(data.expires_at) < new Date()) {
-    return new Response(
-      JSON.stringify({ error: "인증코드가 만료되었습니다. 재발송 해주세요." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  await supabase
-    .from("sgp_phone_verifications")
-    .update({ attempts: data.attempts + 1 })
-    .eq("id", verification_id);
-
-  if (data.code !== code) {
-    const remaining = 4 - data.attempts;
-    return new Response(
-      JSON.stringify({
-        error: `인증코드가 일치하지 않습니다. (${remaining}회 남음)`,
-        remaining,
-      }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  await supabase
-    .from("sgp_phone_verifications")
-    .update({ verified: true })
-    .eq("id", verification_id);
-
-  return new Response(
-    JSON.stringify({
-      verified: true,
-      phone: data.phone,
-      message: "인증이 완료되었습니다.",
-    }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  const { data, error } = await supabase.rpc("sgp_confirm_phone", { p_id: verification_id, p_code: code });
+  return new Response(JSON.stringify(error ? { error: "인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요." } : data),
+    { status: error ? 503 : data?.verified ? 200 : 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
 
 Deno.serve(async (req: Request) => {
@@ -206,8 +147,16 @@ Deno.serve(async (req: Request) => {
   try {
     const url = new URL(req.url);
     const path = url.pathname.split("/").pop();
-    const body = await req.json();
+    if (Number(req.headers.get("content-length")) > 8192) return new Response(null, { status: 413, headers: corsHeaders });
+    const raw = await req.text();
+    if (raw.length > 8192) return new Response(null, { status: 413, headers: corsHeaders });
+    const body = JSON.parse(raw);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return new Response(JSON.stringify({ error: "입력값을 확인해주세요." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    if (path === "register") {
+      const result = await registerResident(supabase, body);
+      return new Response(JSON.stringify(result.body), { status: result.status, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+    }
     if (path === "send") {
       return await handleSend(body);
     } else if (path === "confirm") {
