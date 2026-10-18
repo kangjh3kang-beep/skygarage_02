@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -14,44 +15,49 @@ import { useAuth } from "../contexts/AuthContext";
 import type { ServiceRequest } from "../../sgp/contexts/ResidentDataContext";
 import { requestStatusLabels } from "../../sgp/request-labels";
 export default function PlatformReadiness() {
-  const { displayName } = useAuth();
-  const [requests, setRequests] = useState<ServiceRequest[]>([]);
-  const [sites, setSites] = useState(0);
-  const [error, setError] = useState("");
+  const { displayName, user } = useAuth();
+  const [response, setResponse] = useState<{key:string;requests:ServiceRequest[];sites:number;error:string}|null>(null);
+  const [actionError, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState<Record<string, string>>({});
   const [reload, setReload] = useState(0);
+  const requestKey = `${user?.id}:${reload}`;
+  const current = response?.key === requestKey ? response : null;
+  const loading = !current;
+  const requests = current?.requests ?? [];
+  const sites = current?.sites ?? 0;
+  const error = actionError || current?.error || "";
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
     Promise.all([
       supabase
         .from("sgp_service_requests")
         .select("id,category,subject,description,status,response,created_at")
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(100).abortSignal(controller.signal),
       supabase
         .from("platform_sites")
-        .select("id", { count: "exact", head: true }),
+        .select("id", { count: "exact", head: true }).abortSignal(controller.signal),
     ])
       .then(([r, s]) => {
         if (!active) return;
-        if (r.error || s.error)
-          setError(
-            "운영 정보를 불러오지 못했습니다. 관리자 인증을 다시 확인해 주세요.",
-          );
+        if (r.error || s.error || !Array.isArray(r.data) || !Number.isSafeInteger(s.count) || (s.count ?? -1) < 0)
+          setResponse({key:requestKey,requests:[],sites:0,error:"운영 정보를 불러오지 못했습니다. 관리자 인증을 다시 확인해 주세요."});
         else {
-          setError("");
-          setRequests(r.data as ServiceRequest[]);
-          setSites(s.count || 0);
+          setResponse({key:requestKey,requests:r.data as ServiceRequest[],sites:s.count as number,error:""});
         }
       })
       .catch(() => {
-        if (active) setError("서버 연결을 확인해 주세요.");
-      });
+        if (active) setResponse({key:requestKey,requests:[],sites:0,error:"서버 연결을 확인해 주세요."});
+      }).finally(() => clearTimeout(timeout));
     return () => {
       active = false;
+      clearTimeout(timeout);
+      controller.abort();
     };
-  }, [reload]);
+  }, [requestKey]);
   async function review(
     id: string,
     status: "reviewing" | "resolved" | "rejected",
@@ -81,6 +87,7 @@ export default function PlatformReadiness() {
         플랫폼 운영 준비
       </Typography>
       <Typography sx={{ my: 2 }}>{displayName} · 총괄 최고관리자</Typography>
+      <Button component={Link} to="/admin/implementation" variant="outlined" sx={{mb:2}}>통합시스템 구축·검증 현황</Button>
       <Alert severity="info" sx={{ mb: 3 }}>
         앱 계정과 요청 접수는 운영 중입니다. 현장 운행·출입·결제는 별도 검수
         전까지 차단되어 있습니다.
@@ -88,19 +95,20 @@ export default function PlatformReadiness() {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
-          <Button onClick={() => setReload((n) => n + 1)}>다시 조회</Button>
+          <Button onClick={() => {setError("");setReload((n) => n + 1);}}>다시 조회</Button>
         </Alert>
       )}
       <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-        <Chip label={`등록 현장 ${sites}곳`} />
-        <Chip label={`조회 요청 ${requests.length}건`} />
+        <Chip label={loading ? '현장 확인 중' : error ? '현장 수 확인 불가' : `등록 현장 ${sites}곳`} />
+        <Chip label={loading ? '요청 확인 중' : error ? '요청 수 확인 불가' : `조회 요청 ${requests.length}건`} />
         <Chip label="실장비 운행 미승인" color="warning" />
       </Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
         입주민 요청
       </Typography>
-      {!error && !requests.length && <p>접수된 요청이 없습니다.</p>}
-      {requests.map((r) => (
+      {loading && <p role="status">운영 정보를 확인하고 있습니다.</p>}
+      {!loading && !error && !requests.length && <p>접수된 요청이 없습니다.</p>}
+      {!loading && !error && requests.map((r) => (
         <Card key={r.id} sx={{ mb: 2 }}>
           <CardContent>
             <Chip label={requestStatusLabels[r.status]} size="small" />

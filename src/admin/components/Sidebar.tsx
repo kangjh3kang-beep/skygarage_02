@@ -82,6 +82,7 @@ const menuGroups: MenuGroup[] = [
     defaultOpen: true,
     items: [
       { label: '통합 운영', icon: <DashboardIcon />, path: '/admin' },
+      { label: '구축·검증 현황', icon: <AccountTreeIcon />, path: '/admin/implementation', minScope: 'global' },
       { label: '운영 현황', icon: <SpeedIcon />, path: '/admin/operations', minScope: 'complex' },
       { label: 'NOC', icon: <PublicIcon />, path: '/admin/noc', minScope: 'global' },
       { label: '시스템', icon: <ShieldIcon />, path: '/admin/system', minScope: 'region' },
