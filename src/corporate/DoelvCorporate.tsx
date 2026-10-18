@@ -4,10 +4,11 @@ import { appUrl } from '../lib/domain-routing';
 import CorporatePhoto from './CorporatePhoto';
 import CorporateInquiry from './CorporateInquiry';
 import CorporateValue from './CorporateValue';
+import CorporateFilms from './CorporateFilms';
 import './corporate.css';
 
 const officialApp = appUrl(import.meta.env.VITE_OFFICIAL_APP_ORIGIN);
-const navigation = [['brand', '도엘브'], ['collection', '컬렉션'], ['experience', '라이프스타일'], ['value', '사업 가치'], ['technology', '모빌리티'], ['contact', '프로젝트 문의']];
+const navigation = [['brand', '도엘브'], ['collection', '컬렉션'], ['experience', '라이프스타일'], ['value', '사업 가치'], ['films', '브랜드 영상'], ['technology', '모빌리티'], ['contact', '프로젝트 문의']];
 
 export function CorporateHeader() {
   const [open, setOpen] = useState(false);
@@ -90,6 +91,7 @@ export default function DoelvCorporate() {
         </div>
         <div id="valet" className="dc-feature dc-feature-valet"><div className="dc-feature-copy"><p className="dc-eyebrow">02 / UNDERGROUND ROBOT VALET</p><h3>주차를 맡기는 순간,<br />여유가 시작됩니다.</h3><p>차량 인수 공간에서 주차 구역까지 이어지는 로봇 발렛. 기존 단지와 건축물에도 적용 가능한 동선을 검토하고, 같은 면적에서 주차대수 확대와 편리한 차량 인수를 함께 추구합니다.</p><a className="dc-text-link" href="#contact" onClick={() => setInterest('스카이게러지 도엘브')}>우리 단지 도입 상담 <span aria-hidden="true">↗</span></a></div><CorporatePhoto scene="valet" alt="저상형 자율주행 주차로봇이 차량을 운반하는 고급 지하 발렛 주차장" sizes="(max-width: 900px) 100vw, 65vw" /></div>
       </section>
+      <CorporateFilms />
       <section id="technology" className="dc-technology dc-section">
         <div className="dc-section-heading"><div><p className="dc-eyebrow">ENGINEERED FOR A BETTER EVERYDAY</p><h2>보이지 않는 곳까지,<br />정교하게 연결하다.</h2></div><p>주차, 승강, 이송.<br />도엘브 모빌리티를 구성하는 세 가지 기술 비전.</p></div>
         <article className="dc-tech-main"><CorporatePhoto scene="elevator" alt="차량과 자율반송기가 탑승한 도엘브 차량용 엘리베이터 콘셉트" sizes="(max-width: 900px) 100vw, 60vw" /><div><p className="dc-eyebrow">01 / VERTICAL MOBILITY</p><h3>도엘브 엘리베이터</h3><p className="dc-tech-subtitle">차량과 자율반송기를 연결하는 수직 동선</p><p>건축의 높이를 이동의 가능성으로. 차량용 엘리베이터와 ATR의 연동을 통해 지하 인수 공간에서 각 층의 목적 구역까지 이어지는 흐름을 구상합니다.</p><ul><li>차량·반송기 탑승과 층간 이송</li><li>승강장 정렬 및 도어 연동</li><li>접근 인증과 설비 안전 상태 확인</li></ul></div></article>

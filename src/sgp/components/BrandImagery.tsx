@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { photography } from '../assets/photography';
+import MediaBrandSeal from '../../components/MediaBrandSeal';
 
 const scenes = {
   home: { title: 'PRIVATE SKY GARAGE', label: '집과 이어지는 나만의 게러지', alt: '고층 주거 거실과 유리벽으로 구분된 세대 전용 게러지 안의 차량' },
@@ -62,6 +63,7 @@ function ScenePhoto({ photo, compact }: { photo: BrandScene; compact: boolean })
             setStatus('loading');
           }}>사진 다시 불러오기</button>
         </div>}
+        {status !== 'failed' && <MediaBrandSeal />}
         <span className="doelv-photo-scene" aria-hidden="true">{scene.title}</span>
       </div>
       <figcaption className="doelv-photo-caption">
