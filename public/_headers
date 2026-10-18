@@ -9,3 +9,5 @@
   Cache-Control: no-store
 /manifest.json
   Cache-Control: no-cache, must-revalidate
+/doelv/*
+  Cache-Control: no-cache, must-revalidate
