@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -17,6 +17,8 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import SmsIcon from '@mui/icons-material/Sms';
 import CakeIcon from '@mui/icons-material/Cake';
 import HomeIcon from '@mui/icons-material/Home';
+import SearchIcon from '@mui/icons-material/Search';
+import AddressSearchDialog from '../components/AddressSearchDialog';
 import { useSgpAuth } from '../contexts/SgpAuthContext';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -42,6 +44,9 @@ export default function SgpLoginPage() {
   const [birthDate, setBirthDate] = useState('');
   const [genderCode, setGenderCode] = useState('');
   const [address, setAddress] = useState('');
+  const [postcode, setPostcode] = useState('');
+  const [addressSearchOpen, setAddressSearchOpen] = useState(false);
+  const detailAddressRef = useRef<HTMLInputElement>(null);
   const [addressDetail, setAddressDetail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -191,7 +196,7 @@ export default function SgpLoginPage() {
       displayName: displayName.trim(),
       birthDate,
       genderCode,
-      address: address.trim(),
+      address: postcode ? `(${postcode}) ${address.trim()}` : address.trim(),
       addressDetail: addressDetail.trim(),
     });
     if (result.error) setError(result.error);
@@ -210,6 +215,8 @@ export default function SgpLoginPage() {
     setBirthDate('');
     setGenderCode('');
     setAddress('');
+    setPostcode('');
+    setAddressSearchOpen(false);
     setAddressDetail('');
     setError('');
     setSuccess('');
@@ -484,12 +491,18 @@ export default function SgpLoginPage() {
                   </Typography>
                 </Box>
 
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
+                  <Typography variant="body2" sx={{ color: '#fff' }}>주소 등록</Typography>
+                  <Button type="button" variant="outlined" startIcon={<SearchIcon />} onClick={() => setAddressSearchOpen(true)} sx={{ minHeight: 44, color: '#a9e9cb', borderColor: '#a9e9cb66', borderRadius: 2 }}>주소 검색</Button>
+                </Box>
+                {postcode && <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#a9e9cb' }}>우편번호 {postcode}</Typography>}
                 <TextField
-                  label="주소"
+                  label="기본주소"
                   value={address}
-                  onChange={e => setAddress(e.target.value)}
+                  onChange={e => { setAddress(e.target.value); setPostcode(''); }}
                   fullWidth size="small"
-                  placeholder="서울특별시 강남구 역삼동"
+                  placeholder="주소 검색 또는 직접 입력"
+                  autoComplete="street-address"
                   sx={{ mb: 2, ...textFieldStyles }}
                   slotProps={{
                     input: { startAdornment: <InputAdornment position="start"><HomeIcon sx={{ fontSize: 18, color: 'rgba(255,255,255,0.4)' }} /></InputAdornment> },
@@ -498,6 +511,8 @@ export default function SgpLoginPage() {
                 />
                 <TextField
                   label="상세주소 (선택)"
+                  inputRef={detailAddressRef}
+                  autoComplete="address-line2"
                   value={addressDetail}
                   onChange={e => setAddressDetail(e.target.value)}
                   fullWidth size="small"
@@ -531,6 +546,17 @@ export default function SgpLoginPage() {
           </>
         )}
       </Box>
+      {addressSearchOpen && <AddressSearchDialog
+        onClose={() => setAddressSearchOpen(false)}
+        onSelect={(selected, zip) => {
+          setAddress(selected);
+          setPostcode(zip);
+          setAddressDetail('');
+          setAddressSearchOpen(false);
+          setError('');
+          requestAnimationFrame(() => detailAddressRef.current?.focus());
+        }}
+      />}
     </Box>
   );
 }
