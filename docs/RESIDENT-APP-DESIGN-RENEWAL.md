@@ -17,7 +17,11 @@ Supabase 스키마, RLS, 인증 처리, 하드웨어 명령은 변경하지 않�
 
 기존 `/app/map` 화면에는 결제내역을 임의 좌표로 매핑하고, 내역이 없으면 예시 차량을 생성하는 코드가 있다. 이 화면은 실제 차량 위치 및 하드웨어 연동 완료의 증거로 사용할 수 없다. 실제 운행 정보 연결은 별도 검증이 필요하다.
 
-현재 연결된 Netlify 계정의 프로젝트 목록에서는 스카이게러지가 조회되지 않았다. 운영 도메인과 배포 대상이 확인되기 전에는 운영 배포를 실행하지 않는다.
+2026-10-18 Netlify 프로젝트 `skygarage-doelv` 생성 및 GitHub 연동 완료. 현재 운영 배포 브랜치는 `design/skygarage-resident-renewal`이며 `main`은 병합하지 않았다. 빌드 명령은 `npm run build`, 게시 폴더는 `dist`, Node.js는 24를 사용한다. `.netlify` 로컬 상태는 Git에서 제외한다.
+
+공개 앱: https://skygarage-doelv.netlify.app/app
+
+첫 배포: `6ad42d7f233601b54e6fb0b9`, 배포 커밋: `c7a452439063f3ef20298b0ff26cfaf1ab600c66`. 배포 상태 ready와 공개 로그인 화면, 회원가입 진입 및 `/app/parking` 직접 접속을 확인했다. Supabase 클라이언트 연결 환경변수 두 개는 Netlify Builds 범위에 등록되어 있다. 실제 가입·SMS·결제·차량 위치 연동은 별도 검증 대상이다.
 
 ## 검증
 
