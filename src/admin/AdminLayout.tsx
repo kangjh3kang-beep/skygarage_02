@@ -34,7 +34,8 @@ import { useAdminTheme } from './contexts/ThemeContext';
 import { useTenant } from './contexts/TenantContext';
 
 const routeTitles: Record<string, string> = {
-  '/admin': 'Dashboard',
+  '/admin': '통합 운영',
+  '/admin/templates': '단지 템플릿 생성기',
   '/admin/operations': '운영 현황',
   '/admin/noc': 'NOC',
   '/admin/system': '시스템',
@@ -82,7 +83,7 @@ const routeTitles: Record<string, string> = {
 };
 
 const roleLabels: Record<string, string> = {
-  super_admin: 'Super Admin',
+  super_admin: '총괄 최고관리자',
   admin: 'Admin',
   manager: 'Manager',
   operator: 'Operator',
@@ -108,12 +109,12 @@ export default function AdminLayout() {
   const [sessionWarning, setSessionWarning] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, role, signOut } = useAuth();
+  const { user, role, displayName: adminName, signOut } = useAuth();
   const { mode, toggleMode } = useAdminTheme();
   const { isImpersonating } = useTenant();
 
   const title = routeTitles[location.pathname] || 'Admin';
-  const displayName = user?.email?.split('@')[0] || 'User';
+  const displayName = adminName || user?.email?.split('@')[0] || 'User';
   const initials = displayName.slice(0, 2).toUpperCase();
 
   // 키보드 단축키
@@ -347,7 +348,7 @@ export default function AdminLayout() {
         <Box id="main-content" sx={{ flex: 1, p: { xs: 2, sm: 2.5, md: 3 }, overflow: 'auto', minWidth: 0 }} role="main">
           <Breadcrumbs />
           <ErrorBoundary>
-            <Outlet />
+            {['/admin', '/admin/', '/admin/templates'].includes(location.pathname) ? <Outlet /> : <Box sx={{py:4}}><Alert severity="info">이 운영 모듈은 단지별 권한·데이터·현장 인수 검증을 준비 중입니다. 현재는 통합 운영의 요청 처리와 검증용 단지 템플릿 생성 기능을 이용할 수 있습니다.</Alert><Button sx={{mt:2}} onClick={()=>navigate('/admin')}>통합 운영</Button><Button sx={{mt:2}} onClick={()=>navigate('/admin/templates')}>단지 템플릿 생성기</Button></Box>}
           </ErrorBoundary>
         </Box>
       </Box>

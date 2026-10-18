@@ -1,37 +1,9 @@
 {
-  "name": "SGP App - SkyGarage Parking",
-  "short_name": "SGP App",
-  "description": "SkyGarage 스마트 주차 결제 앱 - 코인충전, NFC결제, 내차위치 확인",
-  "start_url": "/app",
-  "scope": "/app",
-  "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#0d1b2a",
-  "background_color": "#0d1b2a",
-  "categories": ["lifestyle", "utilities"],
-  "lang": "ko",
-  "dir": "ltr",
+  "id": "/app", "name": "DOELV 스카이게러지", "short_name": "DOELV",
+  "description": "DOELV 스카이게러지 공식 앱", "lang": "ko", "start_url": "/app", "scope": "/app",
+  "display": "standalone", "theme_color": "#081521", "background_color": "#081521",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo01.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/logo03.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "prefer_related_applications": false,
-  "related_applications": [],
-  "id": "/app"
+    {"src":"/doelv/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"/doelv/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ], "prefer_related_applications": false
 }

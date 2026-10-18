@@ -1,3 +1,4 @@
+import { appUrl } from '../lib/domain-routing';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
@@ -254,7 +255,7 @@ export default function Navbar() {
                 variant="contained"
                 size="small"
                 startIcon={<GetAppIcon sx={{ fontSize: 16 }} />}
-                onClick={() => navigate('/app')}
+                component="a" href={appUrl(import.meta.env.VITE_OFFICIAL_APP_ORIGIN)}
                 sx={{
                   ml: 1,
                   py: 0.75,
@@ -266,7 +267,7 @@ export default function Navbar() {
                   '&:hover': { bgcolor: '#00b894' },
                 }}
               >
-                SGP App
+                공식 앱
               </Button>
               <Button
                 variant="contained"
@@ -400,10 +401,10 @@ export default function Navbar() {
               variant="contained"
               fullWidth
               startIcon={<GetAppIcon />}
-              onClick={() => { setDrawerOpen(false); navigate('/app'); }}
+              component="a" href={appUrl(import.meta.env.VITE_OFFICIAL_APP_ORIGIN)}
               sx={{ py: 1.5, bgcolor: '#00d4aa', color: '#0d1b2a', fontWeight: 700, '&:hover': { bgcolor: '#00b894' } }}
             >
-              SGP App 다운로드
+              공식 앱 열기
             </Button>
           </ListItem>
           <ListItem sx={{ px: 3, pt: 1 }}>
