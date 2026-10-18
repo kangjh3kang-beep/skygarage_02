@@ -73,6 +73,10 @@ export default function SgpProfilePage() {
         </div>
         <ServiceRequestForm key={form} category={form} />
         <PwaInstallPrompt />
+        <a className="doelv-row" href="/app-update?returnTo=%2Fapp%2Fprofile">
+          <div><strong>화면 업데이트</strong><small>이전 디자인이 보일 때 최신 화면 불러오기</small></div>
+          <span>↗</span>
+        </a>
         <button className="doelv-secondary" type="button" onClick={signOut}>
           로그아웃
         </button>
