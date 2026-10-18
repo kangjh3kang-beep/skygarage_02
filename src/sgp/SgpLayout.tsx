@@ -1,86 +1,76 @@
-import { Outlet, NavLink } from "react-router-dom";
-import HomeOutlined from "@mui/icons-material/HomeOutlined";
-import AccountBalanceWalletOutlined from "@mui/icons-material/AccountBalanceWalletOutlined";
-import NearMeOutlined from "@mui/icons-material/NearMeOutlined";
-import PersonOutline from "@mui/icons-material/PersonOutlined";
-import LocalParkingOutlined from "@mui/icons-material/LocalParkingOutlined";
+import { Outlet, NavLink, useLocation, Navigate } from "react-router-dom";
+import {
+  HomeOutlined,
+  DirectionsCarOutlined,
+  GarageOutlined,
+  ShieldOutlined,
+  TuneOutlined,
+} from "@mui/icons-material";
 import { useSgpAuth } from "./contexts/SgpAuthContext";
+import { ResidentDataProvider } from "./contexts/ResidentDataContext";
+import DoelvBrand from "./components/DoelvBrand";
 import SgpLoginPage from "./pages/SgpLoginPage";
-import PwaInstallPrompt from "./components/PwaInstallPrompt";
+import SgpWelcomePage from "./pages/SgpWelcomePage";
 import "./renewal.css";
-
+import "./doelv.css";
 const tabs = [
   { label: "홈", icon: <HomeOutlined />, path: "/app" },
-  { label: "주차", icon: <LocalParkingOutlined />, path: "/app/parking" },
-  { label: "내 차 위치", icon: <NearMeOutlined />, path: "/app/map" },
-  {
-    label: "지갑",
-    icon: <AccountBalanceWalletOutlined />,
-    path: "/app/wallet",
-  },
-  { label: "내 정보", icon: <PersonOutline />, path: "/app/profile" },
+  { label: "차량 호출", icon: <DirectionsCarOutlined />, path: "/app/call" },
+  { label: "게러지", icon: <GarageOutlined />, path: "/app/garage" },
+  { label: "출입", icon: <ShieldOutlined />, path: "/app/access" },
+  { label: "설정", icon: <TuneOutlined />, path: "/app/profile" },
 ];
-
 export default function SgpLayout() {
-  const { isAuthenticated, loading, wallet } = useSgpAuth();
+  const { user, isAuthenticated, loading } = useSgpAuth();
+  const location = useLocation();
   if (loading)
     return (
-      <div className="sg-shell sg-loading" role="status">
-        <span className="sg-brand-mark">S</span>
-        <p>스카이게러지를 준비하고 있어요</p>
-        <span className="sg-loader" />
+      <div className="sg-shell doelv-shell sg-loading" role="status">
+        DOELV 앱을 준비하고 있습니다.
       </div>
     );
   if (!isAuthenticated)
     return (
-      <div className="sg-shell">
-        <SgpLoginPage />
+      <div className="sg-shell doelv-shell">
+        {location.pathname.replace(/\/$/, "") === "/app" ? (
+          <SgpWelcomePage />
+        ) : (
+          <SgpLoginPage />
+        )}
       </div>
     );
-
+  if (location.pathname === "/app/login") return <Navigate to="/app" replace />;
   return (
-    <div className="sg-shell">
-      <a className="sg-skip" href="#sg-main">
-        본문 바로가기
-      </a>
-      <header className="sg-header">
-        <NavLink to="/app" className="sg-brand" aria-label="스카이게러지 홈">
-          <span className="sg-brand-mark">S</span>
-          <span>
-            SKY GARAGE<small>EVERYDAY, ELEVATED.</small>
-          </span>
-        </NavLink>
-        <NavLink to="/app/wallet" className="sg-wallet-link">
-          <AccountBalanceWalletOutlined fontSize="small" />
-          {wallet ? `${wallet.balance.toLocaleString()} C` : "내 지갑"}
-        </NavLink>
-      </header>
-      <div className="sg-frame">
-        <nav className="sg-navigation" aria-label="주요 메뉴">
-          <span className="sg-nav-caption">MY SKY GARAGE</span>
-          {tabs.map((tab) => (
-            <NavLink
-              key={tab.path}
-              to={tab.path}
-              end={tab.path === "/app"}
-              className={({ isActive }) =>
-                `sg-nav-item${isActive ? " is-active" : ""}`
-              }
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </NavLink>
-          ))}
-          <span className="sg-nav-foot">
-            일상의 이동을
-            <br />더 여유롭게.
-          </span>
-        </nav>
-        <main id="sg-main" className="sg-main" tabIndex={-1}>
-          <Outlet />
-        </main>
+    <ResidentDataProvider key={user?.id}>
+      <div className="sg-shell doelv-shell">
+        <a className="sg-skip" href="#sg-main">
+          본문 바로가기
+        </a>
+        <header className="doelv-header">
+          <DoelvBrand />
+          <span className="doelv-signature">SIGNATURE</span>
+        </header>
+        <div className="doelv-frame">
+          <nav className="doelv-navigation" aria-label="앱 주요 메뉴">
+            {tabs.map((tab) => (
+              <NavLink
+                key={tab.path}
+                to={tab.path}
+                end={tab.path === "/app"}
+                className={({ isActive }) =>
+                  `doelv-nav-item${isActive ? " is-active" : ""}`
+                }
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+          <main id="sg-main" className="doelv-main" tabIndex={-1}>
+            <Outlet />
+          </main>
+        </div>
       </div>
-      <PwaInstallPrompt />
-    </div>
+    </ResidentDataProvider>
   );
 }

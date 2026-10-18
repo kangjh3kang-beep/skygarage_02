@@ -1,3 +1,6 @@
+import { useSearchParams, Link } from 'react-router-dom';
+import DoelvBrand from '../components/DoelvBrand';
+import PwaInstallPrompt from '../components/PwaInstallPrompt';
 import { useState, useCallback, useRef } from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -36,7 +39,8 @@ const labelStyles = { sx: { color: 'rgba(255,255,255,0.6)' } };
 
 export default function SgpLoginPage() {
   const { signIn, signUp } = useSgpAuth();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [params] = useSearchParams();
+  const [mode, setMode] = useState<'login' | 'register'>(params.get('mode') === 'register' ? 'register' : 'login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -234,7 +238,7 @@ export default function SgpLoginPage() {
 
 
   return (
-    <Box sx={{
+    <Box className="doelv-login" sx={{
       minHeight: '100dvh',
       background: 'radial-gradient(ellipse at 50% 0%, #23463f 0%, #0d1b2a 60%)',
       display: 'flex',
@@ -245,9 +249,9 @@ export default function SgpLoginPage() {
       py: 4,
     }}>
       <div className="sg-login-heading" style={{ width: '100%', maxWidth: 420 }}>
-        <div className="sg-brand"><span className="sg-brand-mark">S</span><span>SKY GARAGE<small>EVERYDAY, ELEVATED.</small></span></div>
-        <h1>주차의 새로운 일상,<br /><span>스카이게러지.</span></h1>
-        <p>주차 · 차량 위치 · 결제를 하나로 연결하세요.</p>
+        <DoelvBrand />
+        <h1>나의 일상에 더하는,<br /><span>한 층의 여유.</span></h1>
+        <p>DOELV 스카이게러지 계정으로 시작하세요.</p>
       </div>
 
       <Box
@@ -256,14 +260,14 @@ export default function SgpLoginPage() {
         sx={{
           width: '100%',
           maxWidth: 420,
-          bgcolor: '#142739',
+          bgcolor: '#102230',
           borderRadius: 2,
           p: 3,
           border: '1px solid rgba(255,255,255,0.08)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        {loading && <LinearProgress sx={{ mb: 2, borderRadius: 1, '& .MuiLinearProgress-bar': { bgcolor: '#00d4aa' } }} />}
+        {loading && <LinearProgress sx={{ mb: 2, borderRadius: 1, '& .MuiLinearProgress-bar': { bgcolor: '#d2ab76' } }} />}
 
         {mode === 'login' ? (
           <>
@@ -300,13 +304,13 @@ export default function SgpLoginPage() {
             />
             <Button
               type="submit" variant="contained" fullWidth disabled={loading}
-              sx={{ py: 1.3, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#00d4aa', color: '#0d1b2a', '&:hover': { bgcolor: '#00b894' }, boxShadow: '0 4px 14px rgba(0,212,170,0.3)' }}
+              sx={{ py: 1.3, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#d2ab76', color: '#0d1b2a', '&:hover': { bgcolor: '#c4985b' }, boxShadow: '0 4px 14px rgba(0,212,170,0.3)' }}
             >
               로그인
             </Button>
             <Box sx={{ textAlign: 'center', mt: 2.5 }}>
               <Button size="small" onClick={() => { setMode('register'); setError(''); }} sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
-                계정이 없으신가요? <Box component="span" sx={{ color: '#00d4aa', ml: 0.5, fontWeight: 600 }}>회원가입</Box>
+                계정이 없으신가요? <Box component="span" sx={{ color: '#d2ab76', ml: 0.5, fontWeight: 600 }}>회원가입</Box>
               </Button>
             </Box>
           </>
@@ -319,8 +323,8 @@ export default function SgpLoginPage() {
               {REGISTER_STEPS.map(label => (
                 <Step key={label}>
                   <StepLabel sx={{
-                    '& .MuiStepLabel-label': { color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', '&.Mui-active': { color: '#00d4aa' }, '&.Mui-completed': { color: '#4caf50' } },
-                    '& .MuiStepIcon-root': { color: 'rgba(255,255,255,0.15)', '&.Mui-active': { color: '#00d4aa' }, '&.Mui-completed': { color: '#4caf50' } },
+                    '& .MuiStepLabel-label': { color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', '&.Mui-active': { color: '#d2ab76' }, '&.Mui-completed': { color: '#4caf50' } },
+                    '& .MuiStepIcon-root': { color: 'rgba(255,255,255,0.15)', '&.Mui-active': { color: '#d2ab76' }, '&.Mui-completed': { color: '#4caf50' } },
                   }}>
                     {label}
                   </StepLabel>
@@ -377,7 +381,7 @@ export default function SgpLoginPage() {
                       <Button
                         variant="contained" onClick={verifyOtp}
                         disabled={loading || otpCode.length !== 6}
-                        sx={{ minWidth: 72, fontWeight: 700, borderRadius: 2, bgcolor: '#00d4aa', color: '#0d1b2a', '&:hover': { bgcolor: '#00b894' } }}
+                        sx={{ minWidth: 72, fontWeight: 700, borderRadius: 2, bgcolor: '#d2ab76', color: '#0d1b2a', '&:hover': { bgcolor: '#c4985b' } }}
                       >
                         확인
                       </Button>
@@ -479,7 +483,7 @@ export default function SgpLoginPage() {
                 <Button
                   variant="contained" fullWidth onClick={handleNextToAddress}
                   disabled={loading}
-                  sx={{ py: 1.3, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#00d4aa', color: '#0d1b2a', '&:hover': { bgcolor: '#00b894' } }}
+                  sx={{ py: 1.3, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#d2ab76', color: '#0d1b2a', '&:hover': { bgcolor: '#c4985b' } }}
                 >
                   다음 단계
                 </Button>
@@ -540,7 +544,7 @@ export default function SgpLoginPage() {
                   </Button>
                   <Button
                     type="submit" variant="contained" disabled={loading}
-                    sx={{ flex: 2, py: 1.2, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#00d4aa', color: '#0d1b2a', '&:hover': { bgcolor: '#00b894' }, boxShadow: '0 4px 14px rgba(0,212,170,0.3)' }}
+                    sx={{ flex: 2, py: 1.2, fontWeight: 700, fontSize: '0.95rem', borderRadius: 2, bgcolor: '#d2ab76', color: '#0d1b2a', '&:hover': { bgcolor: '#c4985b' }, boxShadow: '0 4px 14px rgba(0,212,170,0.3)' }}
                   >
                     가입완료
                   </Button>
@@ -550,12 +554,14 @@ export default function SgpLoginPage() {
 
             <Box sx={{ textAlign: 'center', mt: 2.5 }}>
               <Button size="small" onClick={resetRegistration} sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
-                이미 계정이 있으신가요? <Box component="span" sx={{ color: '#00d4aa', ml: 0.5, fontWeight: 600 }}>로그인</Box>
+                이미 계정이 있으신가요? <Box component="span" sx={{ color: '#d2ab76', ml: 0.5, fontWeight: 600 }}>로그인</Box>
               </Button>
             </Box>
           </>
         )}
       </Box>
+      <PwaInstallPrompt />
+      <Link className="doelv-install" to="/app">공식 앱 메인으로 돌아가기</Link>
       {addressSearchOpen && <AddressSearchDialog
         onClose={() => setAddressSearchOpen(false)}
         onSelect={(selected, zip) => {

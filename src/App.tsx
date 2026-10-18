@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useMemo, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
@@ -11,10 +11,14 @@ import { TenantProvider } from './admin/contexts/TenantContext';
 import { ToastProvider } from './admin/contexts/ToastContext';
 import { AdminThemeProvider, useAdminTheme } from './admin/contexts/ThemeContext';
 import AdminLayout from './admin/AdminLayout';
+import AdminSecurityGate from './admin/components/AdminSecurityGate';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import { COLORS } from './theme';
 
 const Login = lazy(() => import('./admin/pages/Login'));
-const Dashboard = lazy(() => import('./admin/pages/Dashboard'));
+const SiteTemplateGenerator = lazy(() => import('./admin/pages/SiteTemplateGenerator'));
+const Dashboard = lazy(() => import('./admin/pages/PlatformReadiness'));
 const ComplexManagement = lazy(() => import('./admin/pages/ComplexManagement'));
 const ResidentManagement = lazy(() => import('./admin/pages/ResidentManagement'));
 const ParkingOperations = lazy(() => import('./admin/pages/ParkingOperations'));
@@ -88,12 +92,12 @@ const ParkingSettings = lazy(() => import('./parking/pages/resident/SettingsPage
 // SGP App (New User App)
 const SgpLayout = lazy(() => import('./sgp/SgpLayout'));
 const SgpHomePage = lazy(() => import('./sgp/pages/SgpHomePage'));
-const SgpWalletPage = lazy(() => import('./sgp/pages/SgpWalletPage'));
-const SgpPayPage = lazy(() => import('./sgp/pages/SgpPayPage'));
-const SgpParkingPage = lazy(() => import('./sgp/pages/SgpParkingPage'));
-const SgpVehicleMapPage = lazy(() => import('./sgp/pages/SgpVehicleMapPage'));
+const DoelvCall = lazy(() => import('./sgp/pages/DoelvServicePages').then(m => ({ default: m.CallPage })));
+const DoelvGarage = lazy(() => import('./sgp/pages/DoelvServicePages').then(m => ({ default: m.GaragePage })));
+const DoelvAccess = lazy(() => import('./sgp/pages/DoelvServicePages').then(m => ({ default: m.AccessPage })));
+const DoelvRequests = lazy(() => import('./sgp/pages/DoelvServicePages').then(m => ({ default: m.RequestsPage })));
+const DoelvWallet = lazy(() => import('./sgp/pages/DoelvServicePages').then(m => ({ default: m.WalletPage })));
 const SgpProfilePage = lazy(() => import('./sgp/pages/SgpProfilePage'));
-const SgpAvailableSpotsPage = lazy(() => import('./sgp/pages/SgpAvailableSpotsPage'));
 
 // Parking App (Visitor)
 const VisitorHome = lazy(() => import('./parking/pages/visitor/VisitorHome'));
@@ -127,10 +131,11 @@ function AdminThemeWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onToggleDarkMode: () => void }) {
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
   if (loading) return fallback;
   if (!user) return <Suspense fallback={fallback}><Login /></Suspense>;
+  if (!role) return <Navigate to="/app" replace />;
   return (
     <Suspense fallback={fallback}>
       <Routes>
@@ -156,11 +161,17 @@ function SgpAppGuard() {
       <Routes>
         <Route element={<SgpLayout />}>
           <Route index element={<SgpHomePage />} />
-          <Route path="wallet" element={<SgpWalletPage />} />
-          <Route path="pay" element={<SgpPayPage />} />
-          <Route path="parking" element={<SgpParkingPage />} />
-          <Route path="map" element={<SgpVehicleMapPage />} />
-          <Route path="spots" element={<SgpAvailableSpotsPage />} />
+          <Route path="login" element={<Navigate to="/app" replace />} />
+          <Route path="call" element={<DoelvCall />} />
+          <Route path="garage" element={<DoelvGarage />} />
+          <Route path="access" element={<DoelvAccess />} />
+          <Route path="requests" element={<DoelvRequests />} />
+          <Route path="*" element={<Navigate to="/app" replace />} />
+          <Route path="wallet" element={<DoelvWallet />} />
+          <Route path="pay" element={<DoelvWallet />} />
+          <Route path="parking" element={<DoelvGarage />} />
+          <Route path="map" element={<DoelvGarage />} />
+          <Route path="spots" element={<DoelvGarage />} />
           <Route path="profile" element={<SgpProfilePage />} />
         </Route>
       </Routes>
@@ -207,15 +218,16 @@ function VisitorRoutes() {
 }
 
 function ProtectedRoutes() {
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
 
   const fallback = <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}><CircularProgress /></Box>;
 
   if (loading) return fallback;
   if (!user) return <Suspense fallback={fallback}><Login /></Suspense>;
+  if (!role) return <Box sx={{p:4}}><Alert severity="error">관리 권한이 등록된 계정만 접근할 수 있습니다.</Alert><Button component="a" href="/app">공식 앱으로 돌아가기</Button></Box>;
 
   return (
-    <AdminThemeProvider>
+    <AdminSecurityGate><AdminThemeProvider>
       <AdminThemeWrapper>
         <TenantProvider>
           <ToastProvider>
@@ -223,6 +235,7 @@ function ProtectedRoutes() {
             <Routes>
               <Route element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="templates" element={<SiteTemplateGenerator />} />
             <Route path="complexes" element={<ComplexManagement />} />
             <Route path="residents" element={<ResidentManagement />} />
             <Route path="parking" element={<ParkingOperations />} />
@@ -274,7 +287,7 @@ function ProtectedRoutes() {
           </ToastProvider>
         </TenantProvider>
       </AdminThemeWrapper>
-    </AdminThemeProvider>
+    </AdminThemeProvider></AdminSecurityGate>
   );
 }
 

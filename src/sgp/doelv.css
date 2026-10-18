@@ -1,0 +1,698 @@
+.doelv-shell {
+  --sg-bg: #081521;
+  --sg-card: #122532;
+  --sg-line: rgba(210, 171, 118, 0.3);
+  --sg-text: #f8f5f0;
+  --sg-muted: #b1bec8;
+  --sg-mint: #d2ab76;
+  background: #081521;
+  color: #f8f5f0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans CJK KR", sans-serif;
+  min-height: 100dvh;
+}
+.doelv-shell * {
+  box-sizing: border-box;
+}
+.doelv-shell h1,
+.doelv-shell h2,
+.doelv-shell h3,
+.doelv-shell p {
+  margin-top: 0;
+}
+.doelv-shell button {
+  cursor: pointer;
+}
+.doelv-shell button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.doelv-shell :focus-visible {
+  outline: 2px solid #efce9e;
+  outline-offset: 4px;
+}
+.doelv-shell a,
+.doelv-shell button {
+  touch-action: manipulation;
+}
+.doelv-header {
+  max-width: 1200px;
+  margin: auto;
+  height: 100px;
+  padding: 12px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(210, 171, 118, 0.38);
+}
+.doelv-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.doelv-brand img {
+  object-fit: contain;
+}
+.doelv-signature,
+.doelv-badge {
+  display: inline-block;
+  border: 1px solid rgba(210, 171, 118, 0.42);
+  border-radius: 30px;
+  padding: 6px 12px;
+  color: #efce9e;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.doelv-signature {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+.doelv-frame {
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  padding: 0 36px;
+}
+.doelv-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 40px 24px 30px 0;
+  position: sticky;
+  top: 0;
+  height: calc(100dvh - 100px);
+}
+.doelv-nav-item {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 12px;
+  border-radius: 10px;
+  color: #aab7c1 !important;
+  font-size: 14px;
+  min-height: 48px;
+}
+.doelv-nav-item.is-active {
+  background: #d2ab7610;
+  color: #efce9e !important;
+}
+.doelv-nav-item svg {
+  width: 21px;
+  height: 21px;
+}
+.doelv-main {
+  min-width: 0;
+  border-left: 1px solid #d2ab7622;
+  padding: 28px 0 36px 30px;
+}
+.doelv-photo {
+  height: 300px;
+  border: 1px solid #d2ab7666;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 12px 30px #0002;
+}
+.doelv-photo:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, #04121ff0);
+}
+.doelv-photo-residence {
+  background-image: url("/doelv/residence.webp");
+  background-position: 50% 48%;
+}
+.doelv-photo-garage {
+  background-image: url("/doelv/garage.webp");
+}
+.doelv-photo-lobby {
+  background-image: url("/doelv/lobby.webp");
+  background-position: 55% 68%;
+}
+.doelv-photo-arrival {
+  background-image: url("/doelv/arrival.webp");
+  background-position: center 39%;
+}
+.doelv-photo-tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 6px 10px;
+  border-radius: 25px;
+  border: 1px solid #efce9e88;
+  background: #08152199;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  z-index: 1;
+  color: #efce9e;
+}
+.doelv-photo-caption {
+  position: absolute;
+  left: 22px;
+  bottom: 29px;
+  z-index: 1;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #efce9e;
+  font-weight: 650;
+}
+.doelv-photo-note {
+  position: absolute;
+  bottom: 11px;
+  left: 22px;
+  font-size: 9px;
+  color: #b1bec8;
+  z-index: 1;
+}
+.doelv-content {
+  padding: 28px 0 0;
+}
+.doelv-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #d2ab76;
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+.doelv-content h1 {
+  font-size: 27px;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: -0.055em;
+  margin-bottom: 23px;
+}
+.doelv-card {
+  padding: 23px;
+  background: linear-gradient(135deg, #1b2d3b, #0f1d2b);
+  border: 1px solid #cda56b77;
+  border-radius: 17px;
+  margin-bottom: 18px;
+}
+.doelv-card h2 {
+  font-size: 19px;
+  margin: 9px 0;
+}
+.doelv-card p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #b5c2cc;
+  margin-bottom: 10px;
+}
+.doelv-card small,
+.doelv-footnote {
+  font-size: 11px;
+  color: #aab7c1;
+}
+.doelv-card .doelv-eyebrow {
+  color: #d2ab76;
+  font-size: 10px;
+}
+.doelv-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 57px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(110deg, #b88e56, #f0d09a 48%, #c4985b);
+  color: #142332 !important;
+  font-weight: 750;
+  font-size: 15px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  box-shadow: 0 8px 22px #0003;
+}
+.doelv-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.doelv-primary span {
+  margin-left: auto;
+}
+.doelv-secondary {
+  display: block;
+  width: 100%;
+  border: 1px solid #d2ab7655;
+  border-radius: 12px;
+  color: #efce9e !important;
+  background: transparent;
+  text-align: center;
+  padding: 13px 14px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.doelv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 15px 0;
+}
+.doelv-mini {
+  padding: 19px 17px;
+  border: 1px solid #dab27a55;
+  border-radius: 14px;
+  background: #102330;
+  color: #f8f5f0;
+  text-align: left;
+  min-height: 74px;
+}
+.doelv-mini strong {
+  font-size: 14px;
+  display: block;
+}
+.doelv-mini small {
+  display: block;
+  font-size: 11px;
+  color: #a9b8c2;
+  margin-top: 7px;
+}
+.doelv-mini[aria-pressed="true"] {
+  border-color: #efce9e;
+  background: #d2ab7615;
+}
+.doelv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #122532;
+  border: 1px solid #cea87266;
+  border-radius: 15px;
+  padding: 18px;
+  margin: 12px 0;
+  min-height: 75px;
+}
+.doelv-row strong {
+  font-size: 14px;
+}
+.doelv-row small {
+  display: block;
+  font-size: 11px;
+  margin-top: 6px;
+  color: #a9b8c2;
+}
+.doelv-row > span {
+  color: #d2ab76;
+}
+.doelv-notice {
+  padding: 16px;
+  background: #112230;
+  border: 1px solid #283e4a;
+  border-radius: 13px;
+  font-size: 13px;
+  color: #d8e0e5;
+  line-height: 1.8;
+}
+.doelv-notice button {
+  color: #efce9e;
+  background: transparent;
+  border: 1px solid #d2ab7666;
+  border-radius: 7px;
+  padding: 7px;
+}
+.doelv-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid #d2ab7644;
+  margin-top: 18px;
+  font-size: 11px;
+  color: #b8c5cd;
+}
+.doelv-muted {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #b1bec8;
+}
+.doelv-form {
+  margin: 26px 0 20px;
+  padding-top: 22px;
+  border-top: 1px solid #d2ab7633;
+}
+.doelv-form h3 {
+  font-size: 18px;
+}
+.doelv-form label {
+  display: block;
+  color: #e9d7b9;
+  font-size: 13px;
+  margin: 15px 0;
+}
+.doelv-form input,
+.doelv-form textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #d2ab7677;
+  background: #122532;
+  border-radius: 10px;
+  color: #f8f5f0;
+  font: inherit;
+  line-height: 1.7;
+  padding: 12px;
+  margin-top: 7px;
+  resize: vertical;
+}
+.doelv-form input::placeholder,
+.doelv-form textarea::placeholder {
+  color: #94a4b1;
+}
+.doelv-error {
+  color: #ffb4ac;
+  font-size: 13px;
+}
+.doelv-success {
+  color: #a8dfc9;
+  font-size: 13px;
+}
+.doelv-preline {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.doelv-response {
+  border-top: 1px solid #d2ab7644;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.doelv-install {
+  display: block;
+  width: 100%;
+  padding: 13px 8px;
+  background: transparent;
+  color: #efce9e;
+  border: 0;
+  text-align: center;
+  font-size: 12px;
+  min-height: 44px;
+}
+.doelv-installed {
+  font-size: 11px;
+  color: #a8dfc9;
+  display: block;
+  text-align: center;
+  padding: 13px;
+}
+.doelv-welcome {
+  display: grid;
+  grid-template-columns: minmax(300px, 460px) 440px;
+  gap: 100px;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: 42px;
+  background: radial-gradient(
+    circle at 65% 10%,
+    #21364a,
+    #0b1926 40%,
+    #050e17 85%
+  );
+}
+.doelv-welcome-copy h1 {
+  font:
+    normal 66px/1.05 Georgia,
+    serif;
+  letter-spacing: -1.5px;
+  margin: 28px 0;
+}
+.doelv-welcome-copy h1 em {
+  color: #d2ab76;
+}
+.doelv-welcome-copy p:not(.doelv-eyebrow) {
+  font-size: 15px;
+  line-height: 2;
+  color: #aab7c1;
+}
+.doelv-welcome-copy a {
+  color: #d2ab76;
+  font-size: 12px;
+  display: inline-block;
+  margin-top: 28px;
+}
+.doelv-rule {
+  width: 64px;
+  height: 2px;
+  background: #d2ab76;
+  display: block;
+  margin-bottom: 30px;
+}
+.doelv-welcome-panel {
+  min-height: 790px;
+  padding: 35px 30px 26px;
+  text-align: center;
+  background:
+    linear-gradient(
+      180deg,
+      #010a1566,
+      #010a1577 32%,
+      #020b14cc 63%,
+      #081521 100%
+    ),
+    url("/doelv/residence.webp") center/cover;
+  border: 1px solid #d2ab7666;
+  border-radius: 25px;
+  box-shadow: 0 30px 80px #0006;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.doelv-welcome-panel > .doelv-eyebrow {
+  border-bottom: 1px solid #d2ab7688;
+  padding-bottom: 20px;
+  width: 100%;
+  font-size: 10px;
+  color: #efce9e;
+}
+.doelv-master-logo {
+  object-fit: contain;
+  margin: 32px 0 24px;
+  width: 210px;
+  height: auto;
+  filter: drop-shadow(0 10px 18px #0008);
+}
+.doelv-welcome-panel h2 {
+  font:
+    400 22px/1.6 Georgia,
+    serif;
+  letter-spacing: 0.07em;
+}
+.doelv-welcome-panel h2 span {
+  color: #efce9e;
+  font-size: 28px;
+}
+.doelv-welcome-panel > p:not(.doelv-eyebrow) {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #f1e7d8;
+}
+.doelv-welcome-actions {
+  margin-top: auto;
+  width: 100%;
+  padding-top: 20px;
+}
+.doelv-welcome-panel > small {
+  font-size: 8px;
+  color: #c6b69f;
+  letter-spacing: 0.16em;
+  margin-top: 15px;
+}
+.doelv-login {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    #273443,
+    #081521 65%
+  ) !important;
+}
+.doelv-login .sg-login-heading h1 span {
+  color: #efce9e;
+}
+.doelv-login .sg-login-heading p {
+  color: #b1bec8;
+}
+.doelv-login .MuiButton-containedPrimary {
+  background: linear-gradient(110deg, #b88e56, #f0d09a, #c4985b) !important;
+  color: #142332 !important;
+}
+.doelv-login .MuiButton-text {
+  color: #efce9e;
+}
+.doelv-login
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: #d2ab76;
+}
+.doelv-login .MuiInputLabel-root.Mui-focused {
+  color: #efce9e;
+}
+@media (min-width: 1100px) {
+  .doelv-main {
+    max-width: 840px;
+  }
+  .doelv-photo {
+    height: 330px;
+  }
+  .doelv-content {
+    max-width: 800px;
+  }
+  .doelv-card {
+    padding: 26px;
+  }
+  .doelv-form {
+    max-width: 650px;
+  }
+}
+@media (max-width: 760px) {
+  .doelv-header {
+    height: 96px;
+    padding: 12px 19px;
+  }
+  .doelv-brand img:first-child {
+    width: 55px;
+    height: 49px;
+  }
+  .doelv-brand img:nth-child(2) {
+    width: 145px;
+    height: 52px;
+  }
+  .doelv-frame {
+    display: block;
+    padding: 0;
+  }
+  .doelv-main {
+    border: 0;
+    padding: 14px 17px calc(94px + env(safe-area-inset-bottom));
+  }
+  .doelv-photo {
+    height: 246px;
+    border-radius: 18px;
+  }
+  .doelv-content {
+    padding: 21px 5px 0;
+  }
+  .doelv-content h1 {
+    font-size: 23px;
+    margin-bottom: 18px;
+  }
+  .doelv-card {
+    padding: 17px 19px;
+  }
+  .doelv-card h2 {
+    font-size: 18px;
+  }
+  .doelv-navigation {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 20;
+    height: auto;
+    min-height: 75px;
+    background: #050e17fa;
+    border-top: 1px solid #d2ab7633;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    padding: 8px 0 env(safe-area-inset-bottom);
+  }
+  .doelv-nav-item {
+    padding: 8px 2px;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 10px;
+    border-radius: 0;
+    position: relative;
+  }
+  .doelv-nav-item.is-active {
+    background: transparent;
+  }
+  .doelv-nav-item.is-active:before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    width: 26px;
+    height: 2px;
+    background: #d2ab76;
+  }
+  .doelv-mini {
+    padding: 15px 13px;
+  }
+  .doelv-welcome {
+    display: block;
+    padding: 0;
+    background: #081521;
+  }
+  .doelv-welcome-copy {
+    display: none;
+  }
+  .doelv-welcome-panel {
+    border: 0;
+    border-radius: 0;
+    min-height: 100dvh;
+    max-width: 480px;
+    margin: auto;
+    padding: calc(28px + env(safe-area-inset-top)) 28px
+      calc(22px + env(safe-area-inset-bottom));
+    box-shadow: none;
+  }
+  .doelv-master-logo {
+    width: 195px;
+    margin-top: 32px;
+    margin-bottom: 20px;
+  }
+  .doelv-welcome-panel h2 {
+    font-size: 20px;
+  }
+  .doelv-welcome-panel h2 span {
+    font-size: 27px;
+  }
+  .doelv-welcome-actions {
+    padding-top: 14px;
+  }
+  .doelv-welcome-panel > small {
+    margin-top: 8px;
+  }
+  .doelv-login .sg-login-heading {
+    padding-top: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doelv-shell * {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1050px) {
+  .doelv-welcome {
+    display: block;
+    padding: 30px;
+  }
+  .doelv-welcome-copy {
+    display: none;
+  }
+  .doelv-welcome-panel {
+    max-width: 480px;
+    margin: auto;
+  }
+}
+
+.doelv-login .MuiOutlinedInput-root {
+  min-height: 48px;
+}
+.doelv-login .MuiInputBase-input {
+  padding-top: 13px;
+  padding-bottom: 13px;
+}
+.doelv-login .MuiButton-containedPrimary {
+  box-shadow: 0 7px 18px #d2ab7626 !important;
+}

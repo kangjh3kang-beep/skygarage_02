@@ -1,3 +1,4 @@
+import { resolveRegistrationProof } from "./registration-proof.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.49.1";
 
 export type SignupResult = { status: number; body: { error?: string; code?: string; registered?: boolean } };
@@ -17,10 +18,9 @@ export async function registerResident(client: SupabaseClient, raw: unknown): Pr
       typeof b.gender_code !== 'string' || !/^[1-8]$/.test(b.gender_code)) {
     return failure(400, '전화번호, 이름, 생년월일, 성별, 비밀번호와 주소를 확인해주세요.');
   }
-  // Atomic claim prevents parallel/replayed requests from reusing one SMS proof.
-  const { data: proof, error: proofError } = await client.rpc('sgp_claim_signup', { p_id: b.verification_id, p_code: b.code, p_phone: phone });
-  if (proofError) return failure(503, '가입 인증을 확인하지 못했습니다. 잠시 후 다시 시도해주세요.');
-  if (!proof?.phone || proof.error) return failure(403, '문자 인증이 만료되었거나 이미 사용되었습니다. 다시 인증해주세요.', 'verification_required');
+  const proof = await resolveRegistrationProof(client, { method: b.verification_method,
+    verificationId: b.verification_id, code: b.code, phone });
+  if (!proof.ok) return failure(proof.status, proof.error, proof.code);
 
   const { data, error } = await client.auth.admin.createUser({
     email: `${phone}@sgp.skygarage.app`, password, email_confirm: true,

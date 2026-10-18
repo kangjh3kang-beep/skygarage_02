@@ -44,3 +44,10 @@ test('profile failure compensates only newly created auth account',async()=>{
 test('cleanup failure is not misreported as a clean retry',async()=>{
   const client=mock({profileError:{},cleanupError:{}});assert.equal((await registerResident(client,body)).body.code,'registration_incomplete');
 });
+
+ test('client cannot select unconfigured PASS or self-assert identity assurance',async()=>{
+  for(const method of ['pass','unknown']){
+    const client=mock();const result=await registerResident(client,{...body,verification_method:method,verified:true,kyc_level:2});
+    assert.equal(result.status,method==='pass'?501:400);assert.equal(client.calls.length,0);
+  }
+});

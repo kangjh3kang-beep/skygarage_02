@@ -1,79 +1,115 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { User } from '@supabase/supabase-js';
-import { supabase } from '../../lib/supabase';
-
-export type UserRole = 'super_admin' | 'admin' | 'manager' | 'operator' | 'viewer';
-
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "../../lib/supabase";
+import {
+  trustedAdminRole,
+  adminLoginIdentifier,
+  type AdminRole,
+} from "../../lib/admin-role";
+export type UserRole = AdminRole;
 interface AuthContextType {
   user: User | null;
   role: UserRole | null;
+  displayName: string;
   loading: boolean;
   isSuperAdmin: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchRole(session.user.id);
-      else setLoading(false);
+    let active = true;
+    let generation = 0;
+    const sync = async (next: User | null) => {
+      const version = ++generation;
+      setUser(next);
+      setRole(null);
+      setDisplayName("");
+      setLoading(!!next);
+      if (!next) return;
+      try {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("role,display_name")
+          .eq("user_id", next.id)
+          .maybeSingle();
+        if (active && generation === version) {
+          setRole(trustedAdminRole(data, error));
+          setDisplayName(!error ? data?.display_name || "" : "");
+        }
+      } catch {
+        if (active && generation === version) {
+          setRole(null);
+          setDisplayName("");
+        }
+      } finally {
+        if (active && generation === version) setLoading(false);
+      }
+    };
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (active) void sync(data.session?.user || null);
+      })
+      .catch(() => {
+        if (active) setLoading(false);
+      });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => {
+        if (active) void sync(session?.user || null);
+      }, 0);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchRole(session.user.id);
-      else { setRole(null); setLoading(false); }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      ++generation;
+      data.subscription.unsubscribe();
+    };
   }, []);
-
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (data?.role) {
-      setRole(data.role as UserRole);
-    } else {
-      const { count } = await supabase.from('user_roles').select('*', { count: 'exact', head: true });
-      const assignedRole = (count === 0 || count === null) ? 'super_admin' : 'viewer';
-      await supabase.from('user_roles').insert({ user_id: userId, role: assignedRole });
-      setRole(assignedRole);
-    }
-    setLoading(false);
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  async function signIn(identifier: string, password: string) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: adminLoginIdentifier(identifier),
+      password,
+    });
     return { error: error?.message || null };
-  };
-
-  const signOut = async () => {
+  }
+  async function signOut() {
     await supabase.auth.signOut();
     setUser(null);
     setRole(null);
-  };
-
+    setDisplayName("");
+  }
   return (
-    <AuthContext.Provider value={{ user, role, loading, isSuperAdmin: role === 'super_admin', signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        role,
+        displayName,
+        loading,
+        isSuperAdmin: role === "super_admin",
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
-
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const value = useContext(AuthContext);
+  if (!value) throw new Error("useAuth must be used within AuthProvider");
+  return value;
 }

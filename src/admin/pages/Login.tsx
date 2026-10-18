@@ -31,7 +31,7 @@ export default function Login() {
     setError('');
     const { error: err } = await signIn(email.trim(), password);
     if (err) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      setError('전화번호·이메일 또는 비밀번호가 올바르지 않습니다.');
     }
     setLoading(false);
   };
@@ -99,7 +99,7 @@ export default function Login() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               <SecurityIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                5-Tier Admin Platform
+                운영 관리자 로그인
               </Typography>
             </Box>
           </Box>
@@ -112,14 +112,14 @@ export default function Login() {
 
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
-              label="이메일"
-              type="email"
+              label="전화번호 또는 이메일"
+              type="text"
               value={email}
               onChange={e => setEmail(e.target.value)}
               fullWidth
               required
               size="small"
-              autoComplete="email"
+              autoComplete="username"
               autoFocus
               slotProps={{
                 input: {
@@ -191,7 +191,7 @@ export default function Login() {
           >
             승인된 관리자만 접근할 수 있습니다.
             <br />
-            계정 문의: admin@skygarage.kr
+            등록된 계정으로 로그인 후 2단계 인증을 진행합니다.
           </Typography>
         </CardContent>
       </Card>

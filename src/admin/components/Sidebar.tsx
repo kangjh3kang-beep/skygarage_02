@@ -81,7 +81,7 @@ const menuGroups: MenuGroup[] = [
     label: '개요',
     defaultOpen: true,
     items: [
-      { label: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
+      { label: '통합 운영', icon: <DashboardIcon />, path: '/admin' },
       { label: '운영 현황', icon: <SpeedIcon />, path: '/admin/operations', minScope: 'complex' },
       { label: 'NOC', icon: <PublicIcon />, path: '/admin/noc', minScope: 'global' },
       { label: '시스템', icon: <ShieldIcon />, path: '/admin/system', minScope: 'region' },
@@ -91,6 +91,7 @@ const menuGroups: MenuGroup[] = [
     label: '운영 관리',
     defaultOpen: true,
     items: [
+      { label: '단지 템플릿 생성', icon: <ApartmentIcon />, path: '/admin/templates', minScope: 'global' },
       { label: '단지 관리', icon: <ApartmentIcon />, path: '/admin/complexes', minScope: 'region' },
       { label: '사용자', icon: <PeopleIcon />, path: '/admin/residents' },
       { label: '주차 운영', icon: <LocalParkingIcon />, path: '/admin/parking' },
