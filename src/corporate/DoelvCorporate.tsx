@@ -5,10 +5,11 @@ import CorporatePhoto from './CorporatePhoto';
 import CorporateInquiry from './CorporateInquiry';
 import CorporateValue from './CorporateValue';
 import CorporateFilms from './CorporateFilms';
+import BrandStory from './BrandStory';
 import './corporate.css';
 
 const officialApp = appUrl(import.meta.env.VITE_OFFICIAL_APP_ORIGIN);
-const navigation = [['brand', '도엘브'], ['collection', '컬렉션'], ['experience', '라이프스타일'], ['value', '사업 가치'], ['films', '브랜드 영상'], ['technology', '모빌리티'], ['contact', '프로젝트 문의']];
+const navigation = [['brand', '회사소개'], ['collection', '컬렉션'], ['experience', '라이프스타일'], ['value', '사업 가치'], ['films', '브랜드 영상'], ['technology', '모빌리티'], ['contact', '프로젝트 문의']];
 
 export function CorporateHeader() {
   const [open, setOpen] = useState(false);
@@ -72,9 +73,9 @@ export default function DoelvCorporate() {
         </div>
         <div className="dc-hero-bottom"><a href="#brand">DISCOVER DOELV <span aria-hidden="true">↓</span></a><span>ARCHITECTURE · MOBILITY · LIFE</span></div>
       </section>
-      <section id="brand" className="dc-brand dc-section">
-        <div><p className="dc-eyebrow">THE DOELV PHILOSOPHY</p><h2>좋은 공간을 넘어,<br /><em>좋은 일상으로.</em></h2></div>
-        <div className="dc-brand-story"><p className="dc-lead">집으로 향하는 마지막 순간까지.<br />도엘브는 이동의 경험을 주거의 품격으로 연결합니다.</p><p>도엘브 타워, 시티, 빌리지. 서로 다른 공간의 개성 위에 스카이게러지와 자율 모빌리티의 가능성을 더합니다. 사람의 동선은 편안하게, 기술은 공간 속에 자연스럽게.</p><a className="dc-text-link" href="/brand-guide">브랜드 이야기 <span aria-hidden="true">↗</span></a></div>
+      <section id="brand" className="dc-brand dc-brand-about dc-section" aria-label="회사소개와 도엘브 브랜드 철학">
+        <BrandStory />
+        <a className="dc-text-link" href="/brand-guide">브랜드 체계와 아이덴티티 더 보기 <span aria-hidden="true">↗</span></a>
       </section>
       <section id="collection" className="dc-collection dc-section">
         <div className="dc-section-heading"><div><p className="dc-eyebrow">THE COLLECTION</p><h2>당신의 삶에 맞는 도엘브.</h2></div><p>세 가지 공간, 하나의 철학.<br />건축과 이동의 새로운 조화를 제안합니다.</p></div>
@@ -115,5 +116,5 @@ export default function DoelvCorporate() {
 
 export function DoelvBrandGuide() {
   useEffect(() => { document.title = 'DOELV 도엘브 | 브랜드 가이드'; }, []);
-  return <div className="dc-shell" id="top"><CorporateHeader /><main id="main" className="dc-brand-guide dc-section"><p className="dc-eyebrow">DOELV BRAND IDENTITY</p><h1>공간과 모빌리티의<br />새로운 기준, 도엘브.</h1><div className="dc-brand-display"><BrandIdentity /></div><p className="dc-lead">도엘브는 건축과 이동의 연결을 통해 일상의 품격을 제안합니다.</p><div className="dc-guide-grid">{collections.map(item => <article key={item.scene}><h2>{item.english}</h2><p>{item.description}</p></article>)}<article><h2>SKY GARAGE DOELV</h2><p>세대 직입, 지하 로봇 발렛, 차량용 엘리베이터와 자율이송로봇을 연결하는 모빌리티 시스템.</p></article></div><h2>차분한 깊이, 절제된 빛.</h2><div className="dc-swatches">{[['#152522', 'Deep Forest'], ['#c4a477', 'Champagne Bronze'], ['#f3f0e9', 'Warm Ivory']].map(([color, name]) => <div key={color}><span style={{ background: color }} /><strong>{name}</strong><small>{color}</small></div>)}</div><a className="dc-button" href="/#collection">컬렉션 둘러보기 <span aria-hidden="true">↗</span></a></main><CorporateFooter /></div>;
+  return <div className="dc-shell" id="top"><CorporateHeader /><main id="main" className="dc-brand-guide dc-section"><p className="dc-eyebrow">DOELV BRAND IDENTITY</p><h1>공간과 모빌리티의<br />새로운 기준, 도엘브.</h1><BrandStory /><h2 className="dc-brand-family-title">하나의 철학, 다양한 공간.</h2><div className="dc-guide-grid">{collections.map(item => <article key={item.scene}><h2>{item.english}</h2><p>{item.description}</p></article>)}<article><h2>SKY GARAGE DOELV</h2><p>세대 직입, 지하 로봇 발렛, 차량용 엘리베이터와 자율이송로봇을 연결하는 모빌리티 시스템.</p></article></div><h2>차분한 깊이, 절제된 빛.</h2><div className="dc-swatches">{[['#152522', 'Deep Forest'], ['#c4a477', 'Champagne Bronze'], ['#f3f0e9', 'Warm Ivory']].map(([color, name]) => <div key={color}><span style={{ background: color }} /><strong>{name}</strong><small>{color}</small></div>)}</div><a className="dc-button" href="/#collection">컬렉션 둘러보기 <span aria-hidden="true">↗</span></a></main><CorporateFooter /></div>;
 }

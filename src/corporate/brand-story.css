@@ -1,0 +1,35 @@
+.dc-brand-about{display:block}
+.dc-brand-intro{display:grid;grid-template-columns:minmax(240px,.8fr) minmax(0,1.3fr);gap:7vw;align-items:center}
+.dc-brand-emblem{min-height:420px;padding:52px 25px;background:#152522;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;border:1px solid #b99a6359}
+.dc-brand-emblem .doelv-master-logo{width:180px}
+.dc-brand-emblem>p{font:9px/1.8 Arial,sans-serif;letter-spacing:.2em;color:#d5bd95;text-align:center}
+.dc-brand-manifesto .dc-lead{margin:25px 0 18px;font-size:19px}
+.dc-brand-manifesto>p:not(.dc-eyebrow):not(.dc-lead){font-size:14px;line-height:2}
+.dc-brand-manifesto>p+p{margin-top:14px}
+.dc-brand-naming{margin-top:64px;padding-top:50px;border-top:1px solid #b6a88a80}
+.dc-brand-naming>.dc-eyebrow{margin-bottom:14px}
+.dc-brand-naming>h3{font-size:clamp(23px,2.1vw,32px);line-height:1.5}
+.dc-shell .dc-name-equation{display:flex;align-items:center;gap:clamp(10px,2vw,28px);margin:30px 0 22px;font:400 clamp(29px,4vw,58px)/1.2 Georgia,serif;letter-spacing:.015em;color:#233a30;white-space:nowrap}
+.dc-name-equation i{font:300 .55em/1 Arial,sans-serif;color:#8a704a;font-style:normal}
+.dc-name-equation strong{font-weight:400;color:#8a6835}
+.dc-shell .dc-name-description{max-width:790px;font-size:14px;line-height:1.9}
+.dc-name-parts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;margin:35px 0 0}
+.dc-name-parts>div{border-top:2px solid #9e835a;padding-top:20px;min-width:0}
+.dc-name-parts dt>span{display:block;font:400 47px/1.2 Georgia,serif;color:#8a6835;margin-bottom:15px}
+.dc-name-parts dt>strong{display:block;font:400 clamp(16px,1.65vw,23px)/1.5 Georgia,serif;color:#263b31}
+.dc-name-parts dd{margin:16px 0 0}
+.dc-name-parts h4{margin:0 0 10px;font-size:14px;font-weight:500;line-height:1.7;color:#263b31}
+.dc-name-parts dd p{font-size:13px;line-height:1.95}
+.dc-brand-values{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;margin-top:58px;padding-top:32px;border-top:1px solid #b6a88a80}
+.dc-brand-values article>span{font:10px/1.5 Arial,sans-serif;color:#8a6c43;letter-spacing:.12em}
+.dc-brand-values h3{font-size:18px;line-height:1.55;margin:12px 0}
+.dc-brand-values p{font-size:12px;line-height:1.95}
+.dc-brand-signature{display:grid;grid-template-columns:1fr 2fr;gap:35px;margin-top:42px;padding:28px 30px;background:#eae5db}
+.dc-brand-signature h3{font-size:21px;line-height:1.55}
+.dc-brand-signature p{font-size:13px;line-height:1.95}
+.dc-brand-guide .dc-brand-foundation{margin-top:50px}
+.dc-brand-guide .dc-brand-family-title{margin-top:70px}
+.dc-brand-about>.dc-text-link{margin-top:35px}
+@media(max-width:1100px){.dc-header nav{gap:22px}}
+@media(max-width:900px){.dc-brand-intro{grid-template-columns:minmax(210px,.8fr) minmax(0,1.2fr);gap:35px}.dc-brand-values{grid-template-columns:repeat(2,minmax(0,1fr))}.dc-name-parts{gap:20px}}
+@media(max-width:720px){.dc-brand-intro{grid-template-columns:1fr;gap:35px}.dc-brand-emblem{min-height:0;padding:35px 22px;gap:22px}.dc-brand-emblem .doelv-master-logo{width:135px}.dc-brand-naming{margin-top:40px;padding-top:32px}.dc-shell .dc-name-equation{gap:10px;font-size:clamp(27px,7.8vw,45px);margin:25px 0 20px}.dc-name-parts{grid-template-columns:1fr;gap:28px;margin-top:28px}.dc-name-parts>div{padding-top:18px}.dc-name-parts dt{display:flex;align-items:baseline;gap:22px}.dc-name-parts dt>span{font-size:37px;margin:0;min-width:57px}.dc-name-parts dt>strong{font-size:19px}.dc-name-parts dd{margin-top:15px}.dc-brand-values{gap:26px 20px;margin-top:38px}.dc-brand-values h3{font-size:17px}.dc-brand-signature{grid-template-columns:1fr;gap:16px;padding:25px 22px;margin-top:32px}.dc-brand-guide .dc-brand-foundation{margin-top:35px}}
