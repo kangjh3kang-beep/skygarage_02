@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { generateCode, sendSolapi, checkSolapiAuthentication, resolveSolapiSender, readSmsConfig } from "./solapi.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,170 +12,28 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const ALIGO_API_KEY = (Deno.env.get("ALIGO_API_KEY") || "").trim();
-const ALIGO_USER_ID = (Deno.env.get("ALIGO_USER_ID") || "").trim();
-const ALIGO_SENDER = (Deno.env.get("ALIGO_SENDER") || "").trim();
-
-const COOLSMS_API_KEY = (Deno.env.get("COOLSMS_API_KEY") || "").trim();
-const COOLSMS_API_SECRET = (Deno.env.get("COOLSMS_API_SECRET") || "").trim();
-const COOLSMS_SENDER = (Deno.env.get("COOLSMS_SENDER") || "").trim();
-
-// Startup diagnostic - check which secrets are actually populated
-console.log("[SMS-VERIFY BOOT] Env check:", JSON.stringify({
-  ALIGO_API_KEY: ALIGO_API_KEY ? `set (${ALIGO_API_KEY.length} chars)` : "EMPTY",
-  ALIGO_USER_ID: ALIGO_USER_ID ? `set (${ALIGO_USER_ID.length} chars)` : "EMPTY",
-  ALIGO_SENDER: ALIGO_SENDER ? `set (${ALIGO_SENDER.length} chars)` : "EMPTY",
-  COOLSMS_API_KEY: COOLSMS_API_KEY ? `set (${COOLSMS_API_KEY.length} chars)` : "EMPTY",
-  COOLSMS_API_SECRET: COOLSMS_API_SECRET ? `set (${COOLSMS_API_SECRET.length} chars)` : "EMPTY",
-  COOLSMS_SENDER: COOLSMS_SENDER ? `set (${COOLSMS_SENDER.length} chars)` : "EMPTY",
-}));
-
+const config = readSmsConfig(name => Deno.env.get(name));
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-function generateCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function cleanPhone(raw: string): string {
-  return raw.replace(/[^0-9]/g, "");
-}
-
-// --- Aligo SMS API ---
-async function sendAligo(
-  phone: string,
-  message: string
-): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const sender = cleanPhone(ALIGO_SENDER);
-  const receiver = cleanPhone(phone);
-
-  console.log(`[ALIGO] Attempting send: sender=${sender}, receiver=${receiver}`);
-
-  if (!sender || sender.length < 9) {
-    return { success: false, error: `ALIGO_SENDER is empty or invalid after cleanup. Raw value length: ${ALIGO_SENDER.length}` };
+const cleanPhone = (value: string) => value.replace(/\D/g, "");
+let senderHealth: { until: number; result: Awaited<ReturnType<typeof resolveSolapiSender>> } | undefined;
+async function getSender() {
+  if (!senderHealth || senderHealth.until < Date.now()) {
+    const result = await resolveSolapiSender(config);
+    senderHealth = { result, until: Date.now() + (result.sender ? 60000 : 10000) };
   }
-
-  const formData = new FormData();
-  formData.append("key", ALIGO_API_KEY);
-  formData.append("user_id", ALIGO_USER_ID);
-  formData.append("sender", sender);
-  formData.append("receiver", receiver);
-  formData.append("msg", message);
-
-  const response = await fetch("https://apis.aligo.in/send/", {
-    method: "POST",
-    body: formData,
-  });
-
-  const result = await response.json();
-  console.log(`[ALIGO] Response:`, JSON.stringify(result));
-
-  if (result.result_code === "1" || result.result_code === 1) {
-    return { success: true, messageId: String(result.msg_id || "") };
-  }
-  return { success: false, error: result.message || `Aligo code: ${result.result_code}` };
+  return senderHealth.result;
 }
-
-// --- CoolSMS/Solapi API ---
-function generateSalt(length = 32): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-  return Array.from(array).map((b) => chars[b % chars.length]).join("");
+async function sendSms(phone: string, message: string) {
+  const result = await getSender();
+  if (!result.sender) return { success: false as const, error: result.error, provider: "solapi" };
+  return sendSolapi({ ...config, sender: result.sender }, phone, message);
 }
-
-async function generateHmacSignature(date: string, salt: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-  const signature = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(date + salt));
-  return Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function sendCoolSms(
-  phone: string,
-  message: string
-): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const sender = cleanPhone(COOLSMS_SENDER);
-  const receiver = cleanPhone(phone);
-
-  console.log(`[SOLAPI] Attempting send: sender=${sender}, receiver=${receiver}`);
-
-  if (!sender || sender.length < 9) {
-    return { success: false, error: `COOLSMS_SENDER is empty or invalid. Raw value length: ${COOLSMS_SENDER.length}` };
-  }
-
-  const date = new Date().toISOString();
-  const salt = generateSalt();
-  const signature = await generateHmacSignature(date, salt, COOLSMS_API_SECRET);
-  const authorization = `HMAC-SHA256 apiKey=${COOLSMS_API_KEY}, date=${date}, salt=${salt}, signature=${signature}`;
-
-  const response = await fetch("https://api.solapi.com/messages/v4/send", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": authorization,
-    },
-    body: JSON.stringify({
-      message: { to: receiver, from: sender, text: message, type: "SMS" },
-    }),
-  });
-
-  const result = await response.json();
-  console.log(`[SOLAPI] status=${response.status}:`, JSON.stringify(result));
-
-  if (response.ok && result.groupId) {
-    return { success: true, messageId: result.groupId };
-  }
-  return { success: false, error: result.errorMessage || result.message || "Solapi fail" };
-}
-
-// --- Unified: Aligo first, CoolSMS fallback ---
-async function sendSms(
-  phone: string,
-  message: string
-): Promise<{ success: boolean; messageId?: string; error?: string; provider?: string }> {
-  const aligoReady = !!(ALIGO_API_KEY && ALIGO_USER_ID && ALIGO_SENDER);
-  const coolsmsReady = !!(COOLSMS_API_KEY && COOLSMS_API_SECRET && COOLSMS_SENDER);
-
-  console.log(`[SMS] aligoReady=${aligoReady}, coolsmsReady=${coolsmsReady}`);
-
-  if (aligoReady) {
-    try {
-      const result = await sendAligo(phone, message);
-      if (result.success) return { ...result, provider: "aligo" };
-      console.log(`[SMS] Aligo failed: ${result.error}`);
-    } catch (err) {
-      console.log(`[SMS] Aligo exception: ${(err as Error).message}`);
-    }
-  }
-
-  if (coolsmsReady) {
-    try {
-      const result = await sendCoolSms(phone, message);
-      return { ...result, provider: "coolsms" };
-    } catch (err) {
-      return { success: false, error: (err as Error).message, provider: "coolsms" };
-    }
-  }
-
-  if (!aligoReady && !coolsmsReady) {
-    return {
-      success: false,
-      error: "SMS 발송 설정이 되어있지 않습니다. ALIGO 또는 COOLSMS Secret 값을 확인해주세요.",
-      provider: "none",
-    };
-  }
-
-  return { success: false, error: "모든 SMS 발송이 실패했습니다.", provider: "none" };
-}
+let authHealth: { until: number; authenticated: boolean } | undefined;
 
 async function handleSend(body: { phone: string }): Promise<Response> {
   const { phone } = body;
 
-  if (!phone || phone.replace(/[^0-9]/g, "").length < 10) {
+  if (typeof phone !== "string" || !/^010\d{8}$/.test(cleanPhone(phone))) {
     return new Response(
       JSON.stringify({ error: "올바른 전화번호를 입력하세요." }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -185,11 +44,16 @@ async function handleSend(body: { phone: string }): Promise<Response> {
 
   // Rate limit
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  const { count } = await supabase
+  const { count, error: rateLimitError } = await supabase
     .from("sgp_phone_verifications")
     .select("*", { count: "exact", head: true })
     .eq("phone", phoneClean)
     .gte("created_at", fiveMinAgo);
+
+  if (rateLimitError) {
+    return new Response(JSON.stringify({ error: "문자 요청을 확인하지 못했습니다. 잠시 후 다시 시도해주세요." }),
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
 
   if ((count || 0) >= 3) {
     return new Response(
@@ -201,7 +65,7 @@ async function handleSend(body: { phone: string }): Promise<Response> {
   const code = generateCode();
   const expiresAt = new Date(Date.now() + 3 * 60 * 1000).toISOString();
 
-  const smsMessage = `[SGP] 인증코드: ${code}\n3분 이내 입력해주세요.`;
+  const smsMessage = `[SkyGarage] 인증번호 ${code} (3분 이내 입력)`;
   const smsResult = await sendSms(phoneClean, smsMessage);
 
   if (!smsResult.success) {
@@ -319,10 +183,26 @@ async function handleConfirm(body: {
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === "GET" && new URL(req.url).pathname.endsWith("/health")) {
+    if (new URL(req.url).searchParams.get("verify") === "1") {
+      if (!authHealth || authHealth.until < Date.now()) {
+        authHealth = { authenticated: await checkSolapiAuthentication(config), until: Date.now() + 60000 };
+      }
+      const sender = await getSender();
+      return new Response(JSON.stringify({ provider: "solapi", configured: Boolean(config.apiKey && config.apiSecret), authenticated: authHealth.authenticated,
+        senderConfigured: /^\d{8,11}$/.test(cleanPhone(config.sender)), senderReady: Boolean(sender.sender), activeSenderCount: sender.activeCount,
+        senderError: sender.error || null }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+    }
+    return new Response(JSON.stringify({ provider: "solapi", configured: Boolean(config.apiKey && config.apiSecret && config.sender) }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
+  if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST 요청만 지원합니다." }),
+    { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json", Allow: "POST, OPTIONS" } });
   try {
     const url = new URL(req.url);
     const path = url.pathname.split("/").pop();
@@ -338,9 +218,9 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({ error: "Invalid endpoint. Use /send or /confirm" }),
       { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch {
     return new Response(
-      JSON.stringify({ error: (err as Error).message }),
+      JSON.stringify({ error: "요청을 처리하지 못했습니다. 입력값을 확인해주세요." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

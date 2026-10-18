@@ -86,7 +86,7 @@ export function SgpAuthProvider({ children }: { children: ReactNode }) {
       options: { data: { phone, display_name: displayName } },
     });
 
-    if (authError) return { error: authError.message };
+    if (authError) return { error: /signups not allowed/i.test(authError.message) ? '현재 서버에서 신규 회원가입이 비활성화되어 있습니다. 관리자에게 문의해주세요.' : authError.message };
     if (!authData.user) return { error: '회원가입에 실패했습니다.' };
 
     const { error: profileError } = await supabase.from('sgp_users').insert({
