@@ -38,10 +38,10 @@ const types = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css',
     for(const width of [320,390,768,1440,1920]){
       const page=await context.newPage();await page.setViewportSize({width,height:1000});page.on('pageerror',e=>errors.push(e.message));
       await page.goto(origin);await page.locator('.dc-hero h1').waitFor();
-      for(const img of await page.locator('.dc-photo img').all()) {await img.scrollIntoViewIfNeeded();await img.evaluate(el=>el.decode());}
+      for(const img of await page.locator('.dc-photo > img').all()) {await img.scrollIntoViewIfNeeded();await img.evaluate(el=>el.decode());}
       for(const logo of await page.locator('.doelv-approved img').all()) await logo.evaluate(el=>el.decode());
       await page.evaluate(()=>document.fonts.ready);
-      const observed=await page.evaluate(()=>({images:[...document.querySelectorAll('.dc-photo img')].length,broken:[...document.images].filter(i=>!i.naturalWidth).length,overflow:document.documentElement.scrollWidth>innerWidth,logo:document.querySelector('.dc-header .doelv-wordmark strong').textContent,oldBrand:/PALATRIA|팔라트리아/.test(document.body.innerText)}));
+      const observed=await page.evaluate(()=>({images:[...document.querySelectorAll('.dc-photo > img')].length,broken:[...document.images].filter(i=>!i.naturalWidth).length,overflow:document.documentElement.scrollWidth>innerWidth,logo:document.querySelector('.dc-header .doelv-wordmark strong').textContent,oldBrand:/PALATRIA|팔라트리아/.test(document.body.innerText)}));
       assert.equal(observed.images,9);assert.equal(observed.broken,0);assert.equal(observed.overflow,false);assert.equal(observed.logo,'DOELV');assert.equal(observed.oldBrand,false);
       assert.equal(await page.locator('h1').count(),1);
       if(width<901){await page.getByRole('button',{name:'메뉴 열기'}).click();await page.getByRole('navigation',{name:'메인 메뉴'}).getByRole('link',{name:'컬렉션',exact:true}).click();assert.equal(await page.getByRole('button',{name:'메뉴 열기'}).getAttribute('aria-expanded'),'false');}
@@ -70,11 +70,11 @@ const types = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css',
     // Simulate a CDN returning HTML for image assets. JPEG should recover every scene.
     await context.route('**/assets/*.webp',r=>r.fulfill({status:200,contentType:'text/html',body:'<!doctype html>missing'}));
     await page.goto(origin);
-    for(const photo of await page.locator('.dc-photo').all()){await photo.scrollIntoViewIfNeeded();await photo.locator('img[src$=".jpg"]').waitFor();await photo.locator('img').evaluate(el=>el.decode());}
+    for(const photo of await page.locator('.dc-photo').all()){await photo.scrollIntoViewIfNeeded();await photo.locator('img[src$=".jpg"]').waitFor();await photo.locator(':scope > img').evaluate(el=>el.decode());}
     await context.route('**/assets/*.jpg',r=>r.abort());await page.goto(origin);await page.locator('.dc-hero').getByRole('button',{name:'이미지 다시 불러오기 ↻'}).waitFor();
     assert.equal(await page.locator('.dc-header .doelv-approved').count(),1);
     await context.unroute('**/assets/*.webp');await context.unroute('**/assets/*.jpg');
-    await page.locator('.dc-hero').getByRole('button',{name:'이미지 다시 불러오기 ↻'}).click();await page.locator('.dc-hero img').evaluate(el=>el.decode());
+    await page.locator('.dc-hero').getByRole('button',{name:'이미지 다시 불러오기 ↻'}).click();await page.locator('.dc-hero .dc-photo > img').evaluate(el=>el.decode());
     await page.goto(origin+'/app');await page.locator('.doelv-photo').waitFor();assert.equal(await page.locator('.dc-shell').count(),0);
     assert.deepEqual(errors,[]);
     const result={matrix,formValidation:true,formRejectedRetainsData:true,formSuccessAfterAcceptedResponse:true,localInterceptedSubmissions:requests.length,jpegFallback:9,manualRetry:true,keyboardTabs:true,legacyValetRedirect:true,brandGuide:true,appLink:'/app',adminLink:'/admin',jsErrors:errors,productionWrites:0};

@@ -9,6 +9,7 @@ import {
 import { useSgpAuth } from "./contexts/SgpAuthContext";
 import { ResidentDataProvider } from "./contexts/ResidentDataContext";
 import DoelvBrand from "./components/DoelvBrand";
+import CorporateSiteLink from "./components/CorporateSiteLink";
 import SgpLoginPage from "./pages/SgpLoginPage";
 import SgpWelcomePage from "./pages/SgpWelcomePage";
 import "./renewal.css";
@@ -48,7 +49,7 @@ export default function SgpLayout() {
         </a>
         <header className="doelv-header">
           <DoelvBrand />
-          <span className="doelv-signature">SIGNATURE</span>
+          <CorporateSiteLink />
         </header>
         <div className="doelv-frame">
           <nav className="doelv-navigation" aria-label="앱 주요 메뉴">

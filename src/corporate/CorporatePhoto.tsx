@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { corporatePhotography, type CorporateScene } from './photography';
+import MediaBrandSeal from '../components/MediaBrandSeal';
 
 export default function CorporatePhoto({ scene, alt, priority = false, className = '', sizes = '100vw' }: {
   scene: CorporateScene; alt: string; priority?: boolean; className?: string; sizes?: string;
@@ -14,6 +15,7 @@ export default function CorporatePhoto({ scene, alt, priority = false, className
       fetchPriority={priority ? 'high' : 'auto'} decoding="async"
       onError={() => setFailure(value => value + 1)} />
       : <div className="dc-photo-unavailable"><span>{alt}</span><button type="button" onClick={() => { setFailure(0); setRetry(value => value + 1); }}>이미지 다시 불러오기 ↻</button></div>}
+    {failure < 2 && <MediaBrandSeal />}
     <figcaption>DOELV VISION · AI 콘셉트 이미지</figcaption>
   </figure>;
 }

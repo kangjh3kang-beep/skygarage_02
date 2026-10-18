@@ -1,5 +1,6 @@
 import { useSearchParams, Link } from 'react-router-dom';
 import DoelvBrand from '../components/DoelvBrand';
+import CorporateSiteLink from '../components/CorporateSiteLink';
 import PwaInstallPrompt from '../components/PwaInstallPrompt';
 import { useState, useCallback, useRef } from 'react';
 import Box from '@mui/material/Box';
@@ -248,6 +249,7 @@ export default function SgpLoginPage() {
       px: 2.5,
       py: 4,
     }}>
+      <div className="doelv-login-return"><CorporateSiteLink /></div>
       <div className="sg-login-heading" style={{ width: '100%', maxWidth: 420 }}>
         <DoelvBrand />
         <h1>나의 일상에 더하는,<br /><span>한 층의 여유.</span></h1>

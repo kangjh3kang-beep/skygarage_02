@@ -48,6 +48,9 @@ const routeFor = scene => '/app' + (scene === 'home' ? '' : '/' + scene);
     page.on('pageerror', e => errors.push(e.message));
     await page.goto(origin + '/app');
     await page.locator('.doelv-photo.is-loaded').waitFor();
+    assert.equal(await page.getByRole('link', { name: '도엘브 PC 웹사이트로 돌아가기' }).getAttribute('href'), 'https://www.skygarage.net/');
+    for(const route of ['/app/login','/app/login?mode=register']) { await page.goto(origin+route); assert.equal(await page.getByRole('link', { name: '도엘브 PC 웹사이트로 돌아가기' }).getAttribute('href'), 'https://www.skygarage.net/'); }
+    await page.goto(origin+'/app'); await page.locator('.doelv-photo.is-loaded').waitFor();
     assert.equal(await page.locator('.doelv-approved').count(), 1);
     for (const logo of await page.locator('.doelv-approved img').all()) {
       const src = await logo.getAttribute('src');
@@ -73,6 +76,9 @@ const routeFor = scene => '/app' + (scene === 'home' ? '' : '/' + scene);
         assert.match(observed.src, new RegExp('/assets/' + scene + '-(?:800|full)-[\\w-]+\\.webp$'));
         assert.equal(observed.opacity, '1'); assert.ok(observed.logo >= 48); assert.equal(observed.wordmark, 'DOELV'); assert.equal(observed.broken, 0); assert.equal(observed.overflow, false);
         assert.ok(Math.abs(observed.width / observed.height - observed.naturalWidth / observed.naturalHeight) < .02, 'no stretching/cropping');
+        assert.equal(await page.getByRole('link', { name: '도엘브 PC 웹사이트로 돌아가기' }).getAttribute('href'), 'https://www.skygarage.net/');
+        assert.equal(await page.locator('.doelv-photo-stage .doelv-media-seal').count(),1);
+        const collision=await page.evaluate(()=>{const a=document.querySelector('.doelv-header .doelv-brand').getBoundingClientRect(), b=document.querySelector('.doelv-corporate-link').getBoundingClientRect();return a.right>b.left}); assert.equal(collision,false,'return link cannot overlap original logo');
         matrix.push({ scene, width, loaded: true, logo: 'original-gold-png', broken: 0 });
         if (output && [390, 1440].includes(width)) { await page.evaluate(async () => { await document.fonts.ready; await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); }); await page.screenshot({ path: path.join(output, `${scene}-${width}.png`), fullPage: true }); }
       }
@@ -108,7 +114,7 @@ const routeFor = scene => '/app' + (scene === 'home' ? '' : '/' + scene);
     await page.getByRole('navigation', { name: '앱 주요 메뉴' }).getByRole('link', { name: '게러지', exact: true }).click();
     await page.locator('.doelv-photo[data-scene="garage"].is-loaded').waitFor();
     assert.deepEqual(errors, []); assert.deepEqual(mutations, []);
-    const result = { matrix, spaNavigation: true, aliases: 4, jpegRecovery: 7, brokenPlaceholderAvoided: true, manualRetry: true, noBackendMutations: true, jsErrors: errors, boundary: 'Production build tested locally with isolated authenticated fixtures; no production user login.' };
+    const result = { matrix, pcWebsiteLinkAllPages:true, exactLogoOverlays:true, spaNavigation: true, aliases: 4, jpegRecovery: 7, brokenPlaceholderAvoided: true, manualRetry: true, noBackendMutations: true, jsErrors: errors, boundary: 'Production build tested locally with isolated authenticated fixtures; no production user login.' };
     if (output) fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify(result, null, 2));
     console.log(JSON.stringify(result));
   } finally { await browser.close(); server.close(); }

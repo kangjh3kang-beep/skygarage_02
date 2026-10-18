@@ -1,0 +1,7 @@
+.doelv-shell a.doelv-corporate-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 12px;border:1px solid #c6a87970;border-radius:4px;color:#e7cda3;background:#152a23;text-decoration:none;font-size:12px;line-height:1.4;white-space:nowrap;flex-shrink:0}
+.doelv-shell a.doelv-corporate-link:hover{background:#263d30;border-color:#e0bc80}
+.doelv-shell a.doelv-corporate-link:focus-visible{outline:2px solid #f2d29d;outline-offset:4px}
+.doelv-login-return{width:100%;max-width:420px;display:flex;justify-content:flex-end;margin-bottom:24px}
+.doelv-welcome-copy .doelv-corporate-link{margin-top:18px}
+@media(max-width:760px){.doelv-header{padding-left:14px;padding-right:14px;gap:10px}.doelv-header a.doelv-corporate-link{padding:8px;font-size:11px;gap:5px}.doelv-header .doelv-corporate-link svg{width:14px}.doelv-login-return{margin-bottom:18px}}
+@media(max-width:360px){.doelv-header .doelv-original-wordmark{width:112px}.doelv-header .doelv-identity{gap:8px}}

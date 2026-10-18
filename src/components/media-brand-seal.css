@@ -1,0 +1,7 @@
+.doelv-media-seal{position:absolute;top:16px;left:16px;z-index:3;display:inline-flex;align-items:center;gap:9px;padding:9px 13px;background:rgba(10,22,19,.77);border:1px solid rgba(217,183,117,.4);border-radius:2px;pointer-events:none;max-width:calc(100% - 32px)}
+.doelv-media-seal img{display:block!important;object-fit:contain!important;height:auto!important;flex:none;transform:none!important;filter:none;opacity:1!important}
+.doelv-media-seal .doelv-media-emblem{width:30px!important}
+.doelv-media-seal .doelv-media-wordmark{width:105px!important}
+.dc-hero>.dc-photo>.doelv-media-seal{top:auto;left:auto;right:4.5vw;bottom:112px}
+.doelv-photo-stage>.doelv-media-seal{left:auto;right:14px;top:14px}
+@media(max-width:720px){.doelv-media-seal{top:12px;left:12px;padding:7px 9px;gap:7px}.doelv-media-seal .doelv-media-emblem{width:23px!important}.doelv-media-seal .doelv-media-wordmark{width:83px!important}.dc-hero>.dc-photo>.doelv-media-seal{right:24px;bottom:112px}.doelv-photo-stage>.doelv-media-seal{top:10px;right:10px}}
