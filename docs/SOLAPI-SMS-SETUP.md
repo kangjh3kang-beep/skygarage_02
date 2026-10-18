@@ -26,7 +26,7 @@
 
 ## 검증
 
-- `node --test tests/solapi.test.mjs`: 9개 통과.
+- `node --test tests/solapi.test.mjs`: 13개 통과.
 - 어댑터 TypeScript 검사 통과.
 - 배포된 `/sms-verify/health?verify=1`: HTTP 200, `provider=solapi`, `configured=true`, `authenticated=true` 확인.
 - 실제 SMS 발송·발신번호 등록 상태·단말 수신 및 인증코드 확인은 미검증. 사용자 수신번호 없이 임의 문자 발송을 수행하지 않았다.
@@ -39,3 +39,9 @@ https://skygarage-doelv.netlify.app/app 에서 회원가입 → 전화번호 입
 - https://solapi.com/developers/api/authentication-api-key
 - https://solapi.com/developers/api/messages
 - https://solapi.com/developers/api/getBalance
+
+## 2026-10-18 후속 점검
+
+실제 앱의 설정 오류 제보 후 API 인증과 발신번호를 함께 재검증했다. 현 설정에서는 SOLAPI 발신번호 조회가 `HTTP 400 / SignatureDoesNotMatch`로 실패하고, 발신번호 설정값에 유효한 번호가 없는 것을 확인했다. 앞선 인증 확인 결과만으로 발송 준비 완료를 판단할 수 없다. API Key/Secret 한 쌍과 인증된 발신번호를 Supabase Secrets에서 다시 확인해야 한다.
+
+코드는 활성 발신번호를 SOLAPI에서 직접 확인하도록 보완했다. 발신번호 설정이 비어 있거나 유효하지 않고 활성 번호가 정확히 하나일 때에만 해당 번호를 자동 선택한다. 여러 개이면 명시적으로 지정해야 하며, 설정된 번호가 유효하지만 인증목록에 없으면 다른 번호로 바꾸지 않는다. API 키와 Secret은 SOLAPI/COOLSMS 두 환경변수 쌍 사이에서 섞어 읽지 않는다.

@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { generateCode, sendSolapi, checkSolapiAuthentication } from "./solapi.ts";
+import { generateCode, sendSolapi, checkSolapiAuthentication, resolveSolapiSender, readSmsConfig } from "./solapi.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,14 +12,22 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const config = {
-  apiKey: (Deno.env.get("SOLAPI_API_KEY") || Deno.env.get("COOLSMS_API_KEY") || "").trim(),
-  apiSecret: (Deno.env.get("SOLAPI_API_SECRET") || Deno.env.get("COOLSMS_API_SECRET") || "").trim(),
-  sender: (Deno.env.get("SOLAPI_SENDER") || Deno.env.get("COOLSMS_SENDER") || "").trim(),
-};
+const config = readSmsConfig(name => Deno.env.get(name));
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const cleanPhone = (value: string) => value.replace(/\D/g, "");
-const sendSms = (phone: string, message: string) => sendSolapi(config, phone, message);
+let senderHealth: { until: number; result: Awaited<ReturnType<typeof resolveSolapiSender>> } | undefined;
+async function getSender() {
+  if (!senderHealth || senderHealth.until < Date.now()) {
+    const result = await resolveSolapiSender(config);
+    senderHealth = { result, until: Date.now() + (result.sender ? 60000 : 10000) };
+  }
+  return senderHealth.result;
+}
+async function sendSms(phone: string, message: string) {
+  const result = await getSender();
+  if (!result.sender) return { success: false as const, error: result.error, provider: "solapi" };
+  return sendSolapi({ ...config, sender: result.sender }, phone, message);
+}
 let authHealth: { until: number; authenticated: boolean } | undefined;
 
 async function handleSend(body: { phone: string }): Promise<Response> {
@@ -180,7 +188,10 @@ Deno.serve(async (req: Request) => {
       if (!authHealth || authHealth.until < Date.now()) {
         authHealth = { authenticated: await checkSolapiAuthentication(config), until: Date.now() + 60000 };
       }
-      return new Response(JSON.stringify({ provider: "solapi", configured: Boolean(config.apiKey && config.apiSecret && config.sender), authenticated: authHealth.authenticated }),
+      const sender = await getSender();
+      return new Response(JSON.stringify({ provider: "solapi", configured: Boolean(config.apiKey && config.apiSecret), authenticated: authHealth.authenticated,
+        senderConfigured: /^\d{8,11}$/.test(cleanPhone(config.sender)), senderReady: Boolean(sender.sender), activeSenderCount: sender.activeCount,
+        senderError: sender.error || null }),
         { headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } });
     }
     return new Response(JSON.stringify({ provider: "solapi", configured: Boolean(config.apiKey && config.apiSecret && config.sender) }),

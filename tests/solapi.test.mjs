@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
-import { createAuthorization, sendSolapi, generateCode, checkSolapiAuthentication } from '../supabase/functions/sms-verify/solapi.ts';
+import { createAuthorization, sendSolapi, generateCode, checkSolapiAuthentication, resolveSolapiSender, readSmsConfig } from '../supabase/functions/sms-verify/solapi.ts';
 const config = { apiKey: 'test-key', apiSecret: 'test-secret', sender: '0212345678' };
 const phone = '01000000000';
 const body = 'TEST';
@@ -59,4 +59,28 @@ test('read-only authentication probe returns only boolean and makes no SMS call'
     return json({ balance: 1, accountId: 'private' });
   }), true);
   assert.equal(await checkSolapiAuthentication(config, async () => json({ errorCode: 'InvalidAPIKey' }, 403)), false);
+});
+
+test('single approved sender resolves missing or placeholder configuration', async () => {
+  for (const sender of ['', '미등록']) {
+    const result = await resolveSolapiSender({ ...config, sender }, async url => {
+      assert.equal(url, 'https://api.solapi.com/senderid/v1/numbers/active');
+      return json([{ status: 'ACTIVE', phoneNumber: config.sender }]);
+    });
+    assert.equal(result.sender, config.sender);
+  }
+});
+test('multiple or absent approved senders require explicit configuration', async () => {
+  assert.equal((await resolveSolapiSender({ ...config, sender: '' }, async () => json([]))).sender, undefined);
+  assert.equal((await resolveSolapiSender({ ...config, sender: '' }, async () => json([{status:'ACTIVE',phoneNumber:'0212345678'},{status:'ACTIVE',phoneNumber:'0312345678'}]))).sender, undefined);
+});
+test('unapproved configured sender is not silently replaced', async () => {
+  assert.equal((await resolveSolapiSender(config, async () => json([{status:'ACTIVE',phoneNumber:'0312345678'}]))).sender, undefined);
+});
+
+test('credential aliases never mix keys and secrets from different pairs', () => {
+  const env = { SOLAPI_API_KEY: 'new-key', COOLSMS_API_KEY: 'old-key', COOLSMS_API_SECRET: 'old-secret' };
+  assert.deepEqual(readSmsConfig(name => env[name]), { apiKey: 'new-key', apiSecret: '', sender: '' });
+  delete env.SOLAPI_API_KEY;
+  assert.equal(readSmsConfig(name => env[name]).apiSecret, 'old-secret');
 });
