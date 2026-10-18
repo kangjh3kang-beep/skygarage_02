@@ -62,7 +62,7 @@ export default function DoelvCorporate() {
     <CorporateHeader />
     <main id="main">
       <section className="dc-hero" aria-labelledby="dc-title">
-        <CorporatePhoto scene="tower" priority alt="석재 포디움과 브론즈 외관을 갖춘 도엘브 고급 주상복합 타워의 야경 콘셉트" />
+        <CorporatePhoto scene="tower" priority alt="금색 도엘브 로고가 새겨진 석재 입구와 브론즈 주거 타워, 조경 테라스와 상업 포디움이 어우러진 고급 주상복합 단지의 실사형 야경 콘셉트" />
         <div className="dc-hero-shade" />
         <div className="dc-hero-content"><p className="dc-eyebrow">THE NEXT STANDARD OF LIVING</p>
           <p className="dc-hero-wordmark" aria-hidden="true">DOELV</p>

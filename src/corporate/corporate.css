@@ -14,3 +14,20 @@
 .dc-value{background:#f9f6ef}.dc-value-intro{max-width:850px;margin-bottom:45px;font-size:17px}.dc-business-grid{display:grid;grid-template-columns:1fr 1fr;gap:6vw}.dc-business-grid article{border-top:1px solid #b1a58e;padding-top:25px}.dc-business-grid .dc-eyebrow{display:block;margin-bottom:18px}.dc-business-grid h3{font-size:29px;line-height:1.6;margin-bottom:22px}.dc-business-grid p{font-size:14px}.dc-business-grid ul{margin:20px 0 0;padding-left:18px;font-size:12px;line-height:2.2;color:#61705f}.dc-efficiency{display:grid;grid-template-columns:1.2fr 1fr;gap:35px 7vw;background:#1c342a;color:#f0e8d8;padding:50px;margin-top:55px}.dc-efficiency h3{font-size:22px;line-height:1.6}.dc-efficiency h3 strong{font:400 clamp(64px,6vw,98px)/1.3 Georgia,serif;color:#e1c294;display:block;margin:15px 0}.dc-efficiency h3 strong>span{font-size:35px;margin-left:7px}.dc-efficiency .dc-eyebrow{color:#d8bb90}.dc-efficiency p{font-size:13px;color:#c3cebe}.dc-capacity{align-self:center}.dc-capacity>label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:16px}.dc-capacity>label span{font-size:10px;color:#c1cbb9}.dc-capacity-input{display:flex;align-items:center;border-bottom:1px solid #c8b68e80;gap:10px}.dc-capacity-input input{font:400 34px/1.6 Georgia,serif;color:#f4eddd;border:none;background:none;width:100%;min-width:0;padding:5px 0}.dc-capacity-output{margin-top:25px}.dc-capacity-output>span{font-size:11px;color:#c6d0bf}.dc-capacity-output strong{display:block;font:400 clamp(32px,3.4vw,50px)/1.4 Georgia,serif;margin:10px 0;color:#e8cca3}.dc-capacity-output small{font:14px sans-serif;margin-left:10px}.dc-shell .dc-efficiency-note{grid-column:1/-1;border-top:1px solid #ffffff30;padding-top:20px;font-size:11px;line-height:1.9;color:#bfccba}.dc-value-process{padding:45px 0 30px;max-width:900px}.dc-value-process h3{font-size:23px;margin-bottom:16px;line-height:1.7}.dc-value-process p{font-size:14px}.dc-regulation{border-top:1px solid #b9b5a4;border-bottom:1px solid #b9b5a4;font-size:12px;margin-top:20px}.dc-regulation summary{padding:20px 0;cursor:pointer;font-size:14px}.dc-regulation summary>span{float:right;font-size:10px;color:#7b7f70}.dc-regulation>div{padding:0 0 25px}.dc-regulation p+p{margin-top:16px}.dc-regulation-links{display:flex;gap:25px;margin-top:20px;flex-wrap:wrap}.dc-regulation-links a{text-decoration:underline}
 @media(max-width:900px){.dc-efficiency{padding:35px;gap:30px}.dc-business-grid{gap:35px}}
 @media(max-width:720px){.dc-business-grid{grid-template-columns:1fr;gap:35px}.dc-business-grid h3{font-size:26px}.dc-value-intro{font-size:15px}.dc-efficiency{grid-template-columns:1fr;padding:27px 22px;margin-top:35px}.dc-efficiency h3 strong{font-size:72px}.dc-capacity-output strong{font-size:43px}.dc-value-process h3{font-size:20px}.dc-regulation summary>span{float:none;display:block;padding-left:18px}.dc-regulation summary{font-size:13px}}
+/* Keep the branded arrival facade in view; let the photograph lead on phones. */
+.dc-hero>.dc-photo>img{object-position:76% 50%}
+.dc-collection [data-scene=tower]>img{object-position:77% center}
+@media(max-width:720px){
+  .dc-hero{height:auto;min-height:0;max-height:none;padding-top:76px}
+  .dc-hero>.dc-photo{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:4/3;min-height:320px}
+  .dc-hero>.dc-photo>img{position:absolute;inset:0;object-position:78% center}
+  .dc-hero>.dc-photo figcaption{right:12px;bottom:10px;font-size:8px}
+  .dc-hero>.dc-photo>.doelv-media-seal{top:12px;left:12px;right:auto;bottom:auto}
+  .dc-hero-shade{display:none}
+  .dc-hero-content{padding:36px 24px 40px}
+  .dc-hero .dc-eyebrow{margin-bottom:16px}
+  .dc-shell .dc-hero-wordmark{font-size:62px;margin:14px 0 20px}
+  .dc-hero h1{font-size:32px;line-height:1.45}
+  .dc-shell .dc-hero-description{margin:20px 0 26px}
+  .dc-hero-bottom{position:relative;left:auto;right:auto;margin:0 24px;padding:20px 0}
+}
