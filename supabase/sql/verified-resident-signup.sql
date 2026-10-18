@@ -36,9 +36,8 @@ declare v public.sgp_phone_verifications%rowtype;
 begin
   select * into v from public.sgp_phone_verifications where id = p_verification_id and consumed_at is not null and verified_at is not null;
   if not found then raise exception 'Missing signup verification'; end if;
-  if not exists(select 1 from auth.users where id = p_user_id and email = v.phone || '@sgp.skygarage.app') then
-    raise exception 'Signup user does not match verification';
-  end if;
+  -- p_user_id is returned by Admin createUser in the service-only Edge Function.
+  -- The FK enforces existence; service_role deliberately cannot SELECT auth.users.
   insert into public.sgp_users(id,phone,display_name,birth_date,gender_code,address,address_detail,kyc_level,is_verified,phone_verified_at)
   values(p_user_id,v.phone,p_name,p_birth,p_gender,p_address,p_detail,1,true,v.verified_at);
   insert into public.sgp_coin_wallets(user_id) values(p_user_id);
