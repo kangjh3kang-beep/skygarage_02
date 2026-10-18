@@ -84,3 +84,13 @@ test('credential aliases never mix keys and secrets from different pairs', () =>
   delete env.SOLAPI_API_KEY;
   assert.equal(readSmsConfig(name => env[name]).apiSecret, 'old-secret');
 });
+
+test('live active-sender string array selects the configured approved sender', async () => {
+  const result = await resolveSolapiSender(config, async () => json(['0212345678', '16661234']));
+  assert.equal(result.sender, config.sender);
+  assert.equal(result.activeCount, 2);
+  const missing = await resolveSolapiSender({ ...config, sender: '' }, async () => json(['0212345678', '16661234']));
+  assert.equal(missing.sender, undefined);
+  const mismatch = await resolveSolapiSender({ ...config, sender: '0312345678' }, async () => json(['0212345678', '16661234']));
+  assert.equal(mismatch.sender, undefined);
+});

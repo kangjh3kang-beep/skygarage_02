@@ -83,8 +83,13 @@ export async function resolveSolapiSender(config: SmsConfig, request: typeof fet
       return { activeCount: 0, error: `SOLAPI 발신번호 조회 실패 (HTTP ${response.status}, ${code}). 관리자에게 문의해주세요.` };
     }
     if (!Array.isArray(data)) return { activeCount: 0, error: 'SOLAPI 발신번호 목록 응답을 확인하지 못했습니다. 관리자에게 문의해주세요.' };
-    const active: string[] = [...new Set(data.filter(item => item?.status === 'ACTIVE' && typeof item?.phoneNumber === 'string')
-      .map(item => item.phoneNumber.replace(/\D/g, '')).filter(phone => /^\d{8,11}$/.test(phone)))];
+    // Live API also returns string[]; the /active endpoint guarantees these are approved.
+    // Retain support for the object[] format described in the SOLAPI reference.
+    const active: string[] = [...new Set(data.flatMap(item => {
+      if (typeof item === 'string') return [item];
+      if (item?.status === 'ACTIVE' && typeof item?.phoneNumber === 'string') return [item.phoneNumber];
+      return [];
+    }).map(phone => phone.replace(/\D/g, '')).filter(phone => /^\d{8,11}$/.test(phone)))];
     if (/^\d{8,11}$/.test(configured)) {
       return active.includes(configured) ? { sender: configured, activeCount: active.length }
         : { activeCount: active.length, error: '설정된 발신번호가 SOLAPI에서 인증되지 않았습니다. 발신번호 설정을 확인해주세요.' };
