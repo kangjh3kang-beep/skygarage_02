@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { PhotoHero } from "../components/DoelvBrand";
+import { PhotoHero } from "../components/BrandImagery";
 import ServiceRequestForm from "../components/ServiceRequestForm";
 import PwaInstallPrompt from "../components/PwaInstallPrompt";
 import { useSgpAuth } from "../contexts/SgpAuthContext";
@@ -27,7 +27,7 @@ export default function SgpProfilePage() {
   }, [userId]);
   return (
     <>
-      <PhotoHero photo="arrival" caption="DOELV SIGNATURE / CONCIERGE" />
+      <PhotoHero photo="profile" />
       <div className="doelv-content">
         <p className="doelv-eyebrow">YOUR DOELV RESIDENCE</p>
         <h1>설정 · 컨시어지</h1>

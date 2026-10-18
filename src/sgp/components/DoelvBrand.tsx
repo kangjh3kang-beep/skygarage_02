@@ -1,37 +1,25 @@
-import { Link } from "react-router-dom";
-export default function DoelvBrand() {
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+export function BrandIdentity({ stacked = false }: { stacked?: boolean }) {
+  const [failed, setFailed] = useState(false);
   return (
-    <Link
-      className="doelv-brand"
-      to="/app"
-      aria-label="DOELV 스카이게러지 공식 앱 홈"
-    >
-      <img src="/doelv/emblem.webp" alt="" width="64" height="57" />
-      <img
-        src="/doelv/wordmark.webp"
-        alt="DOELV 도엘브 · SKY GARAGE SYSTEM"
-        width="174"
-        height="62"
-      />
-    </Link>
+    <span className={`doelv-identity${stacked ? ' doelv-identity-stacked' : ''}`}>
+      {failed ? <span className="doelv-mark-fallback" aria-hidden="true">D</span> :
+        <img className="doelv-mark" src="/doelv/mark-v2.svg" alt="" width="64" height="64" onError={() => setFailed(true)} />}
+      <span className="doelv-wordmark">
+        <strong>DOELV</strong>
+        <span className="doelv-brand-korean">도엘브</span>
+        <small>SKY GARAGE SYSTEM</small>
+      </span>
+    </span>
   );
 }
-export function PhotoHero({
-  photo = "residence",
-  caption = "PRIVATE RESIDENCE / SKY GARAGE",
-}: {
-  photo?: string;
-  caption?: string;
-}) {
+
+export default function DoelvBrand() {
   return (
-    <div
-      className={`doelv-photo doelv-photo-${photo}`}
-      role="img"
-      aria-label="DOELV 주거 공간 브랜드 이미지"
-    >
-      <span className="doelv-photo-tag">DOELV SIGNATURE</span>
-      <span className="doelv-photo-caption">{caption}</span>
-      <small className="doelv-photo-note">브랜드 이미지</small>
-    </div>
+    <Link className="doelv-brand" to="/app" aria-label="DOELV 스카이게러지 공식 앱 홈">
+      <BrandIdentity />
+    </Link>
   );
 }
