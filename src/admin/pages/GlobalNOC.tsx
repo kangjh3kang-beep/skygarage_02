@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Alert from '@mui/material/Alert';
+import { requireResult, operationError } from '../../lib/operation-result';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -78,6 +80,9 @@ export default function GlobalNOC() {
   const { showToast } = useToast();
   const { logAction } = useAuditLog();
   const navigate = useNavigate();
+  const [error, setError] = useState('');
+  const generation = useRef(0);
+  const [observedAt, setObservedAt] = useState('');
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<SystemAlert[]>([]);
   const [events, setEvents] = useState<EventLog[]>([]);
@@ -99,69 +104,54 @@ export default function GlobalNOC() {
     return complexes.find(c => c.id === id)?.address || '';
   };
 
-  const loadComplexes = useCallback(async () => {
-    const { data } = await supabase.from('complexes').select('id, name, address, region');
-    if (data) setComplexes(data);
-  }, []);
-
-  const loadAlerts = useCallback(async () => {
-    let query = supabase.from('system_alerts').select('*').order('created_at', { ascending: false }).limit(100);
-    if (severityFilter !== 'all') query = query.eq('severity', severityFilter);
-    if (complexFilter !== 'all') query = query.eq('complex_id', complexFilter);
-    const { data } = await query;
-    if (data) setAlerts(data);
+  const loadData = useCallback(async () => {
+    const request = ++generation.current;
+    setLoading(true); setError('');
+    try {
+      let alertQuery = supabase.from('system_alerts').select('*').order('created_at', { ascending: false }).limit(100);
+      let eventQuery = supabase.from('event_log').select('*').order('created_at', { ascending: false }).limit(200);
+      if (severityFilter !== 'all') alertQuery = alertQuery.eq('severity', severityFilter);
+      if (complexFilter !== 'all') { alertQuery = alertQuery.eq('complex_id', complexFilter); eventQuery = eventQuery.eq('complex_id', complexFilter); }
+      const results = await Promise.all([
+        supabase.from('complexes').select('id, name, address, region'), alertQuery, eventQuery,
+        supabase.from('ai_recommendations').select('id, title, priority, type').in('status', ['pending', 'acknowledged']).in('type', ['system', 'data_quality', 'anomaly']).order('created_at', { ascending: false }).limit(5),
+      ]);
+      results.forEach(requireResult);
+      if (request !== generation.current) return;
+      setComplexes(results[0].data || []); setAlerts(results[1].data || []);
+      setEvents(results[2].data || []); setAiRecs(results[3].data || []);
+      setObservedAt(new Date().toLocaleString('ko-KR'));
+    } catch (e) { if (request === generation.current) setError(operationError(e)); }
+    finally { if (request === generation.current) setLoading(false); }
   }, [severityFilter, complexFilter]);
 
-  const loadEvents = useCallback(async () => {
-    let query = supabase.from('event_log').select('*').order('created_at', { ascending: false }).limit(200);
-    if (complexFilter !== 'all') query = query.eq('complex_id', complexFilter);
-    const { data } = await query;
-    if (data) setEvents(data);
-  }, [complexFilter]);
-
-  const loadAiRecs = useCallback(async () => {
-    const { data } = await supabase.from('ai_recommendations')
-      .select('id, title, priority, type')
-      .in('status', ['pending', 'acknowledged'])
-      .in('type', ['system', 'data_quality', 'anomaly'])
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (data) setAiRecs(data);
-  }, []);
-
-  const loadData = useCallback(async () => {
-    await Promise.all([loadComplexes(), loadAlerts(), loadEvents(), loadAiRecs()]);
-    setLoading(false);
-  }, [loadComplexes, loadAlerts, loadEvents, loadAiRecs]);
-
-  useEffect(() => { loadData(); }, [loadData]);
-
+  useEffect(() => { void loadData(); return () => { ++generation.current; }; }, [loadData]);
   useEffect(() => {
-    const ch1 = supabase.channel('noc-alerts-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_alerts' }, () => { loadAlerts(); })
-      .subscribe();
-    const ch2 = supabase.channel('noc-events-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_log' }, () => { loadEvents(); })
-      .subscribe();
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
-  }, [loadAlerts, loadEvents]);
+    const channel = supabase.channel('noc-data')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_alerts' }, () => { void loadData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_log' }, () => { void loadData(); }).subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [loadData]);
 
   const handleAcknowledge = useCallback(async (alert: SystemAlert) => {
     const { error } = await supabase.from('system_alerts').update({ status: 'acknowledged' }).eq('id', alert.id);
     if (error) { showToast('처리 실패', 'error'); return; }
     logAction('UPDATE', 'system_alerts', alert.id, { action: 'acknowledge' });
     showToast('확인 처리 완료', 'success');
-    loadAlerts();
+    loadData();
     setDetailAlert(null);
-  }, [showToast, logAction, loadAlerts]);
+  }, [showToast, logAction, loadData]);
 
   const criticalCount = alerts.filter(a => a.severity === 'critical' && a.status !== 'resolved').length;
   const activeCount = alerts.filter(a => a.status !== 'resolved').length;
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
 
+  if (error) return <Alert severity="error" action={<Button onClick={() => void loadData()}>다시 조회</Button>}>{error}</Alert>;
+
   return (
     <Box>
+      <Typography variant="caption">마지막 조회: {observedAt} · 조회 기록이며 현장 운행 승인이 아닙니다.</Typography>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         <Box>
           <Typography variant="h1">Global NOC</Typography>

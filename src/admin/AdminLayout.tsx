@@ -26,6 +26,7 @@ import NotificationCenter from './components/NotificationCenter';
 import ConnectionStatus from './components/ConnectionStatus';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import ErrorBoundary from './components/ErrorBoundary';
+import AdminPageGate from './components/AdminPageGate';
 import Breadcrumbs from './components/Breadcrumbs';
 import ContextSwitcher from './components/ContextSwitcher';
 import CoManagementIndicator from './components/CoManagementIndicator';
@@ -55,6 +56,7 @@ const routeTitles: Record<string, string> = {
   '/admin/partners': '파트너',
   '/admin/billing': '청구/인보이스',
   '/admin/settlement': '결제·정산·회계 검증',
+  '/admin/validation': '페이지·연동 검증',
   '/admin/erp': '자체 ERP 회계',
   '/admin/revenue': '매출',
   '/admin/crm': 'CRM',
@@ -351,7 +353,7 @@ export default function AdminLayout() {
         <Box id="main-content" sx={{ flex: 1, p: { xs: 2, sm: 2.5, md: 3 }, overflow: 'auto', minWidth: 0 }} role="main">
           <Breadcrumbs />
           <ErrorBoundary>
-            {['/admin', '/admin/', '/admin/templates', '/admin/implementation', '/admin/governance'].includes(location.pathname.replace(/\/$/, '') || '/') ? <Outlet /> : <Box sx={{py:4}}><Alert severity="info">이 운영 모듈은 단지별 권한·데이터·현장 인수 검증을 준비 중입니다. 구축·검증 화면에서 완료 조건과 다음 작업을 확인할 수 있습니다.</Alert><Button sx={{mt:2}} onClick={()=>navigate('/admin')}>통합 운영</Button><Button sx={{mt:2}} onClick={()=>navigate('/admin/implementation')}>구축·검증 현황</Button><Button sx={{mt:2}} onClick={()=>navigate('/admin/templates')}>단지 템플릿 생성기</Button></Box>}
+            <AdminPageGate><Outlet /></AdminPageGate>
           </ErrorBoundary>
         </Box>
       </Box>

@@ -9,7 +9,7 @@ export const vehicleService = {
       .from('tracking_vehicles')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -19,7 +19,7 @@ export const vehicleService = {
       .select('*')
       .eq('id', id)
       .maybeSingle();
-    if (error) { console.warn(error.message); return null; }
+    if (error) throw error;
     return data;
   },
 
@@ -83,7 +83,7 @@ export const routeService = {
       .select('*')
       .eq('vehicle_id', vehicleId)
       .order('created_at', { ascending: false });
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -93,7 +93,7 @@ export const routeService = {
       .select('*')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -129,7 +129,7 @@ export const bookingService = {
       .from('tracking_bookings')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -139,7 +139,7 @@ export const bookingService = {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -204,7 +204,7 @@ export const locationService = {
       .eq('vehicle_id', vehicleId)
       .order('recorded_at', { ascending: false })
       .limit(limit);
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -228,7 +228,7 @@ export const notificationService = {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50);
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -238,7 +238,7 @@ export const notificationService = {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(50);
-    if (error) { console.warn(error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -247,7 +247,7 @@ export const notificationService = {
       .from('tracking_notifications')
       .update({ read: true })
       .eq('id', id);
-    if (error) console.warn(error.message);
+    if (error) throw error;
   },
 
   async markAllAsRead() {
@@ -255,7 +255,7 @@ export const notificationService = {
       .from('tracking_notifications')
       .update({ read: true })
       .eq('read', false);
-    if (error) console.warn(error.message);
+    if (error) throw error;
   },
 
   async create(notification: { type: string; title: string; message: string; booking_id?: string }) {
@@ -264,7 +264,7 @@ export const notificationService = {
       .insert({ ...notification, read: false })
       .select()
       .maybeSingle();
-    if (error) { console.warn(error.message); return null; }
+    if (error) throw error;
     return data;
   },
 };
@@ -277,7 +277,7 @@ export const valetVehicleService = {
       .from('valet_vehicles')
       .select('*')
       .order('entry_time', { ascending: false });
-    if (error) { console.warn('valetVehicleService.getAll:', error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -287,7 +287,7 @@ export const valetVehicleService = {
       .select('*')
       .eq('id', id)
       .maybeSingle();
-    if (error) { console.warn('valetVehicleService.getById:', error.message); return null; }
+    if (error) throw error;
     return data;
   },
 
@@ -324,7 +324,7 @@ export const atrService = {
       .from('valet_atr_units')
       .select('*')
       .order('unit_code');
-    if (error) { console.warn('atrService.getAll:', error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -334,7 +334,7 @@ export const atrService = {
       .select('*')
       .eq('id', id)
       .maybeSingle();
-    if (error) { console.warn('atrService.getById:', error.message); return null; }
+    if (error) throw error;
     return data;
   },
 };
@@ -346,7 +346,7 @@ export const trackingEventService = {
       .select('*')
       .eq('vehicle_id', vehicleId)
       .order('created_at', { ascending: true });
-    if (error) { console.warn('trackingEventService.getByVehicle:', error.message); return []; }
+    if (error) throw error;
     return data || [];
   },
 
@@ -356,7 +356,7 @@ export const trackingEventService = {
       .insert(event)
       .select()
       .maybeSingle();
-    if (error) { console.warn('trackingEventService.create:', error.message); return null; }
+    if (error) throw error;
     return data;
   },
 };

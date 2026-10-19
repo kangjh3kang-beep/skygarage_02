@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -31,18 +32,21 @@ export default function FullMapPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [vehicles, setVehicles] = useState<ValetVehicle[]>([]);
   const [atrUnits, setAtrUnits] = useState<AtrUnit[]>([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ValetVehicle | null>(null);
   const [floor, setFloor] = useState(1);
 
   const loadData = useCallback(async () => {
     try {
+      setError('');
       const [vData, aData] = await Promise.all([
         valetVehicleService.getAll(),
         atrService.getAll(),
       ]);
       setVehicles(vData);
       setAtrUnits(aData);
+    } catch { setError('현장 정보를 확인하지 못했습니다. 연결·권한·장비 연동 상태를 확인해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -55,6 +59,8 @@ export default function FullMapPage() {
   }, [loadData]);
 
   const activeVehicles = vehicles.filter(v => v.current_stage !== 'exit');
+
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   if (loading) {
     return (

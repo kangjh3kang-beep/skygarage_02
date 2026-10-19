@@ -27,7 +27,10 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-ci.txt
       - run: npm ci
+      - run: npm run inventory -- --check
       - run: node --test tests/*.test.mjs
+      - name: Synthetic page and SQL-backed UI harness
+        run: npm run test:ui
       - name: Governance PostgreSQL 17 gate
         run: |
           set -o pipefail

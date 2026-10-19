@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -34,9 +35,11 @@ const STATUS_LABELS: Record<string, { label: string; color: 'default' | 'success
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const { bookings, loading, refresh } = useBooking();
+  const { bookings, loading, refresh, error: dataError } = useBooking();
   const { showToast } = useToast();
   const [cancelId, setCancelId] = useState<string | null>(null);
+
+  if (dataError) return <Alert severity="error">정보를 조회하지 못했습니다. 연결과 권한을 확인해 주세요.</Alert>;
 
   if (loading) {
     return (

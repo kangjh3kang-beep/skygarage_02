@@ -4,7 +4,6 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -33,7 +32,9 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import FastForwardIcon from '@mui/icons-material/FastForward';
 import SearchIcon from '@mui/icons-material/Search';
-import LockIcon from '@mui/icons-material/Lock';
+import Alert from '@mui/material/Alert';
+import AdminSecurityGate from '../../../admin/components/AdminSecurityGate';
+import { useAuth } from '../../../admin/contexts/AuthContext';
 import { useToast } from '../../components/common/ToastProvider';
 import { useVehicleTracking } from '../../hooks/useVehicleTracking';
 import { useBooking } from '../../hooks/useBooking';
@@ -41,52 +42,12 @@ import { vehicleService, bookingService } from '../../services/trackingService';
 import TrackingMap from '../../components/Map/TrackingMap';
 import type { Vehicle } from '../../types';
 
-const ADMIN_PIN = '1234';
-
-function AdminGate({ children }: { children: React.ReactNode }) {
-  const [authorized, setAuthorized] = useState(() => sessionStorage.getItem('fleet_auth') === 'true');
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState(false);
-
-  if (authorized) return <>{children}</>;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pin === ADMIN_PIN) {
-      sessionStorage.setItem('fleet_auth', 'true');
-      setAuthorized(true);
-    } else {
-      setError(true);
-      setPin('');
-    }
-  };
-
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', p: 3 }}>
-      <Paper sx={{ p: 4, textAlign: 'center', maxWidth: 360, width: '100%' }}>
-        <LockIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>관리자 인증</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          차량 관제 페이지에 접근하려면 관리자 PIN을 입력하세요.
-        </Typography>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            size="small"
-            type="password"
-            label="PIN 입력"
-            value={pin}
-            onChange={e => { setPin(e.target.value); setError(false); }}
-            error={error}
-            helperText={error ? 'PIN이 올바르지 않습니다.' : ' '}
-            autoFocus
-            sx={{ mb: 2 }}
-          />
-          <Button variant="contained" fullWidth type="submit" disabled={!pin}>확인</Button>
-        </form>
-      </Paper>
-    </Box>
-  );
+export default function FleetManagement() {
+  const { user, role } = useAuth();
+  if (!user || !role || !['super_admin', 'admin', 'manager', 'operator'].includes(role)) {
+    return <Alert severity="error">차량 관제 권한을 확인할 수 없습니다.</Alert>;
+  }
+  return <AdminSecurityGate><FleetManagementContent /></AdminSecurityGate>;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: 'success' | 'info' | 'default' | 'warning' | 'error' }> = {
@@ -104,9 +65,9 @@ const BOOKING_STATUS: Record<string, { label: string; color: 'success' | 'info' 
   cancelled: { label: '취소', color: 'error' },
 };
 
-export default function FleetManagement() {
-  const { vehicles, loading, refresh } = useVehicleTracking();
-  const { bookings, loading: bLoading, refresh: refreshBookings } = useBooking();
+function FleetManagementContent() {
+  const { vehicles, loading, error: vehicleError, refresh } = useVehicleTracking();
+  const { bookings, loading: bLoading, error: bookingError, refresh: refreshBookings } = useBooking();
   const [tab, setTab] = useState(0);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>();
   const [vehicleDialog, setVehicleDialog] = useState(false);
@@ -125,11 +86,15 @@ export default function FleetManagement() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
         body: JSON.stringify({ action: 'simulate_step', steps: 1 }),
       });
+      if (!res.ok) throw new Error('simulator_unavailable');
       const data = await res.json();
+      if (!Number.isSafeInteger(data.updated)) throw new Error('invalid_receipt');
       setSimLog(`${data.updated}대 이동 완료 (${new Date().toLocaleTimeString('ko-KR')})`);
       refresh();
     } catch {
-      setSimLog('시뮬레이션 오류');
+      if (simInterval.current) clearInterval(simInterval.current);
+      simInterval.current = null; setSimRunning(false);
+      setSimLog('시뮬레이터를 사용할 수 없습니다. 현장 인수 및 서버 연결을 확인해 주세요.');
     }
   }, [refresh]);
 
@@ -151,15 +116,9 @@ export default function FleetManagement() {
     return () => { if (simInterval.current) clearInterval(simInterval.current); };
   }, []);
 
-  const startRoute = useCallback(async (vehicleId: string) => {
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/vehicle-simulator`;
-    await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ action: 'start_route', vehicle_id: vehicleId }),
-    });
-    refresh();
-  }, [refresh]);
+  const startRoute = useCallback(async (_vehicleId: string) => {
+    setSimLog('실제 운행 명령은 현장 인수 전 사용할 수 없습니다.');
+  }, []);
 
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
@@ -207,25 +166,6 @@ export default function FleetManagement() {
     }
   }, [refreshBookings, showToast]);
 
-  const seedDemoData = useCallback(async () => {
-    try {
-      const demoVehicles = [
-        { driver_name: '김민수', plate_number: '서울 12가 3456', phone: '010-1234-5678', vehicle_model: 'Genesis G80', current_lat: 37.4979, current_lng: 127.0276 },
-        { driver_name: '이영진', plate_number: '서울 34나 7890', phone: '010-2345-6789', vehicle_model: 'Mercedes S-Class', current_lat: 37.5252, current_lng: 126.9258 },
-        { driver_name: '박서준', plate_number: '경기 56다 1234', phone: '010-3456-7890', vehicle_model: 'BMW 7 Series', current_lat: 37.5547, current_lng: 126.9707 },
-        { driver_name: '최하나', plate_number: '서울 78라 5678', phone: '010-4567-8901', vehicle_model: 'Audi A8', current_lat: 37.5126, current_lng: 127.1026 },
-        { driver_name: '정우성', plate_number: '경기 90마 9012', phone: '010-5678-9012', vehicle_model: 'Tesla Model S', current_lat: 37.3947, current_lng: 127.1113 },
-      ];
-      for (const v of demoVehicles) {
-        await vehicleService.create({ ...v, status: 'available' });
-      }
-      showToast(`${demoVehicles.length}대 데모 차량이 추가되었습니다.`, 'success');
-      refresh();
-    } catch {
-      showToast('데모 데이터 생성 중 오류가 발생했습니다.', 'error');
-    }
-  }, [refresh, showToast]);
-
   const filteredVehicles = vehicles.filter(v =>
     !searchQuery ||
     v.driver_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -242,19 +182,18 @@ export default function FleetManagement() {
     );
   }
 
+  if (vehicleError || bookingError) return <Alert severity="error">차량·예약 정보를 조회하지 못했습니다. 권한과 연결 상태를 확인해 주세요.</Alert>;
+
   const availableCount = vehicles.filter(v => v.status === 'available').length;
   const transitCount = vehicles.filter(v => v.status === 'in_transit').length;
   const offlineCount = vehicles.filter(v => v.status === 'offline').length;
 
   return (
-    <AdminGate>
+    <>
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 800 }}>차량 관제</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {vehicles.length === 0 && (
-            <Button variant="outlined" size="small" onClick={seedDemoData}>데모 데이터 생성</Button>
-          )}
           <Button variant="contained" startIcon={<AddIcon />} onClick={openAdd} size="small">차량 등록</Button>
         </Box>
       </Box>
@@ -458,6 +397,6 @@ export default function FleetManagement() {
         </DialogActions>
       </Dialog>
     </Box>
-    </AdminGate>
+    </>
   );
 }

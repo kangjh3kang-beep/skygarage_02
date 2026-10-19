@@ -23,11 +23,11 @@ import { useParkingNotifications } from './hooks/useNotifications';
 import { useParkingAuth } from './contexts/ParkingAuthContext';
 
 const NAV_ITEMS = [
-  { label: '홈', icon: <HomeIcon />, path: '/app' },
-  { label: '주차', icon: <DirectionsCarIcon />, path: '/app/parking' },
-  { label: '방문자', icon: <PeopleAltIcon />, path: '/app/visitors' },
-  { label: '충전', icon: <EvStationIcon />, path: '/app/ev' },
-  { label: '결제', icon: <PaymentIcon />, path: '/app/billing' },
+  { label: '홈', icon: <HomeIcon />, path: '/parking' },
+  { label: '주차', icon: <DirectionsCarIcon />, path: '/parking/parking' },
+  { label: '방문자', icon: <PeopleAltIcon />, path: '/parking/visitors' },
+  { label: '충전', icon: <EvStationIcon />, path: '/parking/ev' },
+  { label: '결제', icon: <PaymentIcon />, path: '/parking/billing' },
 ];
 
 export default function ParkingLayout() {
@@ -42,7 +42,7 @@ export default function ParkingLayout() {
     const idx = NAV_ITEMS.findIndex(item => location.pathname === item.path);
     if (idx >= 0) return idx;
     for (let i = NAV_ITEMS.length - 1; i >= 0; i--) {
-      if (location.pathname.startsWith(NAV_ITEMS[i].path) && NAV_ITEMS[i].path !== '/app') return i;
+      if (location.pathname.startsWith(NAV_ITEMS[i].path) && NAV_ITEMS[i].path !== '/parking') return i;
     }
     return 0;
   };
@@ -50,16 +50,16 @@ export default function ParkingLayout() {
   const [navValue, setNavValue] = useState(getActiveIdx());
   useEffect(() => { setNavValue(getActiveIdx()); }, [location.pathname]);
 
-  const isSubpage = location.pathname !== '/app' && NAV_ITEMS.every(item => item.path !== location.pathname);
+  const isSubpage = location.pathname !== '/parking' && NAV_ITEMS.every(item => item.path !== location.pathname);
 
   const pageTitle = (() => {
-    if (location.pathname === '/app') return 'SkyGarage';
-    if (location.pathname.startsWith('/app/parking')) return '주차 관리';
-    if (location.pathname.startsWith('/app/visitors')) return '방문자 관리';
-    if (location.pathname.startsWith('/app/ev')) return '전기차 충전';
-    if (location.pathname.startsWith('/app/billing')) return '과금 및 결제';
-    if (location.pathname.startsWith('/app/notifications')) return '알림';
-    if (location.pathname.startsWith('/app/settings')) return '설정';
+    if (location.pathname === '/parking') return 'SkyGarage';
+    if (location.pathname.startsWith('/parking/parking')) return '주차 관리';
+    if (location.pathname.startsWith('/parking/visitors')) return '방문자 관리';
+    if (location.pathname.startsWith('/parking/ev')) return '전기차 충전';
+    if (location.pathname.startsWith('/parking/billing')) return '과금 및 결제';
+    if (location.pathname.startsWith('/parking/notifications')) return '알림';
+    if (location.pathname.startsWith('/parking/settings')) return '설정';
     return 'SkyGarage';
   })();
 
@@ -92,18 +92,18 @@ export default function ParkingLayout() {
             >
               {pageTitle}
             </Typography>
-            {complex && location.pathname === '/app' && (
+            {complex && location.pathname === '/parking' && (
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
                 {complex.name}
               </Typography>
             )}
           </Box>
-          <IconButton onClick={() => navigate('/app/notifications')} sx={{ color: 'text.secondary' }} size="small">
+          <IconButton onClick={() => navigate('/parking/notifications')} sx={{ color: 'text.secondary' }} size="small">
             <Badge badgeContent={unreadCount} color="error" max={9}>
               <NotificationsIcon fontSize="small" />
             </Badge>
           </IconButton>
-          <IconButton onClick={() => navigate('/app/settings')} sx={{ color: 'text.secondary', ml: 0.5 }} size="small">
+          <IconButton onClick={() => navigate('/parking/settings')} sx={{ color: 'text.secondary', ml: 0.5 }} size="small">
             <SettingsIcon fontSize="small" />
           </IconButton>
         </Toolbar>

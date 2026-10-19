@@ -6,6 +6,7 @@ import type { UserNotification } from '../types';
 export function useParkingNotifications() {
   const { user } = useParkingAuth();
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
@@ -15,14 +16,18 @@ export function useParkingNotifications() {
       return;
     }
     setLoading(true);
-    const { data } = await supabase
+    try {
+    setError('');
+    const { data, error: queryError } = await supabase
       .from('user_notifications')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50);
+    if (queryError) throw queryError;
     setNotifications(data ?? []);
-    setLoading(false);
+    } catch { setError('알림 정보를 확인하지 못했습니다. 연결과 권한을 확인해 주세요.'); }
+    finally { setLoading(false); }
   }, [user]);
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -43,24 +48,30 @@ export function useParkingNotifications() {
   }, [user, fetch]);
 
   const markAsRead = async (id: string) => {
-    await supabase
+    try {
+    const { error: queryError } = await supabase
       .from('user_notifications')
       .update({ is_read: true })
-      .eq('id', id);
+      .eq('id', id).eq('user_id', user?.id);
+    if (queryError) throw queryError;
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch { setError('알림을 처리하지 못했습니다. 다시 조회해 주세요.'); }
   };
 
   const markAllRead = async () => {
     if (!user) return;
-    await supabase
+    try {
+    const { error: queryError } = await supabase
       .from('user_notifications')
       .update({ is_read: true })
       .eq('user_id', user.id)
       .eq('is_read', false);
+    if (queryError) throw queryError;
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch { setError('알림을 처리하지 못했습니다. 다시 조회해 주세요.'); }
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  return { notifications, unreadCount, loading, markAsRead, markAllRead, refetch: fetch };
+  return { notifications, unreadCount, loading, error, markAsRead, markAllRead, refetch: fetch };
 }

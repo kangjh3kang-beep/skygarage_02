@@ -168,7 +168,7 @@ export default function ParkingManagement() {
         fullWidth
         variant="outlined"
         startIcon={<MapIcon />}
-        onClick={() => navigate('/app/parking/map')}
+        onClick={() => navigate('/parking/parking/map')}
         sx={{ mt: 1, py: 1.2, fontWeight: 600, borderColor: 'divider', color: 'text.primary' }}
       >
         실시간 주차 지도 보기

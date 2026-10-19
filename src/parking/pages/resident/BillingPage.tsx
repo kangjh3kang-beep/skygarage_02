@@ -81,8 +81,8 @@ export default function BillingPage() {
             {pendingAmount.toLocaleString()}원
           </Typography>
           {pendingAmount > 0 && (
-            <Button variant="contained" size="small" sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}>
-              결제하기
+            <Button disabled variant="contained" size="small" sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}>
+              결제 연동 준비 중
             </Button>
           )}
         </CardContent>

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import Alert from '@mui/material/Alert';
+import { requireResult, operationError } from '../../lib/operation-result';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
@@ -89,18 +91,26 @@ export default function WorkflowManager() {
   const { logAction } = useAuditLog();
   const [definitions, setDefinitions] = useState<WorkflowDef[]>([]);
   const [executions, setExecutions] = useState<WorkflowExec[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDef, setEditingDef] = useState<WorkflowDef | null>(null);
   const [defForm, setDefForm] = useState<DefForm>(emptyDefForm);
 
   const fetchData = useCallback(async () => {
-    const [defsRes, execsRes] = await Promise.all([
-      supabase.from('workflow_definitions').select('*').order('name'),
-      supabase.from('workflow_executions').select('*').order('created_at', { ascending: false }).limit(50),
-    ]);
-    if (defsRes.data) setDefinitions(defsRes.data);
-    if (execsRes.data) setExecutions(execsRes.data);
+    setLoading(true); setError('');
+    try {
+      const results = await Promise.all([
+        supabase.from('workflow_definitions').select('*').order('name'),
+        supabase.from('workflow_executions').select('*').order('created_at', { ascending: false }).limit(50),
+      ]);
+      results.forEach(requireResult);
+      setDefinitions(results[0].data || []); setExecutions(results[1].data || []);
+    } catch (e) {
+      setDefinitions([]); setExecutions([]); setError(operationError(e));
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -114,44 +124,10 @@ export default function WorkflowManager() {
 
   const getDefName = (defId: string) => definitions.find(d => d.id === defId)?.name || defId;
 
-  const triggerWorkflow = async (triggerEvent: string) => {
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-engine?action=trigger`;
-    await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ event_type: triggerEvent, source_tier: 'T3' }),
-    });
-    fetchData();
-  };
-
-  const processWorkflows = async () => {
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-engine?action=process`;
-    await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({}),
-    });
-    fetchData();
-  };
-
-  const consumeEvents = async () => {
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/workflow-engine?action=consume-events`;
-    await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({}),
-    });
-    fetchData();
-  };
+  const unavailable = () => setError('현장 워크플로 엔진은 인수 전입니다. 실행·처리·이벤트 소비를 사용할 수 없습니다.');
+  const triggerWorkflow = async (_triggerEvent: string) => unavailable();
+  const processWorkflows = async () => unavailable();
+  const consumeEvents = async () => unavailable();
 
   const handleOpenAdd = () => {
     setEditingDef(null);
@@ -168,30 +144,25 @@ export default function WorkflowManager() {
   const handleSaveDef = async () => {
     const payload = { name: defForm.name.trim(), description: defForm.description.trim(), trigger_event: defForm.trigger_event.trim(), tier: defForm.tier, active: defForm.active };
     if (!payload.name || !payload.trigger_event) return;
-    if (editingDef) {
-      await supabase.from('workflow_definitions').update(payload).eq('id', editingDef.id);
-      logAction('update', `workflow:${editingDef.id}`, editingDef.id, { name: payload.name });
-    } else {
-      await supabase.from('workflow_definitions').insert({ ...payload, steps: [] });
-      logAction('create', `workflow:${payload.name}`, payload.name, { trigger: payload.trigger_event });
-    }
-    setDialogOpen(false);
-    fetchData();
+    if (busy) return;
+    setBusy(true); setError('');
+    try {
+      const result = editingDef
+        ? await supabase.from('workflow_definitions').update(payload).eq('id', editingDef.id).select('id').single()
+        : await supabase.from('workflow_definitions').insert({ ...payload, steps: [] }).select('id').single();
+      const row = requireResult(result);
+      if (!row?.id) throw new Error('missing_write_receipt');
+      const audit = await logAction(editingDef ? 'update' : 'create', 'workflow_definitions', row.id, { name: payload.name });
+      if (!audit.ok) throw new Error('audit_failed');
+      setDialogOpen(false);
+      await fetchData();
+    } catch (e) { setError(operationError(e)); }
+    finally { setBusy(false); }
   };
 
-  const handleToggleActive = async (def: WorkflowDef) => {
-    await supabase.from('workflow_definitions').update({ active: !def.active }).eq('id', def.id);
-    fetchData();
-  };
-
-  const handleDeleteDef = async () => {
-    if (!editingDef) return;
-    await supabase.from('workflow_executions').delete().eq('definition_id', editingDef.id);
-    await supabase.from('workflow_definitions').delete().eq('id', editingDef.id);
-    logAction('delete', `workflow:${editingDef.id}`, editingDef.id, { name: editingDef.name });
-    setDialogOpen(false);
-    fetchData();
-  };
+  const handleToggleActive = async (_def: WorkflowDef) => unavailable();
+  // Deletion must be one authorized server transaction, never two browser deletes.
+  const handleDeleteDef = async () => setError('삭제와 감사 기록을 함께 검증하는 서버 기능 연결 후 사용할 수 있습니다.');
 
   const stats = {
     total: definitions.length,
@@ -220,12 +191,15 @@ export default function WorkflowManager() {
         </Box>
       </Box>
 
+      <Alert severity="info" sx={{ mb: 2 }}>현장 인수 전 화면입니다. 실제 워크플로 실행·삭제·활성 변경은 제공하지 않습니다.</Alert>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loading && <LinearProgress aria-label="워크플로 조회 중" />}
       {/* KPIs */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid size={{ xs: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>{stats.total}</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>{loading || error ? '—' : stats.total}</Typography>
               <Typography variant="caption" color="text.secondary">정의된 워크플로우</Typography>
             </CardContent>
           </Card>
@@ -233,7 +207,7 @@ export default function WorkflowManager() {
         <Grid size={{ xs: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700 }} color="success.main">{stats.active}</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700 }} color="success.main">{loading || error ? '—' : stats.active}</Typography>
               <Typography variant="caption" color="text.secondary">활성</Typography>
             </CardContent>
           </Card>
@@ -241,7 +215,7 @@ export default function WorkflowManager() {
         <Grid size={{ xs: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700 }} color="info.main">{stats.running}</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700 }} color="info.main">{loading || error ? '—' : stats.running}</Typography>
               <Typography variant="caption" color="text.secondary">실행중</Typography>
             </CardContent>
           </Card>
@@ -249,7 +223,7 @@ export default function WorkflowManager() {
         <Grid size={{ xs: 6, md: 3 }}>
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700 }} color="error.main">{stats.failed}</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700 }} color="error.main">{loading || error ? '—' : stats.failed}</Typography>
               <Typography variant="caption" color="text.secondary">실패</Typography>
             </CardContent>
           </Card>
@@ -413,7 +387,7 @@ export default function WorkflowManager() {
           )}
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button onClick={() => setDialogOpen(false)}>취소</Button>
-            <Button variant="contained" onClick={handleSaveDef} disabled={!defForm.name.trim() || !defForm.trigger_event.trim()}>
+            <Button variant="contained" onClick={handleSaveDef} disabled={busy || !defForm.name.trim() || !defForm.trigger_event.trim()}>
               {editingDef ? '저장' : '추가'}
             </Button>
           </Box>

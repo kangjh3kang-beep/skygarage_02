@@ -191,7 +191,7 @@ export default function ResidentDashboard() {
         title="방문 차량"
         value={`${visitorSessions.length}대 주차 중`}
         subtitle={activeVisitors.length > 0 ? `사전등록 ${activeVisitors.length}건 대기` : undefined}
-        onClick={() => navigate('/app/visitors')}
+        onClick={() => navigate('/parking/visitors')}
       />
 
       {/* EV Charging with progress */}
@@ -208,7 +208,7 @@ export default function ResidentDashboard() {
             borderColor: 'primary.main',
           },
         }}
-        onClick={() => navigate('/app/ev')}
+        onClick={() => navigate('/parking/ev')}
       >
         <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -283,7 +283,7 @@ export default function ResidentDashboard() {
       <Button
         variant="outlined"
         fullWidth
-        onClick={() => navigate('/app/visitors')}
+        onClick={() => navigate('/parking/visitors')}
         sx={{ mt: 2, py: 1.2, fontWeight: 600, borderColor: 'divider', color: 'text.primary' }}
         startIcon={<PeopleAltIcon />}
       >
