@@ -18,6 +18,10 @@ import {
   type SiteKind,
   type SiteTemplateInput,
 } from "../../lib/site-template";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useGovernanceQuery } from "../hooks/useGovernanceQuery";
+import { parseGovernanceDirectory } from "../../lib/governance";
 type Blueprint = {
   id: string;
   site_id: string;
@@ -26,6 +30,9 @@ type Blueprint = {
   created_at: string;
 };
 export default function SiteTemplateGenerator() {
+  const {user,role}=useAuth();
+  const [organizationId,setOrganizationId]=useState('');
+  const directory=useGovernanceQuery('platform_governance_directory',{},`${user?.id}:${role}`,parseGovernanceDirectory);
   const [input, setInput] = useState<SiteTemplateInput>({
     name: "",
     kind: "apartment",
@@ -44,6 +51,7 @@ export default function SiteTemplateGenerator() {
   const requestId = useRef(crypto.randomUUID());
   useEffect(() => {
     let active = true;
+    setLoading(true);setItems([]);
     Promise.resolve(
       supabase
         .from("platform_site_blueprints")
@@ -69,7 +77,7 @@ export default function SiteTemplateGenerator() {
     return () => {
       active = false;
     };
-  }, [reload]);
+  }, [reload,user?.id]);
   function change<K extends keyof SiteTemplateInput>(
     key: K,
     value: SiteTemplateInput[K],
@@ -83,6 +91,7 @@ export default function SiteTemplateGenerator() {
     setError("");
     setSuccess("");
     const errors = validateSiteTemplate(input);
+    if(!directory.data?.organizations.some(o=>o.id===organizationId))errors.push("운영 조직을 먼저 선택해 주세요.");
     if (errors.length) {
       setError(errors.join(" "));
       return;
@@ -95,7 +104,8 @@ export default function SiteTemplateGenerator() {
     setError("");
     setSuccess("");
     try {
-      const { data, error } = await supabase.rpc("platform_generate_site", {
+      const { data, error } = await supabase.rpc("platform_generate_site_v2", {
+        p_organization_id: organizationId,
         p_request_id: requestId.current,
         p_name: input.name.trim(),
         p_kind: input.kind,
@@ -103,7 +113,7 @@ export default function SiteTemplateGenerator() {
         p_parking_spaces: input.parkingSpaces,
       });
       if (error || !data) throw error;
-      setSuccess(`검증용 단지 생성 완료 · ${data}`);
+      setSuccess(`검증용 단지 생성 완료 · ${data}. 기본 모듈 자동 구축 대기열에 등록되었습니다.`);
       setPreview(null);
       requestId.current = crypto.randomUUID();
       setLoading(true);
@@ -138,8 +148,13 @@ export default function SiteTemplateGenerator() {
           {success}
         </Alert>
       )}
+      {directory.error&&<Alert severity="error">{directory.error}</Alert>}
       <Card>
         <CardContent>
+          <TextField select fullWidth label="운영 조직" value={organizationId} disabled={busy||directory.loading} onChange={e=>{setOrganizationId(e.target.value);setPreview(null);requestId.current=crypto.randomUUID();}} sx={{mb:2}}>
+            <MenuItem value="">조직을 선택해 주세요</MenuItem>{directory.data?.organizations.map(o=><MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+          </TextField>
+          <Button component={Link} to="/admin/governance" sx={{mb:2}}>운영 조직·현장 검증 관리</Button>
           <Chip label={TEMPLATE_VERSION} size="small" />
           <Typography variant="h6" sx={{ my: 2 }}>
             1. 단지 구성
@@ -222,7 +237,7 @@ export default function SiteTemplateGenerator() {
       ) : !items.length && !error ? (
         <p>아직 생성된 단지가 없습니다.</p>
       ) : null}
-      {items.map((item) => (
+      {!error&&!loading&&items.map((item) => (
         <Card key={item.id} sx={{ mb: 2 }}>
           <CardContent>
             <Chip size="small" label="검증용 · 운행 미승인" color="warning" />
