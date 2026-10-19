@@ -31,7 +31,8 @@ create trigger immutable_journals before update or delete on finance_private.jou
 create trigger immutable_lines before update or delete on finance_private.lines for each row execute function finance_private.immutable();
 create trigger immutable_tariffs before update or delete on finance_private.tariffs for each row execute function finance_private.immutable();
 create trigger immutable_requests before update or delete on finance_private.requests for each row execute function finance_private.immutable();
-create function finance_private.assert_balanced() returns trigger language plpgsql set search_path='' as $$
+-- Deferred triggers fire after the RPC's definer context has ended.
+create function finance_private.assert_balanced() returns trigger language plpgsql security definer set search_path='' as $$
 declare jid uuid; n integer; d numeric;c numeric;
 begin
  if tg_table_name='journals' then jid:=new.id;else jid:=new.journal_id;end if;
