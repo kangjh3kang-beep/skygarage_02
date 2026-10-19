@@ -153,6 +153,10 @@ export async function runScenarios({query,exec,stage,apply,native}) {
     finally{await Promise.all(cs.map(c=>c.end()));}
    });
   }
+  await setActor(actors[0]);
+  const yesterday=(await raw("select ((clock_timestamp() at time zone 'Asia/Seoul')::date-1)::text d"))[0].d;
+  await setActor(actors[0]);
+  await t('ERP2: a new ERP close advances the connected source lock',async()=>{await api('period_close',{book_id:financeBook,through_date:yesterday,note:'원천 잠금 동시 반영 검증'});assert.equal((await raw('select closed_through::text d from finance_private.control'))[0].d,yesterday);});
   // Simulate the legacy source already being closed before ERP migration/integration.
   await raw('insert into finance_private.period_closures(through_date,note,actor) values($1,$2,$3)',[today,'이전 원천 마감 기록',actors[1]]);
   await raw('update finance_private.control set closed_through=$1',[today]);
