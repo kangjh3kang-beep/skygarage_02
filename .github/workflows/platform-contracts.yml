@@ -28,7 +28,16 @@ jobs:
           cache-dependency-path: requirements-ci.txt
       - run: npm ci
       - run: node --test tests/*.test.mjs
-      - run: npm run test:database
+      - name: Governance PostgreSQL 17 gate
+        run: |
+          set -o pipefail
+          npm run test:database | tee /tmp/governance-checks.log
+          grep -qx 'DATABASE_CHECKS_PASSED=58' /tmp/governance-checks.log
+      - name: Finance PostgreSQL 17 gate
+        run: |
+          set -o pipefail
+          npm run test:finance | tee /tmp/finance-checks.log
+          grep -qx 'FINANCE_CHECKS_PASSED=63' /tmp/finance-checks.log
       - run: python -m pip install -r requirements-ci.txt
       - run: python -m pytest skygarage_core/tests skygarage_arch/tests skygarage_diagnostic/tests skygarage_integration/tests -q
       - run: npm run build

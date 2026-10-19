@@ -65,7 +65,7 @@ const RevenueBilling = lazy(() => import('./admin/pages/RevenueBilling'));
 const PatentManagement = lazy(() => import('./admin/pages/PatentManagement'));
 const LicenseManagement = lazy(() => import('./admin/pages/LicenseManagement'));
 const PriorityDispatch = lazy(() => import('./admin/pages/PriorityDispatch'));
-const SettlementManagement = lazy(() => import('./admin/pages/SettlementManagement'));
+const SettlementManagement = lazy(() => import('./admin/pages/FinanceWorkbench'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
 const BrandGuidePage = lazy(() => import('./components/BrandGuidePage'));
