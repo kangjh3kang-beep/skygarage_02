@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
@@ -35,7 +36,7 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { unreadCount } = useNotifications();
+  const { unreadCount, error: notificationError } = useNotifications();
 
   const navItems = [
     { label: '홈', icon: <DashboardIcon />, path: '/tracking' },
@@ -64,6 +65,7 @@ export default function TrackingLayout({ darkMode, onToggleDarkMode }: TrackingL
       <ToastProvider>
       <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <ConnectionStatus />
+        {notificationError && <Alert severity="warning">{notificationError}</Alert>}
         <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
           <Toolbar sx={{ minHeight: { xs: 56 } }}>
             {isSubpage && (

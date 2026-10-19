@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -30,6 +31,7 @@ export default function ValetDashboard() {
   const { unreadCount } = useNotifications();
   const [vehicles, setVehicles] = useState<ValetVehicle[]>([]);
   const [atrUnits, setAtrUnits] = useState<AtrUnit[]>([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [stageFilter, setStageFilter] = useState<StageFilter>('all');
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>();
@@ -37,12 +39,14 @@ export default function ValetDashboard() {
 
   const loadData = useCallback(async () => {
     try {
+      setError('');
       const [vData, aData] = await Promise.all([
         valetVehicleService.getAll(),
         atrService.getAll(),
       ]);
       setVehicles(vData);
       setAtrUnits(aData);
+    } catch { setError('현장 정보를 확인하지 못했습니다. 연결·권한·장비 연동 상태를 확인해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -67,6 +71,8 @@ export default function ValetDashboard() {
   };
 
   const activeAtrCount = atrUnits.filter(a => a.status === 'transporting' || a.status === 'assigned').length;
+
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   if (loading) {
     return (

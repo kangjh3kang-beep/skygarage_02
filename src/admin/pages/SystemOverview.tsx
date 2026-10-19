@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Alert from '@mui/material/Alert';
+import { requireResult, operationError } from '../../lib/operation-result';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -65,6 +67,9 @@ export default function SystemOverview() {
   useDocumentTitle('시스템 현황');
   const navigate = useNavigate();
   const { selectedComplex: tenantComplex } = useTenant();
+  const [error, setError] = useState('');
+  const generation = useRef(0);
+  const [observedAt, setObservedAt] = useState('');
   const [loading, setLoading] = useState(true);
   const [complexes, setComplexes] = useState<Complex[]>([]);
   const [atrUnits, setAtrUnits] = useState<AtrUnit[]>([]);
@@ -73,6 +78,9 @@ export default function SystemOverview() {
   const [period, setPeriod] = useState<'today' | '7d' | '30d'>('7d');
 
   const loadData = useCallback(async () => {
+    const request = ++generation.current;
+    setLoading(true); setError('');
+    try {
     let atrQuery = supabase.from('atr_units').select('*');
     let elevQuery = supabase.from('elevators').select('*');
     let safetyQuery = supabase.from('safety_events').select('*').order('created_at', { ascending: false }).limit(10);
@@ -87,14 +95,18 @@ export default function SystemOverview() {
       elevQuery,
       safetyQuery,
     ]);
-    if (cRes.data) setComplexes(cRes.data);
+    [cRes, aRes, eRes, sRes].forEach(requireResult);
+    if (request !== generation.current) return;
+    if (cRes.data) setComplexes(tenantComplex ? cRes.data.filter(c => c.id === tenantComplex.id) : cRes.data);
     if (aRes.data) setAtrUnits(aRes.data);
     if (eRes.data) setElevators(eRes.data);
     if (sRes.data) setSafetyEvents(sRes.data);
-    setLoading(false);
+    setObservedAt(new Date().toLocaleString('ko-KR'));
+    } catch (e) { if (request === generation.current) setError(operationError(e)); }
+    finally { if (request === generation.current) setLoading(false); }
   }, [tenantComplex]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { void loadData(); return () => { ++generation.current; }; }, [loadData]);
 
   useEffect(() => {
     const channel = supabase.channel('system-overview-realtime')
@@ -112,6 +124,8 @@ export default function SystemOverview() {
       </Box>
     );
   }
+
+  if (error) return <Alert severity="error" action={<Button onClick={() => void loadData()}>다시 조회</Button>}>{error}</Alert>;
 
   const activeComplexes = complexes.filter((c) => c.status === 'active').length;
   const totalAtrs = atrUnits.length;
@@ -176,6 +190,7 @@ export default function SystemOverview() {
 
   return (
     <Box>
+      <Typography variant="caption">마지막 조회: {observedAt} · 조회 기록이며 실제 운행 인수를 의미하지 않습니다.</Typography>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h1" sx={{ mb: 0.5 }}>시스템 통합 현황</Typography>

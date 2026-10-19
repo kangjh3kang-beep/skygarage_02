@@ -16,6 +16,7 @@ import AdminSecurityGate from './admin/components/AdminSecurityGate';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import { COLORS } from './theme';
+import RouteNotFound from './components/RouteNotFound';
 
 const Login = lazy(() => import('./admin/pages/Login'));
 const SiteTemplateGenerator = lazy(() => import('./admin/pages/SiteTemplateGenerator'));
@@ -66,6 +67,7 @@ const PatentManagement = lazy(() => import('./admin/pages/PatentManagement'));
 const LicenseManagement = lazy(() => import('./admin/pages/LicenseManagement'));
 const PriorityDispatch = lazy(() => import('./admin/pages/PriorityDispatch'));
 const SettlementManagement = lazy(() => import('./admin/pages/FinanceWorkbench'));
+const ValidationWorkbench = lazy(() => import('./admin/pages/ValidationWorkbench'));
 const ErpWorkbench = lazy(() => import('./admin/pages/ErpWorkbench'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
@@ -141,7 +143,7 @@ function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onTo
   if (!user) return <Suspense fallback={fallback}><Login /></Suspense>;
   if (!role) return <Navigate to="/app" replace />;
   return (
-    <Suspense fallback={fallback}>
+    <AdminSecurityGate><Suspense fallback={fallback}>
       <Routes>
         <Route element={<TrackingLayout darkMode={darkMode} onToggleDarkMode={onToggleDarkMode} />}>
           <Route index element={<TrackingDashboard />} />
@@ -154,7 +156,7 @@ function TrackingGuard({ darkMode, onToggleDarkMode }: { darkMode: boolean; onTo
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
-    </Suspense>
+    </Suspense></AdminSecurityGate>
   );
 }
 
@@ -200,6 +202,7 @@ function ParkingAppGuard() {
           <Route path="billing" element={<BillingPage />} />
           <Route path="notifications" element={<ParkingNotifications />} />
           <Route path="settings" element={<ParkingSettings />} />
+          <Route path="*" element={<RouteNotFound />} />
         </Route>
       </Routes>
     </Suspense>
@@ -216,6 +219,7 @@ function VisitorRoutes() {
         <Route path="status" element={<VisitorStatus />} />
         <Route path="ev" element={<VisitorEvCharging />} />
         <Route path="checkout" element={<VisitorCheckout />} />
+        <Route path="*" element={<RouteNotFound />} />
       </Routes>
     </Suspense>
   );
@@ -286,6 +290,8 @@ function ProtectedRoutes() {
             <Route path="priority-dispatch" element={<PriorityDispatch />} />
             <Route path="settlement" element={<SettlementManagement />} />
             <Route path="erp" element={<ErpWorkbench />} />
+            <Route path="validation" element={<ValidationWorkbench />} />
+            <Route path="*" element={<RouteNotFound />} />
             <Route path="fleet" element={<FleetManagement />} />
             <Route path="settings" element={<Settings />} />
           </Route>
@@ -378,6 +384,7 @@ export default function App() {
                   <Route path="patent" element={<PatentPage />} />
                   <Route path="brand-guide" element={<BrandGuidePage />} />
                   <Route path="valet" element={<SkyGarageValet />} />
+                  <Route path="*" element={<RouteNotFound />} />
                 </Routes>
               </Suspense>
             </ThemeProvider>

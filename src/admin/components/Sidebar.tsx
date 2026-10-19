@@ -83,6 +83,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { label: '통합 운영', icon: <DashboardIcon />, path: '/admin' },
       { label: '구축·검증 현황', icon: <AccountTreeIcon />, path: '/admin/implementation', minScope: 'global' },
+      { label: '페이지·연동 검증', icon: <AccountTreeIcon />, path: '/admin/validation' },
       { label: '현장 검증·개선', icon: <AccountTreeIcon />, path: '/admin/governance' },
       { label: '운영 현황', icon: <SpeedIcon />, path: '/admin/operations', minScope: 'complex' },
       { label: 'NOC', icon: <PublicIcon />, path: '/admin/noc', minScope: 'global' },

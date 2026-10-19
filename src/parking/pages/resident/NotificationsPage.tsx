@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
@@ -26,7 +27,9 @@ const typeIcon = (type: string) => {
 };
 
 export default function NotificationsPage() {
-  const { notifications, unreadCount, loading, markAsRead, markAllRead } = useParkingNotifications();
+  const { notifications, unreadCount, loading, error, markAsRead, markAllRead } = useParkingNotifications();
+
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   if (loading) {
     return (
@@ -48,7 +51,7 @@ export default function NotificationsPage() {
 
       {notifications.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>알림이 없습니다.</Typography>
+          <Typography role="status" variant="body2" sx={{ color: 'text.secondary' }}>알림이 없습니다.</Typography>
         </Box>
       ) : (
         <List disablePadding>

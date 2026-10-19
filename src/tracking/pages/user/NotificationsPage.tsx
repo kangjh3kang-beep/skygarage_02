@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -23,7 +24,9 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactElement; color: string }> =
 };
 
 export default function NotificationsPage() {
-  const { notifications, loading, markAsRead, markAllAsRead, unreadCount } = useNotifications();
+  const { notifications, loading, markAsRead, markAllAsRead, unreadCount, error: dataError } = useNotifications();
+
+  if (dataError) return <Alert severity="error">정보를 조회하지 못했습니다. 연결과 권한을 확인해 주세요.</Alert>;
 
   if (loading) {
     return (

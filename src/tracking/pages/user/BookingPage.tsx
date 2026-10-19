@@ -39,7 +39,7 @@ const LOCATIONS = [
 
 export default function BookingPage() {
   const navigate = useNavigate();
-  const { vehicles, loading: vehiclesLoading } = useVehicleTracking();
+  const { vehicles, loading: vehiclesLoading, error: dataError } = useVehicleTracking();
   const { createBooking } = useBooking();
   const { showToast } = useToast();
   const [step, setStep] = useState(0);
@@ -84,6 +84,8 @@ export default function BookingPage() {
       setSubmitting(false);
     }
   };
+
+  if (dataError) return <Alert severity="error">정보를 조회하지 못했습니다. 연결과 권한을 확인해 주세요.</Alert>;
 
   if (success) {
     return (

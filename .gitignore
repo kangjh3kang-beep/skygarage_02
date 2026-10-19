@@ -29,3 +29,6 @@ supabase/.temp/
 
 __pycache__/
 .pytest_cache/
+
+# Disposable verification output (synthetic data only)
+artifacts/

@@ -158,7 +158,6 @@ export default function ResidentManagement() {
   const [search, setSearch] = useState('');
   const [piiUnmasked, setPiiUnmasked] = useState(false);
   const [mfaDialogOpen, setMfaDialogOpen] = useState(false);
-  const [mfaCode, setMfaCode] = useState('');
   const [detailResident, setDetailResident] = useState<Resident | null>(null);
   const [detailMode, setDetailMode] = useState<ServiceMode | null>(null);
   const [detailWallet, setDetailWallet] = useState<Wallet | null>(null);
@@ -240,19 +239,6 @@ export default function ResidentManagement() {
       return;
     }
     setMfaDialogOpen(true);
-    setMfaCode('');
-  };
-
-  const handleMfaVerify = () => {
-    if (mfaCode.length === 6) {
-      setPiiUnmasked(true);
-      setMfaDialogOpen(false);
-      showToast('PII 복호화 세션 활성화 (5분간 유효)', 'success');
-      logAction('PII_UNMASK', 'resident_accounts', undefined, { reason: 'admin_mfa_verified' });
-      setTimeout(() => setPiiUnmasked(false), 5 * 60 * 1000);
-    } else {
-      showToast('6자리 OTP를 입력하세요', 'error');
-    }
   };
 
   // ─────────────────────────────────────────────
@@ -384,8 +370,8 @@ export default function ResidentManagement() {
           >
             {piiUnmasked ? '마스킹 복원' : '복호화 보기'}
           </Button>
-          <Button variant="contained" size="small" startIcon={<AddIcon />}>
-            사용자 등록
+          <Button variant="contained" size="small" startIcon={<AddIcon />} component="a" href="/admin">
+            등록 요청 확인
           </Button>
         </Box>
       </Box>
@@ -624,31 +610,11 @@ export default function ResidentManagement() {
         </>
       )}
 
-      {/* MFA Verification Dialog */}
+      {/* Unmasking requires a scoped, audited server endpoint; client OTP length is never proof. */}
       <Dialog open={mfaDialogOpen} onClose={() => setMfaDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <SecurityIcon color="primary" />
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>2차 인증 (MFA)</Typography>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Alert severity="info" sx={{ mb: 2, fontSize: '0.75rem' }}>
-            개인정보 복호화를 위해 OTP 보안키를 입력하세요. 거버넌스[660] 정책에 의거 5분간 유효합니다.
-          </Alert>
-          <TextField
-            label="6자리 OTP 코드"
-            value={mfaCode}
-            onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            fullWidth
-            autoFocus
-            slotProps={{ input: { sx: { fontFamily: 'monospace', fontSize: '1.5rem', letterSpacing: '0.3em', textAlign: 'center' } } }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setMfaDialogOpen(false)}>취소</Button>
-          <Button variant="contained" onClick={handleMfaVerify} disabled={mfaCode.length !== 6}>인증</Button>
-        </DialogActions>
+        <DialogTitle>개인정보 조회 준비 중</DialogTitle>
+        <DialogContent><Typography>민감정보 조회는 서버의 현장 권한·인증·사유·감사 기록 검증을 연결한 후 제공됩니다. 현재 마스킹을 해제할 수 없습니다.</Typography></DialogContent>
+        <DialogActions><Button onClick={() => setMfaDialogOpen(false)}>확인</Button></DialogActions>
       </Dialog>
 
       {/* User Detail Modal - Double Click */}

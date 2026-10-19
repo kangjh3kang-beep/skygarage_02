@@ -31,10 +31,12 @@ export default function ValetVehicleDetail({ vehicleId }: ValetVehicleDetailProp
   const [vehicle, setVehicle] = useState<ValetVehicle | null>(null);
   const [atr, setAtr] = useState<AtrUnit | null>(null);
   const [events, setEvents] = useState<TrackingEvent[]>([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
     try {
+      setError('');
       const [vData, evData] = await Promise.all([
         valetVehicleService.getById(vehicleId),
         trackingEventService.getByVehicle(vehicleId),
@@ -47,6 +49,7 @@ export default function ValetVehicleDetail({ vehicleId }: ValetVehicleDetailProp
       } else {
         setAtr(null);
       }
+    } catch { setError('현장 정보를 확인하지 못했습니다. 연결·권한·장비 연동 상태를 확인해 주세요.');
     } finally {
       setLoading(false);
     }
@@ -57,6 +60,8 @@ export default function ValetVehicleDetail({ vehicleId }: ValetVehicleDetailProp
     const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, [loadData]);
+
+  if (error) return <Alert severity="error">{error}</Alert>;
 
   if (loading) {
     return (
