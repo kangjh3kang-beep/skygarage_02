@@ -112,6 +112,7 @@ const menuGroups: MenuGroup[] = [
       { label: '파트너', icon: <HandshakeIcon />, path: '/admin/partners', minScope: 'region' },
       { label: '청구/인보이스', icon: <AttachMoneyIcon />, path: '/admin/billing' },
       { label: '결제·정산·회계', icon: <AccountBalanceIcon />, path: '/admin/settlement', minScope: 'global' },
+      { label: '자체 ERP 회계', icon: <AccountBalanceIcon />, path: '/admin/erp', minScope: 'global' },
       { label: '매출', icon: <AttachMoneyIcon />, path: '/admin/revenue', minScope: 'global' },
       { label: 'CRM', icon: <SupportAgentIcon />, path: '/admin/crm', minScope: 'region' },
       { label: '문의', icon: <InboxIcon />, path: '/admin/inquiries' },

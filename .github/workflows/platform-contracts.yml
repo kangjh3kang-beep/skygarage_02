@@ -38,6 +38,13 @@ jobs:
           set -o pipefail
           npm run test:finance | tee /tmp/finance-checks.log
           grep -qx 'FINANCE_CHECKS_PASSED=63' /tmp/finance-checks.log
+      - name: Own ERP PostgreSQL 17 gate
+        run: |
+          set -o pipefail
+          npm run test:erp | tee /tmp/erp-checks.log
+          grep -qx 'ERP_CHECKS_PASSED=66' /tmp/erp-checks.log
+      - name: Provider server contract types
+        run: npx tsc --ignoreConfig --noEmit --strict --target ES2023 --module ESNext --moduleResolution bundler --skipLibCheck supabase/functions/_shared/payment-provider.ts
       - run: python -m pip install -r requirements-ci.txt
       - run: python -m pytest skygarage_core/tests skygarage_arch/tests skygarage_diagnostic/tests skygarage_integration/tests -q
       - run: npm run build

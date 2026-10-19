@@ -55,6 +55,7 @@ const routeTitles: Record<string, string> = {
   '/admin/partners': '파트너',
   '/admin/billing': '청구/인보이스',
   '/admin/settlement': '결제·정산·회계 검증',
+  '/admin/erp': '자체 ERP 회계',
   '/admin/revenue': '매출',
   '/admin/crm': 'CRM',
   '/admin/inquiries': '문의',
