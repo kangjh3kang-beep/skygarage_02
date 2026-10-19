@@ -12,7 +12,9 @@
     "test:database": "node scripts/test-governance-database.mjs",
     "test:database:wasm": "node scripts/test-governance-database.mjs --wasm",
     "test:finance": "node scripts/test-finance-database.mjs",
-    "test:finance:wasm": "node scripts/test-finance-database.mjs --wasm"
+    "test:finance:wasm": "node scripts/test-finance-database.mjs --wasm",
+    "test:erp": "node scripts/test-erp-database.mjs",
+    "test:erp:wasm": "node scripts/test-erp-database.mjs --wasm"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

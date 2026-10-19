@@ -66,6 +66,7 @@ const PatentManagement = lazy(() => import('./admin/pages/PatentManagement'));
 const LicenseManagement = lazy(() => import('./admin/pages/LicenseManagement'));
 const PriorityDispatch = lazy(() => import('./admin/pages/PriorityDispatch'));
 const SettlementManagement = lazy(() => import('./admin/pages/FinanceWorkbench'));
+const ErpWorkbench = lazy(() => import('./admin/pages/ErpWorkbench'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const PatentPage = lazy(() => import('./components/PatentPage'));
 const BrandGuidePage = lazy(() => import('./components/BrandGuidePage'));
@@ -284,6 +285,7 @@ function ProtectedRoutes() {
             <Route path="licenses" element={<LicenseManagement />} />
             <Route path="priority-dispatch" element={<PriorityDispatch />} />
             <Route path="settlement" element={<SettlementManagement />} />
+            <Route path="erp" element={<ErpWorkbench />} />
             <Route path="fleet" element={<FleetManagement />} />
             <Route path="settings" element={<Settings />} />
           </Route>
