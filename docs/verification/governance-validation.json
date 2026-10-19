@@ -1,6 +1,6 @@
 {
   "date_kst": "2026-10-19",
-  "deployment_status": "database_applied_web_ci_pending",
+  "deployment_status": "database_applied_web_release_record_in_pr_10",
   "baseline_commit": "6f3b96722ef630d2458f2784ca92a587d3de3100",
   "web_contract_tests": {
     "passed": 55,
@@ -16,13 +16,21 @@
     "passed": 167,
     "failed": 0
   },
-  "native_postgres_17_ci": "pending_remote_ci",
+  "native_postgres_17_ci": {
+    "engine": "PostgreSQL 17.10",
+    "passed": 58,
+    "failed": 0,
+    "concurrent_requests": 8,
+    "unique_organization_ids": 1,
+    "run_url": "https://github.com/kangjh3kang-beep/skygarage_02/actions/runs/39195754533",
+    "source_sha": "9b3474bdee869a0cb8e247a69994ab76e1009864"
+  },
   "authenticated_browser_acceptance": "not_tested",
   "hosted_database_and_cron": "migration_applied_and_first_minute_run_succeeded",
   "physical_equipment": "not_tested",
   "migration_sha256": "c14fdd0c1745d19724d1961820f8b3dff91ca48758e769b2a4fade734594286d",
   "production_build": "passed",
-  "repository_upload": "explicitly_approved_pending_upload",
+  "repository_upload": "completed_pr_10",
   "hosted_verification": {
     "postgres_version": "17.6",
     "requirement_count": 36,
@@ -36,6 +44,13 @@
       "forged_user_metadata_super_admin"
     ],
     "first_maintenance_success_utc": "2026-10-19T03:37:00.023572Z",
-    "sites_at_migration": 0
-  }
+    "sites_at_migration": 0,
+    "migration_version": "20261019033655",
+    "anonymous_postgrest_probes": {
+      "directory": 401,
+      "snapshot": 401,
+      "sqlstate": "42501"
+    }
+  },
+  "deployment_record_url": "https://github.com/kangjh3kang-beep/skygarage_02/pull/10"
 }

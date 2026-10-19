@@ -4,7 +4,7 @@
 
 ## 적용 상태
 
-2026-10-19 사용자가 공개 GitHub 업로드, 운영 DB 변경, 증거 만료 등에 따른 관리 상태 중지, 후속 배포를 명시적으로 승인했다. 동일 SHA-256의 마이그레이션을 운영 PostgreSQL 17.6에 적용했다. 10개 신규 테이블의 RLS·직접 접근 차단, 12개 신규 RPC의 익명 실행 차단과 빈 search_path, 비공개 helper 실행 차단을 확인했다. 익명·MFA 부족·위조 사용자 메타데이터 요청은 실제 운영 DB에서 거부됐다. 매분 작업의 첫 실행은 2026-10-19 12:37 KST에 성공했다. GitHub CI와 웹 배포의 결과는 연결된 PR/배포 확인 기록에서 별도로 확인한다.
+2026-10-19 사용자가 공개 GitHub 업로드, 운영 DB 변경, 증거 만료 등에 따른 관리 상태 중지, 후속 배포를 명시적으로 승인했다. 동일 SHA-256의 마이그레이션을 운영 PostgreSQL 17.6에 적용했다. 10개 신규 테이블의 RLS·직접 접근 차단, 12개 신규 RPC의 익명 실행 차단과 빈 search_path, 비공개 helper 실행 차단을 확인했다. 익명·MFA 부족·위조 사용자 메타데이터 요청은 실제 운영 DB에서 거부됐다. 매분 작업의 첫 실행은 2026-10-19 12:37 KST에 성공했다. GitHub [PR #10](https://github.com/kangjh3kang-beep/skygarage_02/pull/10)의 [CI 실행](https://github.com/kangjh3kang-beep/skygarage_02/actions/runs/39195754533)이 성공했다. 웹 배포 결과와 실제 배포 SHA는 PR 본문에 후속 기록한다.
 
 ## 이번에 구현한 연결
 
@@ -48,11 +48,11 @@ npm run test:database:wasm     # root 전용 실행 환경의 WASM PostgreSQL �
 npm run build
 ```
 
-로컬 확인 결과: 웹 계약 시험 55개, WASM PostgreSQL 18.6 SQL 시험 57개, Python 모형 시험 167개 통과. native PostgreSQL 17 동시성 시험은 CI 정의에 포함했으며 원격 실행 결과 확인 후 배포한다. [검증 기록](verification/governance-validation.json)에 범위와 마이그레이션 해시를 고정한다.
+로컬 확인 결과: 웹 계약 시험 55개, WASM PostgreSQL 18.6 SQL 시험 57개, Python 모형 시험 167개 통과. native PostgreSQL 17.10 SQL·동시성 시험 58개도 GitHub CI에서 통과했다. 8개 독립 트랜잭션의 중복 요청이 조직 ID 1개로 수렴하는 것을 확인했다. [검증 기록](verification/governance-validation.json)에 범위와 마이그레이션 해시를 고정한다.
 
 두 DB 시험기는 항상 새 로컬 DB를 만들며 운영 DB 접속 문자열·프로젝트 ID를 받지 않는다. 실제 SQL 구현과 고정 카탈로그를 적용하고, 최소 Supabase Auth/역할 fixture 위에서 RPC 권한과 상태 전이를 검사한다. hosted Auth의 JWT 서명 검증·MFA 서비스, PostgREST, Realtime, Storage, pg_cron 설치/실행은 로컬 fixture의 검증 범위가 아니다. WASM은 단일 연결이며 동시 트랜잭션 경합은 native PG17 runner에서만 검사한다.
 
-CI 정의에 프런트 계약 시험, native PostgreSQL 17 DB 시험, 기존 Python 모형 시험, 프로덕션 빌드를 연결했다. 새 CI의 실제 실행은 원격 저장소 반영 후 확인해야 한다. 성공한 CI는 현장 HIL·SAT 승인으로 계산하지 않는다.
+CI 정의에 프런트 계약 시험, native PostgreSQL 17 DB 시험, 기존 Python 모형 시험, 프로덕션 빌드를 연결했다. CI 실행 39195754533에서 웹 55개·native SQL/동시성 58개·Python 167개·프로덕션 빌드가 모두 성공했다. 성공한 CI는 현장 HIL·SAT 승인으로 계산하지 않는다.
 
 검증 항목: 두 조직·현장 교차 접근, 위조 사용자 메타데이터, MFA 부족, 읽기 전용 역할, 권한 회수·만료, 중복 등록·내용 충돌, 원자적 단지/이벤트 생성, worker 중복 방지·부분 실패·5회 제한, 자기 검수 거부, 승인 불변, 증거 만료, 모의 결과의 현장 시험 오인 방지, 새 실패의 기존 인수 무효화, 재시험 연결·독립 완료, 소스 변경의 승인 분리, 부족한 증거의 현장 승격 거부, 자동 중지 감사, 고정 분모.
 
@@ -81,3 +81,9 @@ CI 정의에 프런트 계약 시험, native PostgreSQL 17 DB 시험, 기존 Pyt
 
 - [SECURITY DEFINER 실행 권한 경고 안내](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
 - [RLS 정책 없음 안내](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+
+## 배포 확인 기록 위치
+
+운영 DB 마이그레이션 이력 버전은 `20261019033655`, 이름은 `add_platform_feedback_governance`다. 저장소의 CLI 생성 파일 이름과 운영 도구가 기록한 적용 시각은 다르며 SQL SHA-256으로 동일 내용을 대조한다. 익명 PostgREST 요청도 두 신규 조회 RPC에서 HTTP 401 / SQLSTATE 42501로 거부됐다.
+
+병합 이후 공식 도메인의 `/app-version.json`과 제공되는 번들 SHA를 대조한 결과는 [PR #10](https://github.com/kangjh3kang-beep/skygarage_02/pull/10)에 기록한다. 이 문서 안의 CI 결과는 구현 소스 `9b3474bdee869a0cb8e247a69994ab76e1009864`에 대한 결과이며 문서만 갱신한 이후 커밋의 시험도 병합 전에 확인한다.
