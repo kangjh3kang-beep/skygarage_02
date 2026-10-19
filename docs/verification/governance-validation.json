@@ -1,0 +1,41 @@
+{
+  "date_kst": "2026-10-19",
+  "deployment_status": "database_applied_web_ci_pending",
+  "baseline_commit": "6f3b96722ef630d2458f2784ca92a587d3de3100",
+  "web_contract_tests": {
+    "passed": 55,
+    "failed": 0
+  },
+  "wasm_postgres_tests": {
+    "engine": "PostgreSQL 18.6 / PGlite 0.5.10",
+    "passed": 57,
+    "failed": 0,
+    "scope": "SQL, RLS and RPC state contracts on disposable local fixtures"
+  },
+  "python_model_tests": {
+    "passed": 167,
+    "failed": 0
+  },
+  "native_postgres_17_ci": "pending_remote_ci",
+  "authenticated_browser_acceptance": "not_tested",
+  "hosted_database_and_cron": "migration_applied_and_first_minute_run_succeeded",
+  "physical_equipment": "not_tested",
+  "migration_sha256": "c14fdd0c1745d19724d1961820f8b3dff91ca48758e769b2a4fade734594286d",
+  "production_build": "passed",
+  "repository_upload": "explicitly_approved_pending_upload",
+  "hosted_verification": {
+    "postgres_version": "17.6",
+    "requirement_count": 36,
+    "new_tables_rls": 10,
+    "new_tables_browser_direct_access": false,
+    "new_rpc_anon_execute": false,
+    "private_helpers_browser_execute": false,
+    "denied_probes": [
+      "anonymous_rpc",
+      "missing_mfa",
+      "forged_user_metadata_super_admin"
+    ],
+    "first_maintenance_success_utc": "2026-10-19T03:37:00.023572Z",
+    "sites_at_migration": 0
+  }
+}

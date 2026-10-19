@@ -4,7 +4,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { AUDIT_DATE, PLAN_VERSION, operationalAcceptance, phases, requirements, stateLabels } from '../../lib/implementation-plan';
+import { AUDIT_DATE, PLAN_VERSION, phases, requirements, stateLabels } from '../../lib/implementation-plan';
 import { contractReasonLabels, labScenarios, runContractScenario } from '../../lib/mission-contract';
 import { parseReadinessSnapshot, type ReadinessSnapshot } from '../../lib/readiness-snapshot';
 
@@ -50,7 +50,7 @@ export default function ImplementationWorkbench() {
   const filtered = requirements.filter(r => (phase==='all'||r.phase===phase) && `${r.id} ${r.title} ${r.owner} ${r.acceptance}`.toLowerCase().includes(query.toLowerCase()));
   const result = runContractScenario(scenario);
   function download() {
-    const file = {plan_version:PLAN_VERSION,audited_on:AUDIT_DATE,exported_at:new Date().toISOString(),operational_acceptance:operationalAcceptance,snapshot,phases,requirements};
+    const file = {plan_version:PLAN_VERSION,audited_on:AUDIT_DATE,exported_at:new Date().toISOString(),operational_acceptance:{status:"현장·버전별 증거 원장에서 조회",total:36},snapshot,phases,requirements};
     const url = URL.createObjectURL(new Blob([JSON.stringify(file,null,2)],{type:'application/json'}));
     const a = document.createElement('a'); a.href=url; a.download=`DOELV-implementation-${PLAN_VERSION}.json`; a.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -58,11 +58,11 @@ export default function ImplementationWorkbench() {
   return <Box sx={{p:{xs:1,md:3},maxWidth:1440,mx:'auto',width:'100%'}}>
     <Stack direction={{xs:'column',sm:'row'}} spacing={2} sx={{mb:3,justifyContent:"space-between"}}>
       <Box><Typography variant="overline" color="text.secondary">DOELV · IMPLEMENTATION</Typography><Typography component="h1" variant="h4" sx={{fontWeight:750}}>통합시스템 구축·검증</Typography><Typography color="text.secondary" sx={{mt:1}}>본사에서 현장 장비까지, 요구사항과 검증 근거를 함께 관리합니다.</Typography></Box>
-      <Stack direction="row" spacing={1} sx={{alignItems:"center",flexWrap:"wrap"}} useFlexGap><Button component={Link} to="/admin/templates" variant="outlined">단지 템플릿 생성</Button><Button onClick={download}>구축 기준 내려받기</Button></Stack>
+      <Stack direction="row" spacing={1} sx={{alignItems:"center",flexWrap:"wrap"}} useFlexGap><Button component={Link} to="/admin/governance" variant="contained">현장 검증·개선</Button><Button component={Link} to="/admin/templates" variant="outlined">단지 템플릿 생성</Button><Button onClick={download}>구축 기준 내려받기</Button></Stack>
     </Stack>
     <Alert severity="info" sx={{mb:3}}>현재 릴리스는 검수 준비 단계입니다. 소프트웨어 시험 통과, DB 기록 수, 현장 운영 승인은 각각 구분합니다. 이 화면은 장비 명령이나 운영 승인 권한을 부여하지 않습니다.</Alert>
     <Box sx={{display:'grid',gridTemplateColumns:{xs:'1fr',md:'1fr 1fr'},gap:2,mb:3}}>
-      <Card variant="outlined"><CardContent><Typography variant="subtitle2" color="text.secondary">통합 운영 인수</Typography><Typography variant="h3" sx={{fontWeight:750,my:1}}>{operationalAcceptance.approved}<Typography component="span" variant="h6" color="text.secondary"> / {operationalAcceptance.total} 요구사항</Typography></Typography><Typography>{operationalAcceptance.status}</Typography><Typography variant="body2" color="text.secondary" sx={{mt:1}}>계획 {PLAN_VERSION} · 코드·DB 조사 {AUDIT_DATE}. 증거 원장과 독립 승인 기능을 구축하기 전에는 승인 수를 자동 갱신하지 않습니다.</Typography></CardContent></Card>
+      <Card variant="outlined"><CardContent><Typography variant="subtitle2" color="text.secondary">통합 운영 인수</Typography><Typography variant="h3" sx={{fontWeight:750,my:1}}>현장별<Typography component="span" variant="h6" color="text.secondary"> / 36 요구사항</Typography></Typography><Typography>증거·재검증·독립 검수로 판정</Typography><Typography variant="body2" color="text.secondary" sx={{mt:1}}>계획 {PLAN_VERSION} · 코드·DB 조사 {AUDIT_DATE}. 현장 검증·개선 화면에서 조직·현장·소스 버전을 선택하면 유효한 증거로 인수율을 계산합니다.</Typography></CardContent></Card>
       <Card variant="outlined"><CardContent><Typography variant="subtitle2" color="text.secondary">다음 구축 목표</Typography><Typography variant="h6" sx={{my:1}}>현장별 권한과 데이터 연결</Typography><Typography>조직·단지 기준 ID → 현장 역할 → 회원·차량 승인 → 요청 배정</Typography><Typography variant="body2" color="text.secondary" sx={{mt:1}}>제조사 연동은 API 계약서·장비·시험 환경을 확보한 뒤 진행합니다. 일정은 인력과 현장 조건 확정 후 조정합니다.</Typography></CardContent></Card>
     </Box>
     <Stack direction="row" sx={{mb:1,justifyContent:"space-between",alignItems:"center"}}><Typography component="h2" variant="h6">실제 DB 현황</Typography><Button disabled={loading} onClick={()=>setReload(n=>n+1)}>다시 조회</Button></Stack>

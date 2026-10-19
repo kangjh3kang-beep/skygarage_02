@@ -19,6 +19,7 @@ import { COLORS } from './theme';
 
 const Login = lazy(() => import('./admin/pages/Login'));
 const SiteTemplateGenerator = lazy(() => import('./admin/pages/SiteTemplateGenerator'));
+const GovernanceWorkbench = lazy(() => import('./admin/pages/GovernanceWorkbench'));
 const ImplementationWorkbench = lazy(() => import('./admin/pages/ImplementationWorkbench'));
 const Dashboard = lazy(() => import('./admin/pages/PlatformReadiness'));
 const ComplexManagement = lazy(() => import('./admin/pages/ComplexManagement'));
@@ -239,6 +240,7 @@ function ProtectedRoutes() {
             <Route index element={<Dashboard />} />
             <Route path="templates" element={<SiteTemplateGenerator />} />
             <Route path="implementation" element={<ImplementationWorkbench />} />
+            <Route path="governance" element={<GovernanceWorkbench />} />
             <Route path="complexes" element={<ComplexManagement />} />
             <Route path="residents" element={<ResidentManagement />} />
             <Route path="parking" element={<ParkingOperations />} />
