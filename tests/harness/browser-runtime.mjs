@@ -16,8 +16,11 @@ window.matchMedia=()=>({matches:false,addListener(){},removeListener(){},addEven
 window.scrollTo=()=>{};
 const id='11111111-1111-4111-8111-111111111111';
 const error={code:'42501',message:'HARNESS permission denied'};
-export const state={mode:'healthy',role:'super_admin',aal:'aal2',loggedIn:true,actor:id,rpcExecutor:null,calls:[],writeError:false};
-export function reset(mode='healthy') {state.mode=mode;state.actor=id;state.rpcExecutor=null;state.role='super_admin';state.aal='aal2';state.loggedIn=true;state.calls=[];state.writeError=false;localStorage.clear();sessionStorage.clear();if(mode==='populated')localStorage.setItem('sgp_selected_complex',id);}
+const authListeners = new Set();
+export const syntheticMfaSecret = 'HARNESS-NOT-A-REAL-TOTP-KEY';
+export function emitAuthChange() { for (const fn of authListeners) fn('SIGNED_IN', session()); }
+export const state={mode:'healthy',role:'super_admin',aal:'aal2',loggedIn:true,actor:id,rpcExecutor:null,calls:[],writeError:false,factors:null,mfaEnrollExecutor:null,mfaVerifyUpgrades:false,versionError:false};
+export function reset(mode='healthy') {state.mode=mode;state.actor=id;state.rpcExecutor=null;state.role='super_admin';state.aal='aal2';state.loggedIn=true;state.calls=[];state.writeError=false;state.factors=null;state.mfaEnrollExecutor=null;state.mfaVerifyUpgrades=false;state.versionError=false;localStorage.clear();sessionStorage.clear();if(mode==='populated')localStorage.setItem('sgp_selected_complex',id);}
 const book={id,code:'TEST',name:'가상 시험 장부',environment:'sandbox',currency:'KRW',finance_source:true,closed_through:null};
 function rpc(name) {
  if(name==='platform_governance_directory')return {schema_version:1,observed_at:'2026-10-19T00:00:00Z',headquarters:true,operators:[],assignments:[],organizations:[],sites:[]};
@@ -54,12 +57,18 @@ const session=()=>state.loggedIn?{user:user(),access_token:'synthetic-not-a-toke
 globalThis.__harnessSupabase={
  from:name=>query('table',name),rpc:(name,payload)=>query('rpc',name,payload),
  channel:()=>{const c={on:()=>c,subscribe:()=>c,unsubscribe:async()=>{}};return c;},removeChannel:async()=>{},
- auth:{getSession:async()=>({data:{session:session()},error:null}),getUser:async()=>({data:{user:user()},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),signOut:async()=>({error:null}),
-  mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:state.aal,nextLevel:'aal2'},error:null}),listFactors:async()=>({data:{totp:state.aal==='aal1'?[]:[{id,status:'verified'}]},error:null}),enroll:async()=>({data:{id,totp:{qr_code:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'}},error:null}),challengeAndVerify:async()=>({error:state.writeError?error:null})}},
+ auth:{getSession:async()=>({data:{session:session()},error:null}),getUser:async()=>({data:{user:user()},error:null}),onAuthStateChange:fn=>{authListeners.add(fn);return {data:{subscription:{unsubscribe(){authListeners.delete(fn);}}}};},signOut:async()=>({error:null}),
+  mfa:{
+   getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:state.aal,nextLevel:'aal2'},error:null}),
+   listFactors:async()=>{const all=state.factors??(state.aal==='aal1'?[]:[{id,status:'verified',factor_type:'totp'}]);return {data:{all,totp:all.filter(f=>f.status==='verified'&&f.factor_type==='totp')},error:null};},
+   enroll:async()=>{state.calls.push({kind:'auth',name:'mfa.enroll',mutation:true});if(state.mfaEnrollExecutor)return state.mfaEnrollExecutor();state.factors=[...(state.factors??[]),{id,status:'unverified',factor_type:'totp'}];return {data:{id,totp:{qr_code:'<svg xmlns="http://www.w3.org/2000/svg"/>',secret:syntheticMfaSecret}},error:null};},
+   unenroll:async({factorId})=>{state.calls.push({kind:'auth',name:'mfa.unenroll',mutation:true,factorId});state.factors=state.factors.filter(f=>f.id!==factorId);return {error:null};},
+   challengeAndVerify:async()=>{state.calls.push({kind:'auth',name:'mfa.verify',mutation:true});if(!state.writeError&&state.mfaVerifyUpgrades){state.aal='aal2';state.factors=state.factors?.map(f=>({...f,status:'verified'}))??null;}return {error:state.writeError?error:null};}
+  }},
  storage:{from:()=>({list:async()=>({data:[],error:null}),getPublicUrl:()=>({data:{publicUrl:'https://harness.invalid/image.png'}})})},
  functions:{invoke:async name=>{state.calls.push({kind:'function',name});return {data:null,error:{message:'commissioning_required'}};}},
 };
-globalThis.fetch=async url=>{state.calls.push({kind:'http',name:String(url)});if(String(url).includes('app-version.json'))return new Response(JSON.stringify({commit:'synthetic'}));return new Response(JSON.stringify({error:'HARNESS network blocked'}),{status:503});};
+globalThis.fetch=async url=>{state.calls.push({kind:'http',name:String(url)});if(String(url).includes('app-version.json'))return new Response(JSON.stringify(state.versionError?{release:'local-unconfirmed'}:{release:'b0219e0eca6a0bc3f6bb7dee61da0f5629d074a3'}));return new Response(JSON.stringify({error:'HARNESS network blocked'}),{status:503});};
 registerHooks({
  resolve(specifier,context,next) {
   if(specifier.endsWith('/lib/supabase')||specifier.endsWith('/lib/supabase.ts'))return {url:'harness:supabase',shortCircuit:true};

@@ -10,7 +10,7 @@ const {default:App}=await import('../../src/App.tsx');
 const inventory=JSON.parse(readFileSync(new URL('../../src/lib/page-inventory.json',import.meta.url),'utf8'));
 const findings=[];
 const el=React.createElement;
-async function open(path){window.history.replaceState({},'',path);const view=render(el(App));await waitFor(()=>assert.ok(view.container.textContent.trim().length>0),{timeout:15000});return view;}
+async function open(path){window.history.replaceState({},'',path);const view=render(el(App));await waitFor(()=>assert.ok(view.container.textContent.replaceAll('설정·사용 안내','').trim().length>0),{timeout:15000});return view;}
 afterEach(()=>cleanup());
 const theme=createTheme();
 const wrap=(node,path='/admin')=>el(MemoryRouter,{initialEntries:[path]},el(ThemeProvider,{theme},node));
@@ -22,7 +22,7 @@ test('every declared path renders a route, documented gate or fallback with synt
   try {
    const view=await open(path);
    await waitFor(()=>assert.ok(!/페이지를 불러오는 중 문제가 발생했습니다|예상치 못한 오류/.test(view.container.textContent)),{timeout:1000});
-   if(route.mode==='commissioning')assert.match(view.container.textContent,/현장별 권한·데이터 연결과 인수/);
+   if(route.mode==='commissioning')await waitFor(()=>assert.match(view.container.textContent,/현장별 권한·데이터 연결과 인수/));
    if(route.path==='/admin/settlement')await waitFor(()=>assert.match(view.container.textContent,/결제·정산·회계 검증/));
    if(route.path==='/admin/erp')await waitFor(()=>assert.match(view.container.textContent,/자체 ERP/));
    assert.equal(state.calls.some(c=>c.mutation),false,'route mount must not seed or mutate data');

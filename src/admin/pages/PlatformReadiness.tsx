@@ -87,6 +87,7 @@ export default function PlatformReadiness() {
         플랫폼 운영 준비
       </Typography>
       <Typography sx={{ my: 2 }}>{displayName} · 총괄 최고관리자</Typography>
+      <Button component={Link} to="/admin/start" variant="contained" sx={{ mb: 2, mr: 1 }}>처음 설정·검수 시작하기</Button>
       <Button component={Link} to="/admin/implementation" variant="outlined" sx={{mb:2}}>통합시스템 구축·검증 현황</Button>
       <Alert severity="info" sx={{ mb: 3 }}>
         앱 계정과 요청 접수는 운영 중입니다. 현장 운행·출입·결제는 별도 검수

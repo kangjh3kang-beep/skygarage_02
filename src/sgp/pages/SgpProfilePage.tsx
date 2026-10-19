@@ -53,6 +53,7 @@ export default function SgpProfilePage() {
           <strong>내 요청 내역</strong>
           <span>›</span>
         </Link>
+        <Link className="doelv-row" to="/help"><strong>설정·사용 방법 전체 보기</strong><span>›</span></Link>
         <div className="doelv-grid">
           <button
             type="button"
