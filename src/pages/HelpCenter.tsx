@@ -20,8 +20,9 @@ export default function HelpCenter() {
     </Stack>
     <Typography role="status" sx={{ mb: 2 }}>검색 결과 {matches.length}개</Typography>
     {!matches.length && <Alert severity="info">검색어를 줄이거나 사용자 구분을 전체로 변경해 주세요.</Alert>}
+    <Typography component="h2" variant="h6" sx={{ mb: 2 }}>기능별 안내</Typography>
     {matches.map(g => <Accordion key={g.path} disableGutters slotProps={{ transition: { mountOnEnter: true, unmountOnExit: true } }}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-label={`${g.title} ${g.path} 안내 펼치기`}><Box><Typography component="h2" variant="subtitle1" sx={{ fontWeight: 700 }}>{g.title}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>{g.path}</Typography><Chip size="small" label={guideModeLabels[guideMode(g.path)]} sx={{ ml: 1 }} /></Box></AccordionSummary>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-label={`${g.title} ${g.path} 안내 펼치기`}><Box><Typography component="span" variant="subtitle1" sx={{ fontWeight: 700, display: 'block' }}>{g.title}</Typography><Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>{g.path}</Typography><Chip size="small" label={guideModeLabels[guideMode(g.path)]} sx={{ ml: 1 }} /></Box></AccordionSummary>
       <AccordionDetails><GuideBody guide={g} />{!g.path.includes(':') && <Button component={Link} to={g.path} sx={{ mt: 2 }}>이 화면으로 이동</Button>}</AccordionDetails>
     </Accordion>)}
   </Box>;

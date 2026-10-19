@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pageGuides, guideMode, resolvePageGuide } from '../src/lib/page-guides.ts';
-import { onboardingAcceptance, parseDeploymentRelease } from '../src/lib/onboarding.ts';
+import { onboardingAcceptance, parseDeploymentRelease, findOnboardingCase, onboardingProcedureVersion, onboardingEvidencePath } from '../src/lib/onboarding.ts';
 
 const inventory = JSON.parse(readFileSync(new URL('../src/lib/page-inventory.json', import.meta.url), 'utf8'));
 test('each declared route has an exact guide with the same availability', () => {
@@ -48,4 +48,14 @@ test('deployment identity fails closed and G0 procedures do not claim executed r
     assert.ok(c.steps.length >= 2);
     assert.equal('passed' in c || 'actual_result' in c, false);
   }
+});
+test('G0 links accept only known cases and identify a versioned partial procedure', () => {
+  for (const item of onboardingAcceptance) {
+    assert.equal(findOnboardingCase(item.id), item);
+    const url = new URL(onboardingEvidencePath(item), 'https://harness.invalid');
+    assert.equal(url.pathname, '/admin/governance');
+    assert.equal(url.searchParams.get('case'), item.id);
+    assert.equal(onboardingProcedureVersion(item), `g0/${item.id}/v1`);
+  }
+  for (const id of [null, '', 'G0-07', 'G0-01/../../admin', '<script>', 'g0-01']) assert.equal(findOnboardingCase(id), null);
 });

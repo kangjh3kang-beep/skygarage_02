@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 const appRelease = process.env.CF_PAGES_COMMIT_SHA || process.env.COMMIT_REF || `local-${Date.now()}`;
 
 export default defineConfig({
+  server: { allowedHosts: ['terminal.local'] },
   define: { 'import.meta.env.VITE_APP_RELEASE': JSON.stringify(appRelease) },
   plugins: [react(), {
     name: 'app-release',
