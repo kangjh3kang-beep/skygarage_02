@@ -17,8 +17,11 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import { COLORS } from './theme';
 import RouteNotFound from './components/RouteNotFound';
+import PageHelp from './components/PageHelp';
 
 const Login = lazy(() => import('./admin/pages/Login'));
+const GettingStarted = lazy(() => import('./admin/pages/GettingStarted'));
+const HelpCenter = lazy(() => import('./pages/HelpCenter'));
 const SiteTemplateGenerator = lazy(() => import('./admin/pages/SiteTemplateGenerator'));
 const GovernanceWorkbench = lazy(() => import('./admin/pages/GovernanceWorkbench'));
 const ImplementationWorkbench = lazy(() => import('./admin/pages/ImplementationWorkbench'));
@@ -243,6 +246,7 @@ function ProtectedRoutes() {
             <Routes>
               <Route element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="start" element={<GettingStarted />} />
             <Route path="templates" element={<SiteTemplateGenerator />} />
             <Route path="implementation" element={<ImplementationWorkbench />} />
             <Route path="governance" element={<GovernanceWorkbench />} />
@@ -384,12 +388,14 @@ export default function App() {
                   <Route path="patent" element={<PatentPage />} />
                   <Route path="brand-guide" element={<BrandGuidePage />} />
                   <Route path="valet" element={<SkyGarageValet />} />
+                  <Route path="help" element={<HelpCenter />} />
                   <Route path="*" element={<RouteNotFound />} />
                 </Routes>
               </Suspense>
             </ThemeProvider>
           } />
         </Routes>
+        <ThemeProvider theme={publicTheme}><PageHelp /></ThemeProvider>
       </ColorModeContext.Provider>
     </BrowserRouter>
   );

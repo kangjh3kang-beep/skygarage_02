@@ -36,6 +36,7 @@ import { useTenant } from './contexts/TenantContext';
 
 const routeTitles: Record<string, string> = {
   '/admin': '통합 운영',
+  '/admin/start': '운영 설정과 검수 시작하기',
   '/admin/templates': '단지 템플릿 생성기',
   '/admin/implementation': '통합시스템 구축·검증',
   '/admin/governance': '현장 검증·개선 관리',

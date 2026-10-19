@@ -81,6 +81,7 @@ const menuGroups: MenuGroup[] = [
     label: '개요',
     defaultOpen: true,
     items: [
+      { label: '시작하기·설정 안내', icon: <ListAltIcon />, path: '/admin/start' },
       { label: '통합 운영', icon: <DashboardIcon />, path: '/admin' },
       { label: '구축·검증 현황', icon: <AccountTreeIcon />, path: '/admin/implementation', minScope: 'global' },
       { label: '페이지·연동 검증', icon: <AccountTreeIcon />, path: '/admin/validation' },
