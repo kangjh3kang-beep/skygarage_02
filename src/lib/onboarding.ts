@@ -7,6 +7,13 @@ export const onboardingAcceptance = [
   { id: 'G0-06', requirement: 'F06', title: '실패와 만료 증거의 처리', steps: ['실패 시험을 등록하고 개선 과제에 연결한다.', '같은 종류·환경에서 수정 후 재시험한다.', '유효한 재시험을 다른 검수자가 확인한다. 만료 증거의 승격 거부도 확인한다.'], expected: '실패·만료·설정 불일치 증거가 운영 완료로 계산되지 않는다.' },
 ] as const;
 
+export type OnboardingCase = typeof onboardingAcceptance[number];
+export function findOnboardingCase(id: string | null): OnboardingCase | null {
+  return onboardingAcceptance.find(c => c.id === id) ?? null;
+}
+export const onboardingProcedureVersion = (item: OnboardingCase) => `g0/${item.id}/v1`;
+export const onboardingEvidencePath = (item: OnboardingCase) => `/admin/governance?case=${item.id}`;
+
 export function parseDeploymentRelease(value: unknown): string {
   if (!value || typeof value !== 'object' || !('release' in value) || typeof value.release !== 'string' || !/^[a-f0-9]{40}$/.test(value.release)) throw new Error('release_unconfirmed');
   return value.release;
