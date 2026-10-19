@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {parseFinanceSnapshot,parseJournalExport,journalCsv,moneyLabel} from '../src/lib/finance.ts';
+const id='11111111-1111-4111-8111-111111111111';
+const row={journal_id:id,journal_number:'1',entry_date:'2026-10-19',source_kind:'test_credit',source_id:id,line_no:1,account:'cash',erp_account:'TEST_1000',owner_id:id,debit:'1000',credit:'0'};
+const manifest=()=>({schema_version:1,environment:'sandbox',format:'doelv-journal-v1',export_id:id,not_tax_invoice:true,rows:[{...row},{...row,line_no:2,account:'wallet',debit:'0',credit:'1000'}]});
+const snapshot=()=>({schema_version:1,environment:'sandbox',live_enabled:false,actor:id,observed_at:'2026-10-19T06:00:00Z',wallet_balance:'0',facilities:[],payments:[],batches:[],accounts:[],exports:[],counts:{payments:0,journals:0,batches:0,exports:0},reconciliation:{passed:true,balanced:true,wallets_nonnegative:true,payments_match:true,refunds_match:true,facility_payables_match:true,external_bank_verified:false,external_erp_verified:false}});
+test('finance preserves integer precision beyond Number safe range',()=>{const m=manifest();m.rows[0].debit='9007199254740993';m.rows[1].credit='9007199254740993';assert.equal(parseJournalExport(m).rows[0].debit,'9007199254740993');assert.equal(moneyLabel('9007199254740993'),'9,007,199,254,740,993');});
+test('finance rejects unbalanced exported journals',()=>{const m=manifest();m.rows[1].credit='999';assert.throws(()=>parseJournalExport(m));});
+test('finance rejects duplicate journal lines',()=>{const m=manifest();m.rows[1].line_no=1;assert.throws(()=>parseJournalExport(m));});
+test('finance rejects negative and double-sided entries',()=>{for(const value of ['-1','1.5','NaN']){const m=manifest();m.rows[0].debit=value;assert.throws(()=>parseJournalExport(m));}const m=manifest();m.rows[0].credit='1000';assert.throws(()=>parseJournalExport(m));});
+test('finance never parses a live or tax-invoice export as sandbox',()=>{for(const change of [{environment:'live'},{not_tax_invoice:false}])assert.throws(()=>parseJournalExport({...manifest(),...change}));});
+test('finance CSV protects formula and embedded quotes/newlines',()=>{const m=manifest();m.rows[0].source_kind=' =1+2';m.rows[1].source_kind='label,"two"\nline';const csv=journalCsv(m);assert.ok(csv.includes('"\' =1+2"'));assert.ok(csv.includes('"label,""two""\nline"'));assert.ok(csv.startsWith('\uFEFFenvironment,export_id'));});
+test('finance snapshot fails closed on misleading external success',()=>{const s=snapshot();assert.equal(parseFinanceSnapshot(s).reconciliation.passed,true);s.reconciliation.external_bank_verified=true;assert.throws(()=>parseFinanceSnapshot(s));});
+test('finance snapshot rejects false reconciliation summary',()=>{const s=snapshot();s.reconciliation.payments_match=false;assert.throws(()=>parseFinanceSnapshot(s));});
+test('finance reviewed migration exactly matches staged SQL',()=>{const sql=['core','payments','accounting'].map((name,i)=>readFileSync(new URL(`../supabase/sql/finance-0${i+1}-${name}.sql`,import.meta.url),'utf8')).join('\n');assert.equal(readFileSync(new URL('../supabase/migrations/20261019051643_add_finance_sandbox_ledger.sql',import.meta.url),'utf8'),sql);});

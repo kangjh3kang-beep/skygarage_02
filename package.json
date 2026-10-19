@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test:contracts": "node --test tests/*.test.mjs",
     "test:database": "node scripts/test-governance-database.mjs",
-    "test:database:wasm": "node scripts/test-governance-database.mjs --wasm"
+    "test:database:wasm": "node scripts/test-governance-database.mjs --wasm",
+    "test:finance": "node scripts/test-finance-database.mjs",
+    "test:finance:wasm": "node scripts/test-finance-database.mjs --wasm"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
