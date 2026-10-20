@@ -8,6 +8,7 @@ import { parseReadinessSnapshot } from '../../lib/readiness-snapshot';
 import { onboardingAcceptance, onboardingEvidencePath, parseDeploymentRelease } from '../../lib/onboarding';
 import { useAuth } from '../contexts/AuthContext';
 import { useGovernanceQuery } from '../hooks/useGovernanceQuery';
+import LiveAuthVerification from '../components/LiveAuthVerification';
 
 export default function GettingStarted() {
   const { user, role } = useAuth();
@@ -56,6 +57,7 @@ export default function GettingStarted() {
     <Typography sx={{ my: 1, overflowWrap: 'anywhere' }}>웹 배포 버전: {build?.key !== key ? '조회 중' : release || '확인하지 못함 · 최신 화면과 연결을 확인해 주세요'}</Typography>
     {directory.data && <Typography>현장 목록 확인 시각: {new Date(directory.data.observed_at).toLocaleString('ko-KR')}</Typography>}
     {role === 'super_admin' && (readiness.loading ? <Typography role="status">서버 보호 상태 확인 중</Typography> : readiness.error ? <Alert severity="error">{readiness.error}</Alert> : readiness.data && <Alert severity={readiness.data.security.public_tables_without_rls || readiness.data.security.legacy_browser_grants ? 'warning' : 'info'} sx={{ mt: 1 }}>서버 조회가 확인됐습니다. 공개 데이터의 행 보호 미설정 {readiness.data.security.public_tables_without_rls}건 · 기존 장비·AI 테이블의 브라우저 접근 권한 {readiness.data.security.legacy_browser_grants}건. 전체 보안 인수는 별도 시험이 필요합니다.</Alert>)}
+    {role === 'super_admin' && user && <LiveAuthVerification key={user.id} userId={user.id} release={release} verified={auth?.verified === true} />}
     <Typography component="h2" variant="h6" sx={{ mt: 3, mb: 1 }}>실제 계정으로 수행할 G0 검수</Typography>
     <Typography sx={{ mb: 2 }}>아래 절차를 수행한 원자료를 현장 검증·개선에 등록하세요. 내려받은 파일은 빈 결과 양식이며 통과 증거가 아닙니다.</Typography>
     {onboardingAcceptance.map(c => <Accordion key={c.id} disableGutters><AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography>{c.id} · {c.title}</Typography></AccordionSummary><AccordionDetails><Typography>연결 요구사항 {c.requirement}</Typography><Box component="ol" sx={{ pl: 3 }}>{c.steps.map(s => <li key={s}>{s}</li>)}</Box><Typography>기대 결과: {c.expected}</Typography><Button component={Link} to={onboardingEvidencePath(c)} sx={{ mt: 2 }} variant="outlined">{c.id} 시험 결과 기록</Button></AccordionDetails></Accordion>)}

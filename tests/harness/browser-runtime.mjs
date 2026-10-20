@@ -19,10 +19,11 @@ const error={code:'42501',message:'HARNESS permission denied'};
 const authListeners = new Set();
 export const syntheticMfaSecret = 'HARNESS-NOT-A-REAL-TOTP-KEY';
 export function emitAuthChange() { for (const fn of authListeners) fn('SIGNED_IN', session()); }
-export const state={mode:'healthy',role:'super_admin',aal:'aal2',loggedIn:true,actor:id,rpcExecutor:null,calls:[],writeError:false,factors:null,mfaEnrollExecutor:null,mfaVerifyUpgrades:false,versionError:false};
-export function reset(mode='healthy') {state.mode=mode;state.actor=id;state.rpcExecutor=null;state.role='super_admin';state.aal='aal2';state.loggedIn=true;state.calls=[];state.writeError=false;state.factors=null;state.mfaEnrollExecutor=null;state.mfaVerifyUpgrades=false;state.versionError=false;localStorage.clear();sessionStorage.clear();if(mode==='populated')localStorage.setItem('sgp_selected_complex',id);}
+export const state={mode:'healthy',role:'super_admin',aal:'aal2',loggedIn:true,actor:id,rpcExecutor:null,functionExecutor:null,calls:[],writeError:false,factors:null,mfaEnrollExecutor:null,mfaVerifyUpgrades:false,versionError:false};
+export function reset(mode='healthy') {state.mode=mode;state.actor=id;state.rpcExecutor=null;state.functionExecutor=null;state.role='super_admin';state.aal='aal2';state.loggedIn=true;state.calls=[];state.writeError=false;state.factors=null;state.mfaEnrollExecutor=null;state.mfaVerifyUpgrades=false;state.versionError=false;localStorage.clear();sessionStorage.clear();if(mode==='populated')localStorage.setItem('sgp_selected_complex',id);}
 const book={id,code:'TEST',name:'가상 시험 장부',environment:'sandbox',currency:'KRW',finance_source:true,closed_through:null};
 function rpc(name) {
+ if(name==='platform_live_auth_report')return null;
  if(name==='platform_governance_directory')return {schema_version:1,observed_at:'2026-10-19T00:00:00Z',headquarters:true,operators:[],assignments:[],organizations:[],sites:[]};
  if(name==='platform_readiness_snapshot')return {schema_version:1,observed_at:'2026-10-19T00:00:00Z',counts:Object.fromEntries(['sites','blueprints','memberships','requests','devices','commands','telemetry','domain_events','ai_models','ai_actions','hil_records'].map(k=>[k,0])),security:{public_tables_without_rls:0,legacy_browser_grants:0}};
  if(name==='finance_snapshot')return {schema_version:1,environment:'sandbox',live_enabled:false,actor:id,observed_at:'2026-10-19T00:00:00Z',wallet_balance:'10000',home_facility_id:null,closed_through:null,facilities:[],payments:[],batches:[],accounts:[],exports:[],counts:{payments:0,journals:0,batches:0,exports:0},reconciliation:{passed:true,balanced:true,wallets_nonnegative:true,payments_match:true,refunds_match:true,facility_payables_match:true,external_bank_verified:false,external_erp_verified:false}};
@@ -66,7 +67,7 @@ globalThis.__harnessSupabase={
    challengeAndVerify:async()=>{state.calls.push({kind:'auth',name:'mfa.verify',mutation:true});if(!state.writeError&&state.mfaVerifyUpgrades){state.aal='aal2';state.factors=state.factors?.map(f=>({...f,status:'verified'}))??null;}return {error:state.writeError?error:null};}
   }},
  storage:{from:()=>({list:async()=>({data:[],error:null}),getPublicUrl:()=>({data:{publicUrl:'https://harness.invalid/image.png'}})})},
- functions:{invoke:async name=>{state.calls.push({kind:'function',name});return {data:null,error:{message:'commissioning_required'}};}},
+ functions:{invoke:async (name,options)=>{state.calls.push({kind:'function',name,payload:options?.body});if(state.functionExecutor)return state.functionExecutor(name,options);return {data:null,error:{message:'commissioning_required'}};}},
 };
 globalThis.fetch=async url=>{state.calls.push({kind:'http',name:String(url)});if(String(url).includes('app-version.json'))return new Response(JSON.stringify(state.versionError?{release:'local-unconfirmed'}:{release:'b0219e0eca6a0bc3f6bb7dee61da0f5629d074a3'}));return new Response(JSON.stringify({error:'HARNESS network blocked'}),{status:503});};
 registerHooks({

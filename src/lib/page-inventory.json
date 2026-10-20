@@ -3173,7 +3173,9 @@
         "user_roles"
       ],
       "rpcs": [],
-      "functions": [],
+      "functions": [
+        "live-auth-verification"
+      ],
       "links": [
         "/",
         "/admin",
@@ -3224,7 +3226,7 @@
         "/admin/workflows",
         "/help"
       ],
-      "actions": 20,
+      "actions": 22,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -5149,5 +5151,5 @@
     "src/sgp/pages/SgpWalletPage.tsx",
     "src/sgp/pages/SgpWelcomePage.tsx"
   ],
-  "sourceFiles": 234
+  "sourceFiles": 236
 }
