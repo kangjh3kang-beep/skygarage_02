@@ -56,9 +56,9 @@ test('live-Auth provisioning is HQ/MFA gated, idempotent, isolated and revocable
     assert.equal(scoped.headquarters, false); assert.equal(scoped.sites.length, 1); assert.equal(scoped.sites[0].id, run.site_a);
     await assert.rejects(as('authenticated', actors.writer, 'aal2', 'select public.platform_governance_snapshot($1) result', [run.scope_b]), /site_access_denied/);
     await assert.rejects(as('authenticated', actors.writer, 'aal2', 'select public.platform_live_auth_report($1) result', [request]), /super_admin_mfa_required/);
-    await assert.rejects(as('service_role', null, null, 'select public.platform_finish_live_auth_test($1,$2,null,true) result', [request, [{ id: 'unsafe', passed: true, secret: 'not-a-real-secret' }]]), /invalid_test_report/);
+    await assert.rejects(as('service_role', null, null, 'select public.platform_finish_live_auth_test($1,$2,null,true) result', [request, JSON.stringify([{ id: 'unsafe', passed: true, secret: 'not-a-real-secret' }])]), /invalid_test_report/);
     const checks = Array.from({ length: 15 }, (_, i) => ({ id: `fixture_${i}`, passed: true }));
-    const result = await as('service_role', null, null, 'select public.platform_finish_live_auth_test($1,$2,null,true) result', [request, checks]);
+    const result = await as('service_role', null, null, 'select public.platform_finish_live_auth_test($1,$2,null,true) result', [request, JSON.stringify(checks)]);
     assert.equal(result.status, 'passed'); assert.equal(result.acceptance_granted, false); assert.equal(result.human_reviewed, false);
     assert.equal(result.database_cleanup, true); assert.equal(result.auth_cleanup, true);
     assert.equal(Number((await pg.query('select count(*) n from platform_private.site_staff where active')).rows[0].n), 0);
