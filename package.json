@@ -16,7 +16,7 @@
     "test:erp": "node scripts/test-erp-database.mjs",
     "test:erp:wasm": "node scripts/test-erp-database.mjs --wasm",
     "inventory": "node scripts/page-inventory.mjs",
-    "test:ui": "node --test --test-concurrency=1 tests/harness/ui-scenarios.mjs tests/harness/finance-journey.mjs tests/harness/onboarding-guidance.mjs tests/harness/evidence-workflow.mjs tests/harness/live-auth-ui.mjs",
+    "test:ui": "node --test --test-concurrency=1 tests/harness/ui-scenarios.mjs tests/harness/finance-journey.mjs tests/harness/onboarding-guidance.mjs tests/harness/evidence-workflow.mjs tests/harness/live-auth-ui.mjs tests/harness/membership-journey.mjs",
     "test:harness": "npm run inventory -- --check && npm run test:contracts && npm run test:ui && npm run test:database:wasm && npm run test:finance:wasm && npm run test:erp:wasm"
   },
   "dependencies": {

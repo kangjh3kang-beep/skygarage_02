@@ -5,8 +5,11 @@ import ServiceRequestForm from "../components/ServiceRequestForm";
 import PwaInstallPrompt from "../components/PwaInstallPrompt";
 import { useSgpAuth } from "../contexts/SgpAuthContext";
 import { supabase } from "../../lib/supabase";
+import MemberEnrollment from "../components/MemberEnrollment";
+import { useResidentData } from "../contexts/ResidentDataContext";
 export default function SgpProfilePage() {
   const { user, signOut } = useSgpAuth();
+  const { reload: reloadResidentData } = useResidentData();
   const userId = user?.id;
   const [admin, setAdmin] = useState(false);
   const [form, setForm] = useState<"residence" | "concierge">("residence");
@@ -54,6 +57,7 @@ export default function SgpProfilePage() {
           <span>›</span>
         </Link>
         <Link className="doelv-row" to="/help"><strong>설정·사용 방법 전체 보기</strong><span>›</span></Link>
+        {userId && <MemberEnrollment key={userId} userId={userId} verified={user?.is_verified === true && !!user.phone_verified_at} onMembershipChange={reloadResidentData} />}
         <div className="doelv-grid">
           <button
             type="button"
@@ -61,7 +65,7 @@ export default function SgpProfilePage() {
             aria-pressed={form === "residence"}
             onClick={() => setForm("residence")}
           >
-            <strong>입주 단지 연결</strong>
+            <strong>입주 단지 연결 문의</strong>
           </button>
           <button
             type="button"
