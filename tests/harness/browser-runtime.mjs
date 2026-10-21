@@ -24,6 +24,7 @@ export function reset(mode='healthy') {state.mode=mode;state.actor=id;state.rpcE
 const book={id,code:'TEST',name:'가상 시험 장부',environment:'sandbox',currency:'KRW',finance_source:true,closed_through:null};
 function rpc(name) {
  if(name==='platform_live_auth_report')return null;
+ if(name==='platform_my_memberships')return {schema_version:1,applications:[],memberships:[],observed_at:'2026-10-21T00:00:00Z'};
  if(name==='platform_governance_directory')return {schema_version:1,observed_at:'2026-10-19T00:00:00Z',headquarters:true,operators:[],assignments:[],organizations:[],sites:[]};
  if(name==='platform_readiness_snapshot')return {schema_version:1,observed_at:'2026-10-19T00:00:00Z',counts:Object.fromEntries(['sites','blueprints','memberships','requests','devices','commands','telemetry','domain_events','ai_models','ai_actions','hil_records'].map(k=>[k,0])),security:{public_tables_without_rls:0,legacy_browser_grants:0}};
  if(name==='finance_snapshot')return {schema_version:1,environment:'sandbox',live_enabled:false,actor:id,observed_at:'2026-10-19T00:00:00Z',wallet_balance:'10000',home_facility_id:null,closed_through:null,facilities:[],payments:[],batches:[],accounts:[],exports:[],counts:{payments:0,journals:0,batches:0,exports:0},reconciliation:{passed:true,balanced:true,wallets_nonnegative:true,payments_match:true,refunds_match:true,facility_payables_match:true,external_bank_verified:false,external_erp_verified:false}};

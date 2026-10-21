@@ -26,8 +26,8 @@ const SiteTemplateGenerator = lazy(() => import('./admin/pages/SiteTemplateGener
 const GovernanceWorkbench = lazy(() => import('./admin/pages/GovernanceWorkbench'));
 const ImplementationWorkbench = lazy(() => import('./admin/pages/ImplementationWorkbench'));
 const Dashboard = lazy(() => import('./admin/pages/PlatformReadiness'));
-const ComplexManagement = lazy(() => import('./admin/pages/ComplexManagement'));
-const ResidentManagement = lazy(() => import('./admin/pages/ResidentManagement'));
+const ComplexManagement = lazy(() => import('./admin/pages/SiteMembershipWorkbench').then(m => ({ default: m.SiteOperations })));
+const ResidentManagement = lazy(() => import('./admin/pages/SiteMembershipWorkbench'));
 const ParkingOperations = lazy(() => import('./admin/pages/ParkingOperations'));
 const AtrManagement = lazy(() => import('./admin/pages/AtrManagement'));
 const ElevatorManagement = lazy(() => import('./admin/pages/ElevatorManagement'));

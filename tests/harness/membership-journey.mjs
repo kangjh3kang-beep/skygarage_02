@@ -1,0 +1,67 @@
+// Real React + actual disposable SQL. Auth/SMS/transport are synthetic fixtures.
+import { state,reset } from './browser-runtime.mjs';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { membershipDatabase } from '../helpers/membership-database.mjs';
+const React=await import('react');
+const {render,cleanup,waitFor,fireEvent}=await import('@testing-library/react');
+const {default:App}=await import('../../src/App.tsx');
+const {default:Enrollment}=await import('../../src/sgp/components/MemberEnrollment.tsx');
+const enter=(v,label,value)=>fireEvent.change(v.getByLabelText(label),{target:{value}});
+async function open(path){cleanup();window.history.replaceState({},'',path);const v=render(React.createElement(App));await v.findByRole('combobox',{name:'관리할 현장'},{timeout:10000});return v;}
+function executor(db){return async(name,payload={},actor)=>{try{return {data:await db.call(actor,name,payload),error:null};}catch(e){return {data:null,error:{message:e.message,code:e.code}};}};}
+test('UI → site profile → invite → own application → approval → member revocation → own history',async()=>{
+ reset();const db=await membershipDatabase();const {ids:i}=db;state.actor=i.hq;state.rpcExecutor=executor(db);
+ try{
+  let v=await open(`/admin/complexes?site=${i.siteA}`);
+  await v.findByLabelText('현장 주소');
+  console.log('MEMBERSHIP_UI profile loaded');
+  enter(v,'현장 주소','Synthetic UI address');enter(v,'운영 안내 시간','Synthetic 09:00–18:00');
+  fireEvent.click(v.getByRole('button',{name:'운영 안내정보 저장'}));
+  await waitFor(()=>assert.equal(v.getByLabelText('현장 주소').value,'Synthetic UI address'));
+  await waitFor(async()=>assert.equal((await db.call(i.hq,'platform_membership_snapshot',{p_site_id:i.siteA})).profile.revision,1));
+  fireEvent.click(await v.findByRole('button',{name:'초대코드',exact:true}));await v.findByRole('button',{name:'초대코드 발급'});
+  fireEvent.click(v.getByRole('button',{name:'초대코드 발급'}));
+  let code;await waitFor(()=>{code=v.container.textContent.match(/\b[0-9a-f]{64}\b/)?.[0];assert.ok(code);});
+  console.log('MEMBERSHIP_UI invite issued');
+  cleanup();state.actor=i.member;
+  v=render(React.createElement(Enrollment,{key:i.member,userId:i.member,verified:true}));
+  await v.findByText('신청 내역이 없습니다.');enter(v,'현장 초대코드',code);enter(v,'동·호 또는 이용 구분','SYNTHETIC 101');
+  fireEvent.click(v.getByRole('button',{name:'현장 소속 신청'}));await v.findByText(/신청이 접수됐습니다/);
+  await waitFor(()=>assert.match(v.container.textContent,/승인 대기/));
+  console.log('MEMBERSHIP_UI application pending');
+  assert.equal((await db.as(i.member,'select id from public.platform_sites')).rows.length,0);
+  cleanup();state.actor=i.hq;
+  v=await open(`/admin/residents?site=${i.siteA}`);fireEvent.click(await v.findByRole('button',{name:'소속 승인'}));
+  console.log('MEMBERSHIP_UI approval dialog');
+  assert.equal(v.getByRole('button',{name:'처리 확정'}).disabled,true);
+  enter(v,'처리 사유(5~500자)','Synthetic residency reviewed');fireEvent.click(v.getByRole('button',{name:'처리 확정'}));
+  await waitFor(()=>assert.ok(v.queryByRole('dialog')===null));
+  fireEvent.click(await v.findByRole('button',{name:'회원 목록',exact:true}));fireEvent.click(await v.findByRole('button',{name:'소속 회수'}));
+  console.log('MEMBERSHIP_UI revoke dialog');
+  enter(v,'처리 사유(5~500자)','Synthetic move-out reviewed');fireEvent.click(v.getByRole('button',{name:'처리 확정'}));
+  await waitFor(()=>assert.ok(v.queryByRole('dialog')===null));
+  await waitFor(()=>assert.match(v.container.textContent,/소속 회수/));
+  assert.equal((await db.as(i.member,'select id from public.platform_sites')).rows.length,0);
+  cleanup();state.actor=i.member;v=render(React.createElement(Enrollment,{key:i.member,userId:i.member,verified:true}));
+  await waitFor(()=>assert.match(v.container.textContent,/SYNTHETIC site A/));await waitFor(()=>assert.match(v.container.textContent,/소속 회수/));
+  assert.equal(state.calls.some(c=>c.kind==='table'&&c.mutation),false,'all business mutations use guarded RPCs');
+ }finally{cleanup();state.rpcExecutor=null;await db.close();}
+});
+test('a late site response and a failed refresh never expose the previous site list',async()=>{
+ reset();const db=await membershipDatabase();const {ids:i}=db;state.actor=i.hq;
+ const invite=await db.command(i.otherManager,'issue_invite',{site_id:i.siteB,days:1,max_uses:10});
+ await db.command(i.otherMember,'apply',{code:invite.code,unit_label:'SYNTHETIC B UNIT'});
+ let finish;const base=executor(db);
+ state.rpcExecutor=async(name,args,actor)=>name==='platform_membership_snapshot'&&args.p_site_id===i.siteA?new Promise(resolve=>{finish=resolve;}):base(name,args,actor);
+ try{
+  const v=await open(`/admin/residents?site=${i.siteA}`);await waitFor(()=>assert.equal(typeof finish,'function'));
+  fireEvent.mouseDown(v.getByRole('combobox',{name:'관리할 현장'}));fireEvent.click(await v.findByRole('option',{name:/SYNTHETIC site B/}));
+  await v.findByText(/SYNTHETIC B UNIT/);
+  finish(await base('platform_membership_snapshot',{p_site_id:i.siteA,p_kind:'requests',p_status:'pending',p_after:null},i.hq));
+  await waitFor(()=>assert.match(v.container.textContent,/SYNTHETIC B UNIT/));
+  state.rpcExecutor=async(name,args,actor)=>name==='platform_membership_snapshot'?{data:null,error:{code:'42501',message:'site_access_denied'}}:base(name,args,actor);
+  fireEvent.click(v.getByRole('button',{name:'현장 정보 새로 조회'}));await v.findByText(/이전 목록은 표시하지 않습니다/);
+  assert.doesNotMatch(v.container.textContent,/SYNTHETIC B UNIT/);
+ }finally{cleanup();state.rpcExecutor=null;await db.close();}
+});

@@ -769,21 +769,18 @@
     {
       "path": "/admin/complexes",
       "component": "ComplexManagement",
-      "file": "src/admin/pages/ComplexManagement.tsx",
-      "exportName": "default",
+      "file": "src/admin/pages/SiteMembershipWorkbench.tsx",
+      "exportName": "SiteOperations",
       "redirect": null,
       "tables": [
-        "complex_registration_history",
-        "complex_types",
         "complexes",
         "parking_sessions",
         "resident_accounts",
-        "security_audit_logs",
         "system_alerts",
         "user_roles"
       ],
       "rpcs": [
-        "generate_mdm_sequence"
+        "platform_membership_command"
       ],
       "functions": [],
       "links": [
@@ -792,7 +789,6 @@
         "/admin/access",
         "/admin/activity",
         "/admin/ai",
-        "/admin/ai-management",
         "/admin/alerts",
         "/admin/analytics",
         "/admin/atr",
@@ -836,10 +832,10 @@
         "/admin/validation",
         "/admin/workflows"
       ],
-      "actions": 42,
+      "actions": 32,
       "actionReview": [],
-      "mode": "commissioning",
-      "note": "상위 화면에서 실행 차단 · 서버/현장 인수 필요"
+      "mode": "available",
+      "note": "화면 연결 · 업무별 실사용 인수는 별도"
     },
     {
       "path": "/admin/contracts",
@@ -2735,21 +2731,19 @@
     {
       "path": "/admin/residents",
       "component": "ResidentManagement",
-      "file": "src/admin/pages/ResidentManagement.tsx",
+      "file": "src/admin/pages/SiteMembershipWorkbench.tsx",
       "exportName": "default",
       "redirect": null,
       "tables": [
         "complexes",
-        "palatria_wallets",
         "parking_sessions",
         "resident_accounts",
-        "resident_service_modes",
-        "security_audit_logs",
         "system_alerts",
-        "user_roles",
-        "visitor_billing_sessions"
+        "user_roles"
       ],
-      "rpcs": [],
+      "rpcs": [
+        "platform_membership_command"
+      ],
       "functions": [],
       "links": [
         "/",
@@ -2800,10 +2794,10 @@
         "/admin/validation",
         "/admin/workflows"
       ],
-      "actions": 26,
+      "actions": 32,
       "actionReview": [],
-      "mode": "commissioning",
-      "note": "상위 화면에서 실행 차단 · 서버/현장 인수 필요"
+      "mode": "available",
+      "note": "화면 연결 · 업무별 실사용 인수는 별도"
     },
     {
       "path": "/admin/revenue",
@@ -4194,6 +4188,7 @@
         "user_roles"
       ],
       "rpcs": [
+        "platform_membership_command",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4212,7 +4207,7 @@
         "/app/requests",
         "/help"
       ],
-      "actions": 19,
+      "actions": 22,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -5093,6 +5088,7 @@
     "src/admin/pages/SecurityAudit.tsx",
     "src/admin/pages/Settings.tsx",
     "src/admin/pages/SettlementManagement.tsx",
+    "src/admin/pages/SiteMembershipWorkbench.tsx",
     "src/admin/pages/SiteTemplateGenerator.tsx",
     "src/admin/pages/SupportTickets.tsx",
     "src/admin/pages/SystemOverview.tsx",
@@ -5138,9 +5134,11 @@
     "src/tracking/pages/user/VehicleTrackingPage.tsx"
   ],
   "notDirectlyRouted": [
+    "src/admin/pages/ComplexManagement.tsx",
     "src/admin/pages/Dashboard.tsx",
     "src/admin/pages/HardwareIntegration.tsx",
     "src/admin/pages/Login.tsx",
+    "src/admin/pages/ResidentManagement.tsx",
     "src/admin/pages/SettlementManagement.tsx",
     "src/parking/pages/LoginPage.tsx",
     "src/sgp/pages/SgpAvailableSpotsPage.tsx",
@@ -5151,5 +5149,5 @@
     "src/sgp/pages/SgpWalletPage.tsx",
     "src/sgp/pages/SgpWelcomePage.tsx"
   ],
-  "sourceFiles": 236
+  "sourceFiles": 240
 }
