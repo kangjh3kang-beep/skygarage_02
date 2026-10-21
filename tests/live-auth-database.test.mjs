@@ -22,8 +22,9 @@ test('live-Auth provisioning is HQ/MFA gated, idempotent, isolated and revocable
   const root = new URL('../', import.meta.url);
   try {
     for (const path of ['tests/governance-bootstrap.sql', 'supabase/sql/platform-foundation.sql', 'supabase/sql/site-template-generator.sql', 'supabase/sql/platform-governance.sql', 'supabase/sql/platform-governance-catalog.sql']) await pg.exec(await readFile(new URL(path, root), 'utf8'));
-    await pg.exec("alter table auth.users add column email text, add column raw_app_meta_data jsonb default '{}'::jsonb, add column created_at timestamptz default clock_timestamp()");
+    await pg.exec("alter table auth.users add column email text, add column raw_app_meta_data jsonb default '{}'::jsonb, add column created_at timestamptz default clock_timestamp(), add column banned_until timestamptz; create table auth.sessions(user_id uuid); create table auth.refresh_tokens(user_id text,revoked boolean)");
     await pg.exec(await readFile(new URL('supabase/sql/live-auth-verification.sql', root), 'utf8'));
+    await pg.exec(await readFile(new URL('supabase/sql/live-auth-cleanup.sql', root), 'utf8'));
     const hq = randomUUID(), ordinary = randomUUID(), request = randomUUID();
     await pg.query('insert into auth.users(id) values($1),($2)', [hq, ordinary]);
     await pg.query("insert into public.user_roles(user_id,role) values($1,'super_admin')", [hq]);
@@ -58,6 +59,7 @@ test('live-Auth provisioning is HQ/MFA gated, idempotent, isolated and revocable
     await assert.rejects(as('authenticated', actors.writer, 'aal2', 'select public.platform_live_auth_report($1) result', [request]), /super_admin_mfa_required/);
     await assert.rejects(as('service_role', null, null, 'select public.platform_finish_live_auth_test($1,$2,null,true) result', [request, JSON.stringify([{ id: 'unsafe', passed: true, secret: 'not-a-real-secret' }])]), /invalid_test_report/);
     const checks = Array.from({ length: 15 }, (_, i) => ({ id: `fixture_${i}`, passed: true }));
+    await pg.query("update auth.users set banned_until=now()+interval '100 years' where id in ($1,$2,$3)", [actors.writer,actors.reviewer,actors.member]);
     const result = await as('service_role', null, null, 'select public.platform_finish_live_auth_test($1,$2,null,true) result', [request, JSON.stringify(checks)]);
     assert.equal(result.status, 'passed'); assert.equal(result.acceptance_granted, false); assert.equal(result.human_reviewed, false);
     assert.equal(result.database_cleanup, true); assert.equal(result.auth_cleanup, true);
@@ -66,6 +68,22 @@ test('live-Auth provisioning is HQ/MFA gated, idempotent, isolated and revocable
     await assert.rejects(as('authenticated', actors.writer, 'aal2', 'select public.platform_governance_snapshot($1) result', [run.scope_a]), /site_access_denied/);
     assert.equal(Number((await pg.query('select count(*) n from platform_private.evidence_reviews')).rows[0].n), 0);
     assert.equal(Number((await pg.query("select count(*) n from public.platform_sites where phase<>'sandbox'")).rows[0].n), 0);
+    // The hosted state overrides a false success claim and preserves its failure
+    // after recovery. Fixtures simulate Auth's global logout in this local DB.
+    await pg.query('insert into auth.sessions(user_id) values($1)', [actors.writer]);
+    await pg.query('insert into auth.refresh_tokens(user_id,revoked) values($1,false)', [actors.writer]);
+    await pg.query('update platform_private.live_auth_runs set auth_cleanup=true where id=$1', [request]);
+    const targets = await as('authenticated', hq, 'aal2', 'select public.platform_live_auth_cleanup_targets() result');
+    assert.equal(targets.length, 1); assert.equal(targets[0].user_id, actors.writer);
+    await assert.rejects(as('authenticated', hq, 'aal1', 'select public.platform_live_auth_cleanup_targets() result'), /super_admin_mfa_required/);
+    await assert.rejects(as('authenticated', ordinary, 'aal2', 'select public.platform_live_auth_cleanup_targets() result'), /super_admin_mfa_required/);
+    assert.equal(await as('authenticated', hq, 'aal2', 'select public.platform_verify_live_auth_cleanup($1) result', [request]), false);
+    await pg.query('delete from auth.sessions where user_id=$1', [actors.writer]);
+    await pg.query('delete from auth.refresh_tokens where user_id=$1', [actors.writer]);
+    assert.equal(await as('authenticated', hq, 'aal2', 'select public.platform_verify_live_auth_cleanup($1) result', [request]), true);
+    const recovered = await as('authenticated', hq, 'aal2', 'select public.platform_live_auth_report($1) result', [request]);
+    assert.equal(recovered.status, 'failed'); assert.equal(recovered.auth_cleanup, true); assert.equal(recovered.error_code, 'auth_cleanup_failed');
+    assert.equal(recovered.checks.length, 15);
     // Cleanup after an interrupted execution expires rights without an API call.
     const next = await begin(hq, 'aal2', randomUUID());
     await pg.query("update platform_private.live_auth_runs set expires_at=clock_timestamp()-interval '1 second' where id=$1", [next.id]);
