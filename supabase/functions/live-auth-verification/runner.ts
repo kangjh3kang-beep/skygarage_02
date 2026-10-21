@@ -63,7 +63,9 @@ export async function exerciseLiveAuth(options: {
     // Auth Admin API creates actual identities, without email/SMS delivery.
     for (const slot of ['writer', 'reviewer', 'member']) {
       const email = `g0-${run.id.replaceAll('-', '')}-${slot}@example.invalid`;
-      const password = `${crypto.randomUUID()}${crypto.randomUUID()}aA1!`;
+      // Auth rejects passwords over bcrypt's 72-byte limit. Two UUIDs without
+      // hyphens retain 244 random bits while the ASCII result stays at 68 bytes.
+      const password = `${crypto.randomUUID().replaceAll('-', '')}${crypto.randomUUID().replaceAll('-', '')}aA1!`;
       const result = await admin.auth.admin.createUser({ email, password, email_confirm: true, app_metadata: { skygarage_test_run: run.id } });
       if (result.error || !result.data.user) throw new TestFailure('test_identity_creation_failed');
       const actor = { id: result.data.user.id, email, password, client: newClient() };

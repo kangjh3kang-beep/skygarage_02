@@ -14,7 +14,11 @@ test('test authenticator matches RFC 6238 vectors, including leading zeroes', as
 test('an identity is banned even when binding fails; secrets never enter the report', async () => {
   const id = randomUUID(), actor = randomUUID(); let banned = false, finished;
   const admin = { auth: { admin: {
-    createUser: async () => ({ data: { user: { id: actor } }, error: null }),
+    createUser: async ({ password }) => {
+      assert.ok(new TextEncoder().encode(password).length <= 72, 'hosted Auth rejects passwords over 72 bytes');
+      assert.ok(password.length >= 32, 'test passwords retain ample entropy');
+      return { data: { user: { id: actor } }, error: null };
+    },
     updateUserById: async (uid, attrs) => { assert.equal(uid, actor); assert.equal(attrs.ban_duration, '876000h'); banned = true; return { error: null }; },
     getUserById: async () => ({ data: { user: { banned_until: '2126-01-01T00:00:00Z' } }, error: null }),
   } }, rpc: async (name, args) => {
