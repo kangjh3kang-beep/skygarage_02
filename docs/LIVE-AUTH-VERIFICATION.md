@@ -34,6 +34,6 @@
 
 ## 배포·검증
 
-`supabase/sql/live-auth-verification.sql`과 CLI가 생성한 대응 migration을 동일하게 유지한다. 운영 DDL은 연결된 Supabase migration 도구로 적용하고 `live-auth-verification` Edge Function을 JWT 확인을 유지한 채 배포한다. 함수는 실제 사용자 확인과 DB의 최고관리자·AAL2 검사를 모두 거친다. 클라이언트에는 서비스 키를 배포하지 않는다.
+`supabase/sql/live-auth-verification.sql`과 대응 migration을 동일하게 유지한다. 운영 DDL은 연결된 Supabase migration 도구로 적용하고 `live-auth-verification` Edge Function을 JWT 확인을 유지한 채 배포한다. 운영 적용 이력의 버전은 `20261021001220`이며 저장소 migration 파일명도 이 버전과 일치한다. 함수는 실제 사용자 확인과 DB의 최고관리자·AAL2 검사를 모두 거친다. 클라이언트에는 서비스 키를 배포하지 않는다.
 
 계약시험은 RFC 6238 벡터, 실패 시 정리, 미확인 정리의 통과 차단, SQL 권한·범위·동일 요청·역할 회수·중단 정리, 화면의 실행 조건과 계정 전환을 확인한다. CI는 PostgreSQL 17로 새 SQL 계약도 실행한다. 가상 인증 계층을 사용하는 로컬 시험과 운영 Auth 실행 결과는 구분해 기록한다.

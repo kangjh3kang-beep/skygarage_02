@@ -52,5 +52,5 @@ test('session cleanup failure still bans the identity and cannot report full cle
 });
 
 test('committed migration is exactly the SQL checked locally', () => {
-  assert.equal(readFileSync(new URL('../supabase/sql/live-auth-verification.sql', import.meta.url), 'utf8'), readFileSync(new URL('../supabase/migrations/20261020213442_live_auth_verification.sql', import.meta.url), 'utf8'));
+  assert.equal(readFileSync(new URL('../supabase/sql/live-auth-verification.sql', import.meta.url), 'utf8'), readFileSync(new URL('../supabase/migrations/20261021001220_live_auth_verification.sql', import.meta.url), 'utf8'));
 });
