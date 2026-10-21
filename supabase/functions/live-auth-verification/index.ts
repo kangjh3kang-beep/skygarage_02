@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { exerciseLiveAuth } from './runner.ts';
+import { exerciseLiveAuth, repairPriorAuthCleanup } from './runner.ts';
 
 const allowedOrigins = new Set(['https://www.skygarage.net', 'https://skygarage.net']);
 Deno.serve(async (request: Request) => {
@@ -23,6 +23,7 @@ Deno.serve(async (request: Request) => {
     const headquarters = make(anon, authorization);
     const user = await headquarters.auth.getUser(authorization.slice(7));
     if (user.error || !user.data.user) return response({ code: 'authentication_required' }, 401);
+    await repairPriorAuthCleanup({ headquarters, admin: make(service), newClient: () => make(anon) });
     // PostgREST verifies the real JWT and live DB role, including aal2, again.
     const begun = await headquarters.rpc('platform_begin_live_auth_test', { p_request_id: body.request_id, p_release_sha: body.release_sha });
     if (begun.error) return response({ code: begun.error.code === '42501' ? 'headquarters_mfa_required' : begun.error.message === 'rate_limited' ? 'rate_limited' : 'test_cannot_start' }, begun.error.code === '42501' ? 403 : 409);

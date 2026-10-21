@@ -5,6 +5,45 @@ export type TestRun = { id: string; site_a: string; site_b: string; scope_a: str
 type Actor = { id: string; client: SupabaseClient; password: string; email: string; factor?: string; secret?: string };
 export class TestFailure extends Error {}
 
+function testPassword() {
+  // 244 random bits; 68 ASCII bytes, within Auth's 72-byte limit.
+  return `${crypto.randomUUID().replaceAll('-', '')}${crypto.randomUUID().replaceAll('-', '')}aA1!`;
+}
+
+// Recover only the caller's isolated test identities after interrupted cleanup.
+// Password rotation stays inside this invocation; no prior credential is read.
+export async function repairPriorAuthCleanup(options: {
+  headquarters: SupabaseClient; admin: SupabaseClient; newClient: () => SupabaseClient;
+}) {
+  const { headquarters, admin, newClient } = options;
+  const targets = await rpc(headquarters, 'platform_live_auth_cleanup_targets');
+  if (!Array.isArray(targets)) throw new TestFailure('invalid_cleanup_targets');
+  const runs = new Set<string>();
+  for (const target of targets) {
+    if (!/^[0-9a-f-]{36}$/.test(target.run_id) || !/^[0-9a-f-]{36}$/.test(target.user_id)
+      || !['writer', 'reviewer', 'member'].some(slot => target.email === `g0-${target.run_id.replaceAll('-', '')}-${slot}@example.invalid`)) throw new TestFailure('invalid_cleanup_target');
+    const existing = await admin.auth.admin.getUserById(target.user_id);
+    if (existing.error || existing.data.user?.email !== target.email || existing.data.user?.app_metadata?.skygarage_test_run !== target.run_id) throw new TestFailure('invalid_cleanup_identity');
+    const client = newClient();
+    try {
+      const password = testPassword();
+      const rotated = await admin.auth.admin.updateUserById(target.user_id, { password, ban_duration: 'none' });
+      if (rotated.error) throw new TestFailure('cleanup_rotation_failed');
+      const signedIn = await client.auth.signInWithPassword({ email: target.email, password });
+      if (signedIn.error || signedIn.data.user?.id !== target.user_id) throw new TestFailure('cleanup_signin_failed');
+      const signedOut = await client.auth.signOut({ scope: 'global' });
+      if (signedOut.error) throw new TestFailure('cleanup_signout_failed');
+    } finally {
+      const banned = await admin.auth.admin.updateUserById(target.user_id, { ban_duration: '876000h' });
+      if (banned.error) throw new TestFailure('cleanup_ban_failed');
+    }
+    runs.add(target.run_id);
+  }
+  for (const id of runs) {
+    if (await rpc(headquarters, 'platform_verify_live_auth_cleanup', { p_run_id: id }) !== true) throw new TestFailure('prior_auth_cleanup_incomplete');
+  }
+}
+
 // RFC 6238 / SHA-1. Called exclusively for newly created disposable identities.
 // An existing user's factor, password or session is never read or altered.
 export async function totp(secret: string, milliseconds = Date.now()): Promise<string> {
@@ -63,9 +102,7 @@ export async function exerciseLiveAuth(options: {
     // Auth Admin API creates actual identities, without email/SMS delivery.
     for (const slot of ['writer', 'reviewer', 'member']) {
       const email = `g0-${run.id.replaceAll('-', '')}-${slot}@example.invalid`;
-      // Auth rejects passwords over bcrypt's 72-byte limit. Two UUIDs without
-      // hyphens retain 244 random bits while the ASCII result stays at 68 bytes.
-      const password = `${crypto.randomUUID().replaceAll('-', '')}${crypto.randomUUID().replaceAll('-', '')}aA1!`;
+      const password = testPassword();
       const result = await admin.auth.admin.createUser({ email, password, email_confirm: true, app_metadata: { skygarage_test_run: run.id } });
       if (result.error || !result.data.user) throw new TestFailure('test_identity_creation_failed');
       const actor = { id: result.data.user.id, email, password, client: newClient() };
@@ -150,7 +187,11 @@ export async function exerciseLiveAuth(options: {
     // No test password, factor secret or token is returned, logged or persisted.
     for (const actor of actors) {
       try {
-        const [signedOut, banned] = await Promise.allSettled([actor.client.auth.signOut(), admin.auth.admin.updateUserById(actor.id, { ban_duration: '876000h' })]);
+        // Banning first makes Auth reject logout with 403, which the SDK can
+        // treat as local success. Settle global logout before banning, even if
+        // logout throws; the ban must still run.
+        const [signedOut] = await Promise.allSettled([actor.client.auth.signOut({ scope: 'global' })]);
+        const [banned] = await Promise.allSettled([admin.auth.admin.updateUserById(actor.id, { ban_duration: '876000h' })]);
         const user = await admin.auth.admin.getUserById(actor.id);
         if (signedOut.status !== 'fulfilled' || signedOut.value.error || banned.status !== 'fulfilled' || banned.value.error || user.error || !user.data.user?.banned_until || Date.parse(user.data.user.banned_until) <= Date.now()) cleanup = false;
       } catch { cleanup = false; }
