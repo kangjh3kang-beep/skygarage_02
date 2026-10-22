@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { membershipDatabase } from '../helpers/membership-database.mjs';
 const React=await import('react');
-const {render,cleanup,waitFor,fireEvent}=await import('@testing-library/react');
+const {render,cleanup,waitFor,fireEvent,within}=await import('@testing-library/react');
 const {default:App}=await import('../../src/App.tsx');
 const {default:Enrollment}=await import('../../src/sgp/components/MemberEnrollment.tsx');
 const enter=(v,label,value)=>fireEvent.change(v.getByLabelText(label),{target:{value}});
@@ -66,10 +66,12 @@ test('a late site response and a failed refresh never expose the previous site l
  }finally{cleanup();state.rpcExecutor=null;await db.close();}
 });
 test('registered unit workflow rejects a stale selection, recovers and links the canonical household',async()=>{
- reset();const db=await membershipDatabase();const {ids:i}=db;state.actor=i.hq;const base=executor(db);state.rpcExecutor=base;
+ reset();const db=await membershipDatabase();const {ids:i}=db;state.actor=i.manager;state.role='operator';const base=executor(db);state.rpcExecutor=base;
  const reason='Synthetic reviewed registration documents';
  try{
   let v=await open(`/admin/complexes?site=${i.siteA}`);
+  const menus=await v.findAllByRole('navigation',{name:'관리자 메뉴'});
+  await within(menus[0]).findByText('단지 관리',{exact:true});
   await v.findByLabelText('새 건물명');enter(v,'새 건물명','SYNTHETIC UI 101');
   fireEvent.click(v.getByRole('button',{name:'건물 등록',exact:true}));
   fireEvent.click(await v.findByRole('button',{name:'SYNTHETIC UI 101 · 사용 중',exact:true}));
@@ -84,7 +86,7 @@ test('registered unit workflow rejects a stale selection, recovers and links the
   v=render(React.createElement(Enrollment,{key:i.member,userId:i.member,verified:true}));
   await v.findByText('신청 내역이 없습니다.');enter(v,'현장 초대코드',invite.code);enter(v,'동·호 또는 이용 구분','SYNTHETIC claimed 999');
   fireEvent.click(v.getByRole('button',{name:'현장 소속 신청'}));await v.findByText(/신청이 접수됐습니다/);
-  cleanup();state.actor=i.hq;v=await open(`/admin/residents?site=${i.siteA}`);
+  cleanup();state.actor=i.manager;v=await open(`/admin/residents?site=${i.siteA}`);
   fireEvent.click(await v.findByRole('button',{name:'소속 승인'}));enter(v,'처리 사유(5~500자)',reason);
   assert.equal(v.getByRole('button',{name:'처리 확정'}).disabled,true);
   async function choose(){
