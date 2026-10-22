@@ -59,8 +59,8 @@ jobs:
         run: |
           set -o pipefail
           INQUIRY_NATIVE=1 node --test --test-reporter=tap tests/inquiry-admin-database.test.mjs | tee /tmp/inquiry-checks.log
-          grep -qx '# tests 18' /tmp/inquiry-checks.log
-          grep -qx '# pass 18' /tmp/inquiry-checks.log
+          grep -qx '# tests 19' /tmp/inquiry-checks.log
+          grep -qx '# pass 19' /tmp/inquiry-checks.log
           grep -qx '# fail 0' /tmp/inquiry-checks.log
           grep -qx '# skipped 0' /tmp/inquiry-checks.log
       - name: Provider server contract types

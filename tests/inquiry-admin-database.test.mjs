@@ -124,3 +124,15 @@ test('reopening and completing again retains assignment and event revision integ
  await cmd('assign',{assigned_to:i.otherAdmin});await cmd('start_review',{reason:'Synthetic'});await cmd('save_reply',{body:'First draft'});await cmd('complete',{reason:'First completion'});await cmd('reopen',{reason:'Correction'});await cmd('save_reply',{body:'Second draft'});await cmd('complete',{reason:'Second completion'});
  const {inquiry,events}=await detail(id);assert.equal(inquiry.revision,8);assert.equal(inquiry.assigned_to,i.otherAdmin);assert.deepEqual(events.map(x=>x.revision),[8,7,6,5,4,3,2]);assert.equal(JSON.stringify(events).includes('Second draft'),false);assert.equal(inquiry.delivery_status,'not_sent');
 });
+
+test('legacy inquiry notifications do not leak contact identity around the protected RPC',async()=>{
+ const id=await db.seed();
+ for(const [actor,aal] of [[i.member,'aal2'],[i.operator,'aal2'],[i.admin,'aal1']]){
+  assert.equal((await db.as(actor,'select * from public.admin_notifications where inquiry_id=$1',[id],aal)).rows.length,0);
+  assert.equal((await db.as(actor,"update public.admin_notifications set type='system',inquiry_id=null where inquiry_id=$1 returning id",[id],aal)).rows.length,0);
+ }
+ assert.equal((await db.as(i.admin,'select * from public.admin_notifications where inquiry_id=$1',[id])).rows.length,1);
+ // An unrelated notification keeps the existing subsystem policy; this gate is scoped to inquiry PII.
+ await db.pg.query("insert into public.admin_notifications(type,title,message) values('system','Synthetic','No customer data')");
+ assert.ok((await db.as(i.member,"select * from public.admin_notifications where type='system'")).rows.length>0);
+});

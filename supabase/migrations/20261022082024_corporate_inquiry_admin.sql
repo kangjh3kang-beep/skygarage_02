@@ -52,6 +52,16 @@ create policy inquiry_public_form_only on public.inquiries for insert to anon,au
  with check(status='접수대기' and revision=1 and assigned_to is null and reply_content is null and replied_at is null
  and reply_saved_at is null and delivery_status='not_sent' and admin_notes='[]'::jsonb and status_history='[]'::jsonb);
 
+-- Existing notification triggers copy company/contact names. A restrictive policy
+-- closes that indirect read/write path even when old permissive policies remain.
+create policy inquiry_notification_admin_only on public.admin_notifications as restrictive for all to authenticated
+ using ((type is distinct from 'inquiry' and inquiry_id is null) or
+ ((select auth.uid()) is not null and (select auth.jwt()->>'aal')='aal2' and exists
+ (select 1 from public.user_roles where user_id=(select auth.uid()) and role='super_admin')))
+ with check ((type is distinct from 'inquiry' and inquiry_id is null) or
+ ((select auth.uid()) is not null and (select auth.jwt()->>'aal')='aal2' and exists
+ (select 1 from public.user_roles where user_id=(select auth.uid()) and role='super_admin')));
+
 create function platform_private.assert_inquiry_admin() returns uuid
 language plpgsql security definer set search_path='' as $$
 declare actor uuid:=auth.uid(); begin

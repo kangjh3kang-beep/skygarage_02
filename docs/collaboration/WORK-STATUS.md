@@ -10,7 +10,7 @@
 | [#22 재현·린트 gate](https://github.com/kangjh3kang-beep/skygarage_02/issues/22) | Codex / Claude 검토 | 로컬 통과, CI·검토 대기 | #20 |
 | [#23 문의 계약](https://github.com/kangjh3kang-beep/skygarage_02/issues/23) | Codex / Claude UX 분석 | 관리자 v1 고정·Claude UI 연계 검토; 공개 접수 계약 후속 | #20 |
 | [#26 문의 UI](https://github.com/kangjh3kang-beep/skygarage_02/issues/26) | Claude / Codex 검토 | 유형 표시 수정·7건 통과; 서버 연계 대기 | #23 |
-| [#25 문의 서버](https://github.com/kangjh3kang-beep/skygarage_02/issues/25) | Codex / Claude 검토 | 서버 18/18 native 검증, 최종 리뷰·CI 진행 | #23 |
+| [#25 문의 서버](https://github.com/kangjh3kang-beep/skygarage_02/issues/25) | Codex / Claude 검토 | 서버 19/19 native 검증, 최종 리뷰 수정 완료·CI 진행 | #23 |
 | [#24 문의 통합](https://github.com/kangjh3kang-beep/skygarage_02/issues/24) | Codex / Claude 검토 | 선행 대기 | #22, #25, #26 |
 | [#21 회원 실사용 인수](https://github.com/kangjh3kang-beep/skygarage_02/issues/21) | 운영자 + Claude, Codex 검증 지원 | 실제 계정·검수자 준비 필요 | #20 |
 
@@ -31,4 +31,7 @@
 
 Claude CLI는 계약 148244d와 기존 UI를 읽고 직접 CRUD/발송 표시/상태 선택/revision/이벤트/커서/삭제 제거의 전환 필요성을 확인했다. 당시 SQL 미구현 지적은 TDD RED 단계였고 이후 native 18/18로 구현됐다. 기존 UI는 아직 전환 전이므로 게이트를 유지하며 이 변경만으로 운영 배포하지 않는다. Claude가 제안한 idempotency_conflict의 자동 새 UUID 재시도는 채택하지 않는다. 해당 충돌은 입력·결과를 재확인한 뒤 사용자가 새 작업을 결정해야 한다.
 
-전체 계약 158건: 157 통과, native 전용 동시성 1건 기본 WASM 실행에서 제외(별도 native 18/18 포함). 코드가 운영에 배포되거나 실제 문의가 인수된 것은 아니다. 운영 권한 함수 정의 조회는 자동 승인 검토에서 거부되어 운영 정책 대조가 미완료다. 이후 배포 전 확인할 항목으로 유지한다.
+전체 계약 159건: 158 통과, native 전용 동시성 1건 기본 WASM 실행에서 제외(별도 native 19/19 포함). 코드가 운영에 배포되거나 실제 문의가 인수된 것은 아니다. 운영 권한 함수 정의 조회는 자동 승인 검토에서 거부되어 운영 정책 대조가 미완료다. 이후 배포 전 확인할 항목으로 유지한다.
+
+
+서버 구현 PR: [#31](https://github.com/kangjh3kang-beep/skygarage_02/pull/31), 기반은 미병합 PR #30. 최종 fresh review에서 신규 blocker는 없었고, 기존 문의 알림의 개인정보 우회는 이번 범위로 끌어와 18/19 실패 재현 → 19/19 통과로 수정했다. 운영 승인·적용은 별도다.

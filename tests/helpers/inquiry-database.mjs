@@ -18,9 +18,9 @@ export async function inquiryDatabase() {
   } else pg = await PGlite.create({ extensions: { pgcrypto } });
   const root = new URL('../../', import.meta.url);
   try {
-    for (const path of ['tests/governance-bootstrap.sql', 'supabase/migrations/20260515042020_create_inquiries_table.sql']) await pg.exec(await readFile(new URL(path, root), 'utf8'));
+    for (const path of ['tests/governance-bootstrap.sql', 'supabase/migrations/20260515042020_create_inquiries_table.sql', 'supabase/migrations/20260515223120_create_admin_notifications_table.sql']) await pg.exec(await readFile(new URL(path, root), 'utf8'));
     // Simulate broad legacy grants plus manually added policies/column grants.
-    await pg.exec(`grant all on public.inquiries to anon,authenticated; grant insert(company,name,phone,email,project_type,message),update(status) on public.inquiries to anon,authenticated;
+    await pg.exec(`grant select,insert,update,delete on public.admin_notifications to authenticated; grant all on public.inquiries to anon,authenticated; grant insert(company,name,phone,email,project_type,message),update(status) on public.inquiries to anon,authenticated;
       grant usage on sequence public.inquiry_id_seq to anon,authenticated;
       create policy inquiries_admin_all on public.inquiries for all to authenticated using(true) with check(true);
       insert into public.inquiries(id,company,name,phone,email,reply_content,replied_at,admin_notes,status_history) values('LEGACY','SYNTHETIC','TEST','000','synthetic@example.invalid','OLD REPLY',now(),'[{"content":"legacy note"}]','[{"status":"접수대기"}]');`);
