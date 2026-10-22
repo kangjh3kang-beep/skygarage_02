@@ -38,5 +38,19 @@ export const projectTypeLabels: Record<string, string> = {
   ecommerce: '이커머스',
   branding: '브랜딩',
   consulting: '컨설팅',
+  mixed: '고급 주상복합',
+  apartment: '아파트 / 공동주택',
+  officetel: '오피스텔',
+  industrial: '지식산업센터',
+  retrofit: '기존 주차장 개선',
+  investment: '투자 / 파트너십',
+  government: '공공 / 지자체',
   other: '기타',
 };
+
+/** 알려진 유형은 한국어 라벨을, 알 수 없는 유형은 원래 값을 그대로 반환한다. */
+export function getProjectTypeLabel(projectType: string): string {
+  return Object.hasOwn(projectTypeLabels, projectType)
+    ? projectTypeLabels[projectType]
+    : projectType;
+}

@@ -32,7 +32,7 @@ import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import type { InquiryStatus, Inquiry } from '../../lib/types';
-import { projectTypeLabels } from '../../lib/types';
+import { projectTypeLabels, getProjectTypeLabel } from '../../lib/types';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
@@ -109,7 +109,7 @@ export default function InquiryList() {
     const headers = ['ID', '회사명', '담당자명', '연락처', '이메일', '문의유형', '접수일시', '상태'];
     const rows = filtered.map((i) => [
       i.id, i.company, i.name, i.phone, i.email,
-      projectTypeLabels[i.project_type], i.created_at, i.status,
+      getProjectTypeLabel(i.project_type), i.created_at, i.status,
     ]);
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -293,7 +293,7 @@ export default function InquiryList() {
                         <TableCell sx={{ color: '#ffffff', fontSize: '0.875rem' }}>{inq.company}</TableCell>
                         <TableCell sx={{ color: '#e0e6f0', fontSize: '0.875rem' }}>{inq.name}</TableCell>
                         <TableCell sx={{ color: '#e0e6f0', fontSize: '0.875rem' }}>{inq.phone}</TableCell>
-                        <TableCell sx={{ color: '#e0e6f0', fontSize: '0.875rem' }}>{projectTypeLabels[inq.project_type] ?? inq.project_type}</TableCell>
+                        <TableCell sx={{ color: '#e0e6f0', fontSize: '0.875rem' }}>{getProjectTypeLabel(inq.project_type)}</TableCell>
                         <TableCell>
                           <Chip
                             label={inq.status}
