@@ -19,6 +19,7 @@ export async function membershipDatabase() {
  for(const p of ['tests/governance-bootstrap.sql','supabase/sql/platform-foundation.sql','supabase/sql/site-template-generator.sql','supabase/sql/platform-governance.sql','supabase/sql/platform-governance-catalog.sql'])await pg.exec(await readFile(new URL(p,root),'utf8'));
  await pg.exec('alter table public.sgp_users add column display_name text, add column phone_verified_at timestamptz');
  await pg.exec(await readFile(new URL('supabase/sql/site-membership-operations.sql',root),'utf8'));
+ await pg.exec(await readFile(new URL('supabase/sql/site-residence-directory.sql',root),'utf8'));
  const ids=Object.fromEntries(['hq','manager','otherManager','viewer','member','otherMember','unverified'].map(k=>[k,randomUUID()]));
  for(const [name,id] of Object.entries(ids)){
   await pg.query('insert into auth.users(id) values($1)',[id]);

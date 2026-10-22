@@ -96,7 +96,7 @@ const menuGroups: MenuGroup[] = [
     defaultOpen: true,
     items: [
       { label: '단지 템플릿 생성', icon: <ApartmentIcon />, path: '/admin/templates', minScope: 'global' },
-      { label: '단지 관리', icon: <ApartmentIcon />, path: '/admin/complexes', minScope: 'region' },
+      { label: '단지 관리', icon: <ApartmentIcon />, path: '/admin/complexes' },
       { label: '사용자', icon: <PeopleIcon />, path: '/admin/residents' },
       { label: '주차 운영', icon: <LocalParkingIcon />, path: '/admin/parking' },
       { label: 'ATR 로봇', icon: <PrecisionManufacturingIcon />, path: '/admin/atr', minScope: 'complex' },

@@ -6,6 +6,7 @@ import { useGovernanceQuery } from '../hooks/useGovernanceQuery';
 import { parseGovernanceDirectory } from '../../lib/governance';
 import { membershipLabel, parseMembershipSnapshot, type MembershipKind, type MembershipRow, type SiteProfile } from '../../lib/membership';
 import { useMembershipCommand } from '../../hooks/useMembershipCommand';
+import ResidenceDirectory, { RegisteredUnitPicker } from '../components/ResidenceDirectory';
 
 function ProfileEditor({profile,save,busy,allowed}:{profile:SiteProfile;save:(p:SiteProfile)=>void;busy:boolean;allowed:boolean}){
  const [draft,setDraft]=useState(profile);
@@ -17,10 +18,10 @@ function ProfileEditor({profile,save,busy,allowed}:{profile:SiteProfile;save:(p:
    <Button variant="outlined" disabled={!allowed||busy} onClick={()=>save(draft)}>운영 안내정보 저장</Button></Stack>
  </CardContent></Card>;
 }
-const actionLabels:Record<string,string>={profile:'운영 안내정보 변경',issue_invite:'초대코드 발급',revoke_invite:'초대코드 폐기',apply:'소속 신청',withdraw:'신청 철회',review:'신청 검토',revoke_member:'소속 회수'};
+const actionLabels:Record<string,string>={profile:'운영 안내정보 변경',issue_invite:'초대코드 발급',revoke_invite:'초대코드 폐기',apply:'소속 신청',withdraw:'신청 철회',review:'신청 검토',revoke_member:'소속 회수',create_building:'건물 등록',create_unit:'세대 등록',set_building_active:'건물 사용 상태 변경',set_unit_active:'세대 사용 상태 변경',residence_policy:'세대 승인 방식 변경',link_member_unit:'기존 소속의 세대 연결'};
 function SiteWorkspace({userId,siteId,overview}:{userId:string;siteId:string;overview:boolean}){
  const [revision,refresh]=useState(0),[kind,setKind]=useState<MembershipKind>(overview?'history':'requests'),[status,setStatus]=useState(overview?'all':'pending'),[cursors,setCursors]=useState<(string|null)[]>([null]);
- const [dialog,setDialog]=useState<{row:MembershipRow;action:'approved'|'rejected'|'revoke'}|null>(null),[reason,setReason]=useState('');
+ const [dialog,setDialog]=useState<{row:MembershipRow;action:'approved'|'rejected'|'revoke'|'link'}|null>(null),[reason,setReason]=useState(''),[unitId,setUnitId]=useState<string|null>(null);
  const [days,setDays]=useState(1),[uses,setUses]=useState(10),[code,setCode]=useState<string|null>(null),[notice,setNotice]=useState('');
  const command=useMembershipCommand(()=>{refresh(n=>n+1);});
  const after=cursors.at(-1)??null;
@@ -32,7 +33,7 @@ function SiteWorkspace({userId,siteId,overview}:{userId:string;siteId:string;ove
   else setNotice('발급 기록은 확인됐지만 코드는 다시 표시할 수 없습니다. 처음 응답을 받지 못했다면 목록에서 해당 코드를 폐기하고 새로 발급하세요.');
  }
  async function decide(){if(!dialog)return;const {row,action}=dialog;
-  const result=await command.run(action==='revoke'?'revoke_member':'review',action==='revoke'?{site_id:siteId,user_id:row.user_id,expected_revision:row.revision,reason:reason.trim()}:{site_id:siteId,id:row.id,expected_revision:row.revision,decision:action,reason:reason.trim()});
+  const result=await command.run(action==='link'?'link_member_unit':action==='revoke'?'revoke_member':'review',action==='link'?{site_id:siteId,user_id:row.user_id,unit_id:unitId,expected_revision:row.revision,reason:reason.trim()}:action==='revoke'?{site_id:siteId,user_id:row.user_id,expected_revision:row.revision,reason:reason.trim()}:{site_id:siteId,id:row.id,expected_revision:row.revision,decision:action,reason:reason.trim(),unit_id:action==='approved'?unitId:null});
   if(result){setDialog(null);setReason('');setNotice('처리됐습니다. 새로 조회된 상태와 변경 이력을 확인하세요.');}
  }
  const choices=kind==='requests'?['all','pending','approved','rejected','withdrawn']:['all','pending','active','revoked'];
@@ -56,14 +57,19 @@ function SiteWorkspace({userId,siteId,overview}:{userId:string;siteId:string;ove
    {data.rows.map(row=><Card key={row.id} variant="outlined"><CardContent>
     {kind==='history'?<><Typography>{actionLabels[row.action??'']??row.action}</Typography><Typography variant="body2">{new Date(row.created_at!).toLocaleString('ko-KR')} · 처리 계정 {row.actor_id?.slice(-8)}</Typography><Typography sx={{whiteSpace:'pre-wrap'}}>{row.reason}</Typography></>:kind==='invites'?<><Typography>코드 식별자 {row.id.slice(-8)} · 신청 {row.uses}/{row.max_uses}회</Typography><Typography>만료 {new Date(row.expires_at!).toLocaleString('ko-KR')} · {row.revoked?'폐기됨':Date.parse(row.expires_at!)<=Date.now()?'만료됨':'발급됨'}</Typography><Button disabled={blocked||!data.can_manage||row.revoked} onClick={()=>void command.run('revoke_invite',{site_id:siteId,id:row.id,expected_revision:row.revision})}>초대코드 폐기</Button></>:<>
      <Typography component="h3" variant="h6">{row.display_name} · {row.unit_label}</Typography><Typography variant="body2">회원 식별자 {row.user_id?.slice(-8)} · 문자 인증 {row.phone_verified?'확인':'미확인'}</Typography><Chip label={membershipLabel(row.status!)} size="small" sx={{my:1}}/>{row.reason&&<Typography sx={{whiteSpace:'pre-wrap'}}>{row.reason}</Typography>}
-     {kind==='requests'&&row.status==='pending'&&<Stack direction="row" spacing={1}><Button disabled={blocked||!data.can_manage||!row.phone_verified||row.user_id===userId} onClick={()=>{setDialog({row,action:'approved'});setReason('');}}>소속 승인</Button><Button disabled={blocked||!data.can_manage} onClick={()=>{setDialog({row,action:'rejected'});setReason('');}}>신청 반려</Button></Stack>}
+     {row.unit_id&&<Typography variant="body2">등록 세대 원장에 연결됨</Typography>}
+     {kind==='requests'&&row.status==='pending'&&<Stack direction="row" spacing={1}><Button disabled={blocked||!data.can_manage||!row.phone_verified||row.user_id===userId} onClick={()=>{setDialog({row,action:'approved'});setReason('');setUnitId(null);}}>소속 승인</Button><Button disabled={blocked||!data.can_manage} onClick={()=>{setDialog({row,action:'rejected'});setReason('');setUnitId(null);}}>신청 반려</Button></Stack>}
      {kind==='members'&&row.status==='active'&&<Button color="warning" disabled={blocked||!data.can_manage} onClick={()=>{setDialog({row,action:'revoke'});setReason('');}}>소속 회수</Button>}
+     {kind==='members'&&row.status==='active'&&<Button disabled={blocked||!data.can_manage||!row.phone_verified||row.user_id===userId} onClick={()=>{setDialog({row,action:'link'});setReason('');setUnitId(null);}}>등록 세대 연결·변경</Button>}
     </>}
    </CardContent></Card>)}
    <Stack direction="row" spacing={1}><Button disabled={blocked||cursors.length<2} onClick={()=>setCursors(c=>c.slice(0,-1))}>이전 50건</Button><Button disabled={blocked||!data.next_cursor} onClick={()=>setCursors(c=>[...c,data.next_cursor])}>다음 50건</Button></Stack>
    <Typography variant="caption">조회 시각 {new Date(data.observed_at).toLocaleString('ko-KR')} · 목록은 식별자 순서이며 페이지마다 최대 50건입니다.</Typography>
   </>}
-  <Dialog open={!!dialog} onClose={()=>{if(!command.busy)setDialog(null);}} fullWidth maxWidth="sm"><DialogTitle>{dialog?.action==='approved'?'회원 소속 승인':dialog?.action==='rejected'?'회원 신청 반려':'회원 소속 회수'}</DialogTitle><DialogContent><Typography sx={{my:1}}>{dialog?.row.display_name} · {dialog?.row.unit_label}</Typography><Typography sx={{mb:2}}>{dialog?.action==='revoke'?'회수 즉시 이 현장의 소속과 등록 차량의 확인 상태가 해제됩니다. 다른 현장 소속은 유지됩니다.':'실제 입주·이용 자격을 별도로 확인하고 처리 근거를 남기세요. 문자 인증만으로 입주 자격을 판단하지 마세요.'}</Typography><TextField fullWidth multiline minRows={3} label="처리 사유(5~500자)" value={reason} disabled={command.busy} onChange={e=>setReason(e.target.value)} slotProps={{htmlInput:{maxLength:500}}}/></DialogContent><DialogActions><Button disabled={command.busy} onClick={()=>setDialog(null)}>취소</Button><Button variant="contained" disabled={blocked||reason.trim().length<5} onClick={()=>void decide()}>처리 확정</Button></DialogActions></Dialog>
+  {overview&&<ResidenceDirectory userId={userId} siteId={siteId} onChanged={()=>refresh(n=>n+1)}/>}
+  <Dialog open={!!dialog} onClose={()=>{if(!command.busy)setDialog(null);}} fullWidth maxWidth="sm"><DialogTitle>{dialog?.action==='approved'?'회원 소속 승인':dialog?.action==='rejected'?'회원 신청 반려':dialog?.action==='link'?'기존 소속의 등록 세대 연결':'회원 소속 회수'}</DialogTitle><DialogContent><Typography sx={{my:1}}>{dialog?.row.display_name} · {dialog?.row.unit_label}</Typography><Typography sx={{mb:2}}>{dialog?.action==='revoke'?'회수 즉시 이 현장의 소속과 등록 차량의 확인 상태가 해제됩니다. 다른 현장 소속은 유지됩니다.':'실제 입주·이용 자격을 별도로 확인하고 처리 근거를 남기세요. 문자 인증만으로 입주 자격을 판단하지 마세요.'}</Typography>
+   {(dialog?.action==='approved'||dialog?.action==='link')&&<><Alert severity="info">{dialog.action==='link'||data?.residence_policy?.mode==='registered_unit'?'등록 세대 선택이 필수입니다.':'현재는 자유 입력 방식입니다. 등록 세대를 선택하면 확인한 세대에 연결하고, 선택하지 않으면 신청자가 입력한 구분으로 승인합니다.'}</Alert><RegisteredUnitPicker key={dialog.row.id+dialog.action} userId={userId} siteId={siteId} value={unitId} onChange={setUnitId}/></>}
+   <TextField fullWidth multiline minRows={3} sx={{mt:2}} label="처리 사유(5~500자)" value={reason} disabled={command.busy} onChange={e=>setReason(e.target.value)} slotProps={{htmlInput:{maxLength:500}}}/></DialogContent><DialogActions><Button disabled={command.busy} onClick={()=>setDialog(null)}>취소</Button><Button variant="contained" disabled={blocked||reason.trim().length<5||((dialog?.action==='link'||(dialog?.action==='approved'&&data?.residence_policy?.mode==='registered_unit'))&&!unitId)} onClick={()=>void decide()}>처리 확정</Button></DialogActions></Dialog>
  </Stack>;
 }
 export function SiteOperations(){return <SiteMembershipWorkbench overview/>;}

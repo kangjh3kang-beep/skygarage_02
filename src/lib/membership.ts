@@ -1,7 +1,7 @@
 export type MembershipKind = 'requests' | 'members' | 'invites' | 'history';
-export type MembershipRow = { id: string; user_id?: string | null; actor_id?: string; display_name?: string; unit_label?: string; status?: string; revision?: number; reason?: string; phone_verified?: boolean; created_at?: string; decided_at?: string | null; expires_at?: string; max_uses?: number; uses?: number; revoked?: boolean; action?: string };
+export type MembershipRow = { id: string; user_id?: string | null; actor_id?: string; display_name?: string; unit_label?: string; unit_id?: string | null; status?: string; revision?: number; reason?: string; phone_verified?: boolean; created_at?: string; decided_at?: string | null; expires_at?: string; max_uses?: number; uses?: number; revoked?: boolean; action?: string };
 export type SiteProfile = {revision:number;address:string;office_phone:string;service_hours:string};
-export type MembershipSnapshot = {schema_version:1;site:{id:string;name:string;phase:string};can_manage:boolean;profile:SiteProfile;counts:{pending:number;active:number;revoked:number};kind:MembershipKind;rows:MembershipRow[];next_cursor:string|null;observed_at:string};
+export type MembershipSnapshot = {schema_version:1;site:{id:string;name:string;phase:string};can_manage:boolean;residence_policy?:{mode:'free_text'|'registered_unit';revision:number};profile:SiteProfile;counts:{pending:number;active:number;revoked:number};kind:MembershipKind;rows:MembershipRow[];next_cursor:string|null;observed_at:string};
 export type OwnMemberships = {schema_version:1;applications:{id:string;site_id:string;site_name:string;phase:string;unit_label:string;status:string;revision:number;reason:string;created_at:string}[];memberships:{site_id:string;site_name:string;phase:string;unit_label:string;status:string}[];observed_at:string};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const object=(x:unknown):Record<string,unknown>=>{if(!x||typeof x!=='object'||Array.isArray(x))throw Error('invalid_membership_response');return x as Record<string,unknown>;};
@@ -15,11 +15,13 @@ export function parseMembershipSnapshot(input:unknown):MembershipSnapshot{
  const v=object(input),s=object(v.site),p=object(v.profile),c=object(v.counts);
  check(v.schema_version===1&&id(s.id)&&typeof s.name==='string'&&typeof s.phase==='string'&&typeof v.can_manage==='boolean'&&integer(p.revision)&&['address','office_phone','service_hours'].every(k=>typeof p[k]==='string')&&['pending','active','revoked'].every(k=>integer(c[k]))&&['requests','members','invites','history'].includes(String(v.kind))&&Array.isArray(v.rows)&&v.rows.length<=50&&date(v.observed_at)&&(v.next_cursor===null||id(v.next_cursor)));
  for(const item of v.rows){const r=object(item);check(id(r.id)&&!('code'in r)&&!('token_hash'in r));
+  check(r.unit_id===undefined||r.unit_id===null||id(r.unit_id));
   if(v.kind==='requests'||v.kind==='members')check(id(r.user_id)&&typeof r.display_name==='string'&&typeof r.unit_label==='string'&&typeof r.phone_verified==='boolean'&&integer(r.revision)&&Number(r.revision)>0&&['pending','active','revoked','approved','rejected','withdrawn'].includes(String(r.status)));
   if(v.kind==='requests')check(date(r.created_at)&&typeof r.reason==='string');
   if(v.kind==='invites')check(date(r.expires_at)&&date(r.created_at)&&integer(r.max_uses)&&integer(r.uses)&&integer(r.revision)&&typeof r.revoked==='boolean');
   if(v.kind==='history')check(typeof r.action==='string'&&typeof r.reason==='string'&&date(r.created_at)&&id(r.actor_id));
  }
+ if(v.residence_policy!==undefined){const p=object(v.residence_policy);check(['free_text','registered_unit'].includes(String(p.mode))&&integer(p.revision));}
  return v as unknown as MembershipSnapshot;
 }
 export function parseOwnMemberships(input:unknown):OwnMemberships{
@@ -31,5 +33,7 @@ export function parseOwnMemberships(input:unknown):OwnMemberships{
 export function membershipError(error:unknown):string{
  const message=error&&typeof error==='object'&&'message'in error?String(error.message):'';
  const labels:Record<string,string>={phone_verification_required:'문자 인증이 완료된 활성 회원만 신청·승인할 수 있습니다.',invite_unavailable:'초대코드가 만료·폐기됐거나 사용 한도에 도달했습니다. 현장 담당자에게 새 코드를 요청하세요.',application_pending:'이 현장에 승인 대기 중인 신청이 있습니다. 내 신청 내역을 확인하세요.',already_member:'이미 승인된 소속입니다. 내 소속을 다시 조회하세요.',version_conflict:'다른 변경이 먼저 반영됐습니다. 새로 조회하고 최신 상태에서 다시 처리하세요.',idempotency_conflict:'재시도 요청의 내용이 달라졌습니다. 현재 상태를 조회한 뒤 다시 처리하세요.',site_access_denied:'이 현장을 관리할 권한이 없습니다. 담당 현장과 권한을 확인하세요.',mfa_required:'관리자 2단계 인증을 완료한 뒤 다시 시도하세요.',application_closed:'이미 처리된 신청입니다. 최신 상태를 조회하세요.',independent_approver_required:'본인의 소속 신청은 다른 현장 관리자에게 승인받아야 합니다.',site_not_open:'현재 단계에서는 회원 신청·초대·승인을 제공하지 않습니다.',reason_required:'처리 사유를 5자 이상 입력하세요.',active_member_required:'승인된 회원만 소속을 회수할 수 있습니다.',rate_limited:'요청 한도에 도달했습니다. 잠시 후 다시 시도하세요.',application_unavailable:'본인 또는 담당 현장의 신청인지 확인하세요.'};
+ Object.assign(labels,{registered_unit_required:'이 현장은 등록 세대 선택이 필수입니다. 실제 자격을 확인하고 건물·세대를 선택하세요.',unit_unavailable:'해당 현장에서 사용 중인 세대를 선택하세요. 최신 원장을 다시 조회하세요.',building_unavailable:'해당 현장에서 사용 중인 건물을 선택하세요.',residence_unavailable:'선택한 원장 항목을 다시 조회하세요.',building_has_active_units:'건물의 모든 세대를 먼저 사용 중지하세요.',unit_in_use:'활성 소속이 연결된 세대입니다. 자격을 확인해 소속을 회수하거나 다른 세대로 재연결한 뒤 중지하세요.',active_unit_required:'사용 중인 건물과 세대를 먼저 등록하세요.',unmapped_active_members:'원장에 연결되지 않은 활성 소속이 있습니다. 회원 목록에서 자격을 확인해 등록 세대에 연결하세요.',invalid_residence_label:'건물·세대 이름을 1~30자로 입력하세요.'});
+ if(error&&typeof error==='object'&&'code'in error&&error.code==='23505')return '이미 등록된 이름입니다. 기존 원장을 확인하세요.';
  return labels[message]??'처리 결과를 확인하지 못했습니다. 먼저 최신 상태를 조회하세요. 같은 내용의 재시도는 동일 요청으로 처리됩니다.';
 }
