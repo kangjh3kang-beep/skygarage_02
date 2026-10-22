@@ -832,7 +832,7 @@
         "/admin/validation",
         "/admin/workflows"
       ],
-      "actions": 32,
+      "actions": 44,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -2794,7 +2794,7 @@
         "/admin/validation",
         "/admin/workflows"
       ],
-      "actions": 32,
+      "actions": 44,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -5149,5 +5149,5 @@
     "src/sgp/pages/SgpWalletPage.tsx",
     "src/sgp/pages/SgpWelcomePage.tsx"
   ],
-  "sourceFiles": 240
+  "sourceFiles": 242
 }

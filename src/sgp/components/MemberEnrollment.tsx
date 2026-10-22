@@ -9,7 +9,7 @@ export default function MemberEnrollment({userId,verified,onMembershipChange}:{u
  async function apply(){const r=await command.run('apply',{code:code.trim().toLowerCase(),unit_label:unit.trim()});if(r){setCode('');setUnit('');setMessage('신청이 접수됐습니다. 담당자 승인 전에는 소속이 활성화되지 않습니다.');}}
  return <section className="doelv-card" aria-label="내 현장 소속 신청"><p className="doelv-eyebrow">MEMBERSHIP</p><h2>단지·시설 소속 신청</h2>
   <p>현장 담당자가 전달한 64자리 초대코드와 동·호 또는 이용 구분을 입력하세요. 문자 인증을 마친 회원만 신청할 수 있습니다.</p>
-  <p className="doelv-muted">신청 후 관리자가 입주·이용 자격을 확인합니다. 소속 승인은 실제 출입·주차·장비 운행 허가와 별개입니다.</p>
+  <p className="doelv-muted">신청 후 관리자가 입주·이용 자격을 확인하고 등록 세대 또는 해당 시설의 이용 구분에 연결합니다. 입력한 동·호만으로 승인되지 않습니다. 소속 승인은 실제 출입·주차·장비 운행 허가와 별개입니다.</p>
   {!verified&&<p role="alert">휴대전화 문자 인증 상태를 먼저 확인하세요.</p>}
   <form onSubmit={e=>{e.preventDefault();void apply();}}><label>현장 초대코드<input aria-label="현장 초대코드" value={code} autoComplete="off" spellCheck={false} maxLength={64} disabled={command.busy||!verified} onChange={e=>setCode(e.target.value)} style={{display:'block',width:'100%',boxSizing:'border-box',margin:'8px 0',padding:12}}/></label>
    <label>동·호 또는 이용 구분<input aria-label="동·호 또는 이용 구분" value={unit} maxLength={80} disabled={command.busy||!verified} onChange={e=>setUnit(e.target.value)} style={{display:'block',width:'100%',boxSizing:'border-box',margin:'8px 0',padding:12}}/></label>
