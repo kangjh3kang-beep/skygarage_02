@@ -24,8 +24,7 @@ export async function inquiryDatabase() {
       grant usage on sequence public.inquiry_id_seq to anon,authenticated;
       create policy inquiries_admin_all on public.inquiries for all to authenticated using(true) with check(true);
       insert into public.inquiries(id,company,name,phone,email,reply_content,replied_at,admin_notes,status_history) values('LEGACY','SYNTHETIC','TEST','000','synthetic@example.invalid','OLD REPLY',now(),'[{"content":"legacy note"}]','[{"status":"접수대기"}]');`);
-    try { await pg.exec(await readFile(new URL('supabase/sql/corporate-inquiries.sql', root), 'utf8')); }
-    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    await pg.exec(await readFile(new URL('supabase/sql/corporate-inquiries.sql', root), 'utf8'));
     const ids = Object.fromEntries(['admin', 'otherAdmin', 'member', 'operator'].map(k => [k, randomUUID()]));
     for (const [name,id] of Object.entries(ids)) {
       await pg.query('insert into auth.users(id) values($1)', [id]);

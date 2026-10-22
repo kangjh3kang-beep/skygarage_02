@@ -11,11 +11,13 @@
 
 ## RPC
 
+`platform_inquiry_assignees(p_after uuid = null)` → `{rows,next_cursor}`. 현재 super_admin의 user_id/display_name만 50개씩 UUID 순으로 제공한다. 조회자도 MFA 관리자여야 하며 접근 감사를 남긴다. 이름이 비어 있으면 UI에서 ID 일부를 표시한다.
+
 `platform_inquiry_list(p_status text = 'all', p_after text = null)` → `{rows, next_cursor}`. 50개씩 ID 오름차순의 불투명 커서. rows는 id/company/name/project_type/status/assigned_to/revision/created_at/updated_at/reply_saved_at/delivery_status. 연락처·본문은 상세에서만 조회한다. status는 all 또는 접수대기/검토중/보류/답변완료.
 
-`platform_inquiry_detail(p_id text)` → `{inquiry, events}`. inquiry는 기존 열과 revision(초기 1), assigned_to, reply_saved_at, delivery_status. events는 최근 100건(시간·id 내림차순), 이전 이력은 아래 RPC로 순회한다. 기존 admin_notes/status_history는 출처 확인 불가 레거시 기록으로 별도 표시한다.
+`platform_inquiry_detail(p_id text)` → `{inquiry, events}`. inquiry는 기존 열과 revision(초기 1), assigned_to, reply_saved_at, delivery_status. events는 최근 100건(id 내림차순), 이전 이력은 아래 RPC로 순회한다. 기존 admin_notes/status_history는 출처 확인 불가 레거시 기록으로 별도 표시한다.
 
-`platform_inquiry_events(p_id text, p_before bigint = null)` → `{rows,next_cursor}`. 단조 증가 event ID 역순 50개. 각 event는 id/inquiry_id/actor_id/action/data/revision/created_at. 연락처·고객 본문·답변 원문을 감사 이벤트에 복제하지 않는다. note의 data에는 검증된 메모 본문이 저장된다.
+`platform_inquiry_events(p_id text, p_before bigint = null)` → `{rows,next_cursor}`. 단조 증가 event ID 역순 50개. event ID와 next_cursor는 bigint 정밀도 손실을 피하는 십진수 문자열이다. 각 event는 id/inquiry_id/actor_id/action/data/revision/created_at. 연락처·고객 본문·답변 원문을 감사 이벤트에 복제하지 않는다. note의 data에는 검증된 메모 본문이 저장된다.
 
 `platform_inquiry_command(p_request_id uuid, p_action text, p_payload jsonb)` → `{id,revision,status,assigned_to,reply_saved_at,delivery_status}`. payload 공통 필수: `id` string, `expected_revision` 양의 정수. 허용하지 않은 키와 잘못된 JSON 타입은 거부한다.
 

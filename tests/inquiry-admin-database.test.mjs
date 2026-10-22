@@ -111,3 +111,16 @@ test('migration is exactly the independently tested SQL',async()=>{
  const {readdir}=await import('node:fs/promises');const files=await readdir(new URL('../supabase/migrations/',import.meta.url));const migration=files.find(x=>x.endsWith('_corporate_inquiry_admin.sql'));assert.ok(migration);
  assert.equal(await readFile(new URL(`../supabase/migrations/${migration}`,import.meta.url),'utf8'),await readFile(new URL('../supabase/sql/corporate-inquiries.sql',import.meta.url),'utf8'));
 });
+
+test('assignee directory only reveals eligible administrator IDs and names to MFA admins',async()=>{
+ await assert.rejects(db.call(i.member,'platform_inquiry_assignees'),/inquiry_access_denied/);
+ await assert.rejects(db.call(i.admin,'platform_inquiry_assignees',{},'aal1'),/mfa_required/);
+ const page=await db.call(i.admin,'platform_inquiry_assignees');assert.deepEqual(new Set(page.rows.map(x=>x.user_id)),new Set([i.admin,i.otherAdmin]));assert.equal(page.next_cursor,null);assert.deepEqual(Object.keys(page.rows[0]).sort(),['display_name','user_id']);
+ const tail=await db.call(i.admin,'platform_inquiry_assignees',{p_after:page.rows[0].user_id});assert.equal(tail.rows.length,1);
+});
+test('reopening and completing again retains assignment and event revision integrity',async()=>{
+ const id=await db.seed();let rev=1;
+ const cmd=(action,extra)=>db.command(i.admin,action,payload(id,rev++,extra));
+ await cmd('assign',{assigned_to:i.otherAdmin});await cmd('start_review',{reason:'Synthetic'});await cmd('save_reply',{body:'First draft'});await cmd('complete',{reason:'First completion'});await cmd('reopen',{reason:'Correction'});await cmd('save_reply',{body:'Second draft'});await cmd('complete',{reason:'Second completion'});
+ const {inquiry,events}=await detail(id);assert.equal(inquiry.revision,8);assert.equal(inquiry.assigned_to,i.otherAdmin);assert.deepEqual(events.map(x=>x.revision),[8,7,6,5,4,3,2]);assert.equal(JSON.stringify(events).includes('Second draft'),false);assert.equal(inquiry.delivery_status,'not_sent');
+});
