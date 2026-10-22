@@ -8,7 +8,13 @@ const { AuthProvider } = await import('../../src/admin/contexts/AuthContext.tsx'
 const { default: Gate } = await import('../../src/admin/components/AdminSecurityGate.tsx');
 const el = React.createElement;
 const open = path => { window.history.replaceState({}, '', path); return render(el(App)); };
-const gate = () => render(el(AuthProvider, null, el(Gate, null, el('h1', null, '보호된 실제 관리 화면'))));
+const gate = async () => {
+  const view = render(el(AuthProvider, null, el(Gate, null, el('h1', null, '보호된 실제 관리 화면'))));
+  // Gate mounts directly in these tests; wait for the actual authenticated user,
+  // as the production parent route does, before triggering account operations.
+  await view.findByText(/가상 관리자님/);
+  return view;
+};
 const verify = (v, code = '123456') => { fireEvent.change(v.getByLabelText('인증 앱 6자리 번호'), { target: { value: code } }); fireEvent.click(v.getByRole('button', { name: '인증하고 관리 화면 열기' })); };
 afterEach(() => cleanup());
 
@@ -49,7 +55,7 @@ test('public help searches instructions without disclosing authenticated data', 
 
 test('manual MFA key is masked, no secret is stored, verification requires aal2 and clears enrollment UI', async () => {
   reset(); state.aal = 'aal1';
-  const v = gate();
+  const v = await gate();
   fireEvent.click(await v.findByRole('button', { name: '인증 앱 등록하기' }));
   const key = await v.findByLabelText('인증 앱 수동 설정 키');
   assert.equal(key.type, 'password'); assert.equal(key.value, syntheticMfaSecret);
@@ -71,7 +77,7 @@ test('manual MFA key is masked, no secret is stored, verification requires aal2 
 test('pending cleanup re-reads factors and never removes a verified or non-TOTP factor', async () => {
   reset(); state.aal = 'aal1';
   state.factors = [{ id: 'pending', factor_type: 'totp', status: 'unverified' }];
-  const v = gate();
+  const v = await gate();
   await v.findByRole('button', { name: '미완료 등록 정리' });
   state.factors.push({ id: 'verified-after-check', factor_type: 'totp', status: 'verified' }, { id: 'phone', factor_type: 'phone', status: 'unverified' });
   fireEvent.click(v.getByRole('button', { name: '미완료 등록 정리' }));
@@ -85,7 +91,7 @@ test('duplicate enrollment and a late response from a previous account cannot ex
   reset(); state.aal = 'aal1';
   let resolveEnrollment;
   state.mfaEnrollExecutor = () => new Promise(resolve => { resolveEnrollment = resolve; });
-  const v = gate();
+  const v = await gate();
   const button = await v.findByRole('button', { name: '인증 앱 등록하기' });
   fireEvent.click(button); fireEvent.click(button);
   assert.equal(state.calls.filter(c => c.name === 'mfa.enroll').length, 1);
