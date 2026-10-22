@@ -32,6 +32,13 @@ test('CLI preserves debt, rejects new diagnostics and prevents baseline inflatio
     const base = git(['rev-parse', 'HEAD']);
     const unchanged = run([], { CI: 'true', LINT_BASE_SHA: base });
     assert.equal(unchanged.status, 0, unchanged.stdout + unchanged.stderr);
+    mkdirSync(join(root, 'nested'));
+    writeFileSync(join(root, 'nested/eslint.config.js'), "export default [{ rules: { 'no-unused-vars': 'off' } }];\n");
+    writeFileSync(join(root, 'nested/source.js'), 'const hiddenDebt = 1;\n');
+    const nested = run([], { CI: 'true', LINT_BASE_SHA: base });
+    assert.equal(nested.status, 1, 'A nested config must not suppress the root lint gate');
+    assert.match(nested.stderr, /hiddenDebt/);
+    rmSync(join(root, 'nested'), { recursive: true });
     writeFileSync(join(root, 'source.js'), 'const oldDebt = 1; const newDebt = 2;\n');
     const failed = run([], { CI: 'true', LINT_BASE_SHA: base });
     assert.equal(failed.status, 1, failed.stdout + failed.stderr);

@@ -6,11 +6,15 @@ const repo = 'example/project';
 const sha = 'a'.repeat(40);
 const run = { id: 10, run_attempt: 1, head_sha: sha, head_branch: 'main', head_repository: { full_name: repo }, name: 'Platform contracts', event: 'push', status: 'completed', conclusion: 'failure' };
 const marker = '<!-- skygarage-ci-feedback:platform-contracts-main -->';
-function harness({ latest = run, head = sha, issues = [] } = {}) {
+function harness({ latest = run, latestRuns, head = sha, issues = [] } = {}) {
   const mutations = [];
   return { mutations, api: async (path, options) => {
     if (options) { mutations.push({ path, ...options }); return { number: 77 }; }
-    if (path.includes('/actions/workflows/')) return { workflow_runs: [latest] };
+    if (path.includes('/actions/workflows/')) {
+      const event = new URL(path, 'https://api.github.com').searchParams.get('event');
+      const items = latestRuns ?? [latest];
+      return { workflow_runs: event ? items.filter(item => item.event === event) : items };
+    }
     if (path.endsWith('/git/ref/heads/main')) return { object: { sha: head } };
     if (path.includes('/issues?')) return issues;
     throw new Error(`Unexpected API call: ${path}`);
@@ -70,4 +74,19 @@ test('a subsequent failure reopens the automated issue without creating duplicat
   const h = harness({ issues: [{ number: 77, state: 'closed', body: marker, user: { login: 'github-actions[bot]' } }] });
   assert.equal((await syncFeedback({ repo, run, api: h.api })).action, 'reopened');
   assert.equal(h.mutations[0].body.state, 'open');
+});
+
+
+test('a newer unrelated main-named fork PR does not hide current main failure', async () => {
+  const fork = { ...run, id: 20, event: 'pull_request', head_repository: {full_name: 'fork/project'} };
+  const h = harness({ latestRuns: [fork, run] });
+  assert.equal((await syncFeedback({ repo, run, api: h.api })).action, 'opened');
+  assert.equal(h.mutations.length, 1);
+});
+
+test('a newer in-progress manual run supersedes a completed push on the same main SHA', async () => {
+  const manual = { ...run, id: 20, event: 'workflow_dispatch', status: 'in_progress', conclusion: null };
+  const h = harness({ latestRuns: [manual, run] });
+  assert.equal((await syncFeedback({ repo, run, api: h.api })).reason, 'stale-run');
+  assert.equal(h.mutations.length, 0);
 });

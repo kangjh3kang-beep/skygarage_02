@@ -21,6 +21,19 @@ function validate(snapshot) {
   return snapshot;
 }
 
+function diagnosticMessage(message, filePath) {
+  // React compiler diagnostics embed location and source frames in message itself.
+  // Keep semantic prose; checkout paths, moved lines and source excerpts are not identity.
+  if (message.ruleId?.startsWith('react-hooks/')) {
+    const marker = `\n\n${filePath}:`;
+    const index = message.message.indexOf(marker);
+    if (index >= 0 && /^\d+:\d+\r?\n/.test(message.message.slice(index + marker.length))) {
+      return message.message.slice(0, index).trimEnd();
+    }
+  }
+  return message.message;
+}
+
 export function lintSnapshot(results, root) {
   if (!Array.isArray(results)) throw new Error('Invalid ESLint report');
   const entries = new Map();
@@ -31,7 +44,7 @@ export function lintSnapshot(results, root) {
     if (!Array.isArray(result.messages)) throw new Error('Invalid ESLint messages');
     for (const message of result.messages) {
       if (![1, 2].includes(message.severity)) throw new Error('Invalid ESLint severity');
-      const entry = { file, ruleId: message.ruleId ?? null, severity: message.severity, message: message.message, fatal: Boolean(message.fatal), count: 1 };
+      const entry = { file, ruleId: message.ruleId ?? null, severity: message.severity, message: diagnosticMessage(message, result.filePath), fatal: Boolean(message.fatal), count: 1 };
       const key = fingerprint(entry);
       if (entries.has(key)) entries.get(key).count += 1;
       else entries.set(key, entry);
@@ -72,7 +85,7 @@ async function main() {
   if (args.some(arg => arg !== '--write-baseline')) throw new Error('Unknown lint gate argument');
   const root = process.cwd();
   const { ESLint } = await import('eslint');
-  const current = lintSnapshot(await new ESLint({ cwd: root }).lintFiles(['.']), root);
+  const current = lintSnapshot(await new ESLint({ cwd: root, overrideConfigFile: resolve(root, 'eslint.config.js') }).lintFiles(['.']), root);
   const configHash = createHash('sha256').update(await readFile('eslint.config.js')).digest('hex');
   await mkdir('artifacts', { recursive: true });
   await writeFile('artifacts/lint-current.json', JSON.stringify(current, null, 2) + '\n');

@@ -68,3 +68,18 @@ test('fatal diagnostics remain visible independently of count allowances', () =>
   assert.equal(current.totals.fatal, 1);
   assert.equal(current.totals.errors, 1);
 });
+
+
+test('compiler code frames do not leak source or make fingerprints depend on checkout path and line', () => {
+  const report = (checkout, line) => [{ filePath: `${checkout}/src/a.ts`, messages: [{
+    ruleId: 'react-hooks/purity', severity: 2,
+    message: `Error: Cannot call impure function during render\n\nDate.now is impure.\n\n${checkout}/src/a.ts:${line}:5\n> ${line} | PRIVATE SOURCE\n     | ^^^^^ Cannot call impure function`,
+  }] }];
+  const baseline = lintSnapshot(report('/local/project', 5), '/local/project');
+  const current = lintSnapshot(report('/home/runner/work/project/project', 123), '/home/runner/work/project/project');
+  assert.deepEqual(compareSnapshots(current, baseline), { regressions: [], resolved: [] });
+  assert.doesNotMatch(JSON.stringify(current), /PRIVATE SOURCE|home\/runner|:123:5/);
+  assert.match(current.entries[0].message, /Date.now is impure/);
+  const changed = lintSnapshot([{filePath:'/local/project/src/a.ts', messages:[message('react-hooks/purity',2,'Error: A different semantic diagnostic')]}], '/local/project');
+  assert.equal(compareSnapshots(changed, baseline).regressions.length, 1);
+});

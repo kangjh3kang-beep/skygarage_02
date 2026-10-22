@@ -12,7 +12,13 @@ export async function syncFeedback({ repo, run, api }) {
       run.name !== 'Platform contracts' || !['push', 'workflow_dispatch'].includes(run.event) || run.status !== 'completed' ||
       !(run.conclusion === 'success' || failures.has(run.conclusion))) return { action: 'ignored', reason: 'out-of-scope' };
   const prefix = `/repos/${repo}`;
-  const latest = (await api(`${prefix}/actions/workflows/platform-contracts.yml/runs?branch=main&per_page=1`)).workflow_runs?.[0];
+  // PR runs from a fork can also have a branch named main. Query each allowed
+  // event explicitly so unrelated PR activity cannot hide the latest main result.
+  const lists = await Promise.all(['push', 'workflow_dispatch'].map(event =>
+    api(`${prefix}/actions/workflows/platform-contracts.yml/runs?branch=main&event=${event}&per_page=1`)));
+  const latest = lists.flatMap(list => list.workflow_runs ?? [])
+    .filter(item => item.head_repository?.full_name === repo && item.head_branch === 'main' && ['push', 'workflow_dispatch'].includes(item.event))
+    .sort((a, b) => Date.parse(b.created_at ?? '') - Date.parse(a.created_at ?? '') || b.id - a.id)[0];
   const head = (await api(`${prefix}/git/ref/heads/main`)).object?.sha;
   if (latest?.id !== run.id || latest.run_attempt !== run.run_attempt || latest.head_sha !== run.head_sha || head !== run.head_sha) return { action: 'ignored', reason: 'stale-run' };
   const issues = await api(`${prefix}/issues?state=all&labels=kind%3Afeedback&sort=updated&direction=desc&per_page=100`);
