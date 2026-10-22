@@ -25,32 +25,32 @@
 ### Task 1: Shared coordination
 
 Files: AGENTS.md, CLAUDE.md, docs/collaboration/COORDINATION.md, .github templates, docs/collaboration/WORK-STATUS.md.
-- [ ] Add shared guidance and actual issue/role mapping.
-- [ ] Validate references and ownership. Documentation has no artificial unit tests.
-- [ ] Commit the independently reviewable coordination change.
+- [x] Add shared guidance and actual issue/role mapping.
+- [x] Validate references and ownership. Documentation has no artificial unit tests.
+- [x] Commit the independently reviewable coordination change.
 
 ### Task 2: Reproducible lint regression gate
 
 Files: scripts/lint-baseline.mjs, tests/lint-baseline.test.mjs, docs/verification/lint-baseline.json, .nvmrc, package.json, .github/workflows/platform-contracts.yml.
 Interfaces: compareSnapshots(current, baseline) returns new/increased diagnostics and resolved counts. Fingerprints include repository-relative path, rule, severity and message; line numbers are excluded so harmless movement does not invent regressions. Gate documents that identical-fingerprint replacement is not a new-defect detector.
-- [ ] Write tests for new/increased diagnostics, new files, removed files, warning/error separation and moved lines. Observe failure.
-- [ ] Implement deterministic comparison and local lint gate with explicit nonzero exit on regression.
-- [ ] Freeze existing diagnostics as debt. Never auto-update baseline in CI. Detect configuration changes for explicit review; do not weaken rules.
-- [ ] Pin Node 24.22.1, run the gate in CI, upload reports and summarize software scope.
-- [ ] Verify test, full lint inventory, gate, contracts, UI, build and exact-head CI.
+- [x] Write tests for new/increased diagnostics, new files, removed files, warning/error separation and moved lines. Observe failure.
+- [x] Implement deterministic comparison and local lint gate with explicit nonzero exit on regression.
+- [x] Freeze existing diagnostics as debt. Never auto-update baseline in CI. Detect configuration changes for explicit review; do not weaken rules.
+- [x] Pin Node 24.22.1, run the gate in CI, upload reports and summarize software scope.
+- [ ] Verify exact-head CI after final commit; local contracts 140, UI 25, Python 167, build/inventory/lint gate passed.
 
 ### Task 3: Working feedback and growth records
 
 Files: docs/collaboration/WORK-STATUS.md, docs/collaboration/FEEDBACK-LOG.md, docs/contracts/corporate-inquiries.md, scripts/ci-feedback.mjs, tests/ci-feedback.test.mjs, .github/workflows/ci-feedback.yml.
-- [ ] Implement current-main failure/recovery issue updates, ignoring stale or unrelated runs; verify with failing then passing tests.
-- [ ] Publish issue links, initial measurements, responsibilities and ordered dependencies.
-- [ ] Record Claude's actual response and Codex's verification; publish a concise handoff on the relevant issue.
-- [ ] Write the inquiry contract from checked source and review. Open questions must remain explicit and block only dependent implementation.
-- [ ] Record every failure, fix, retest and reviewer outcome. Do not declare current operational acceptance counts without querying actual evidence.
+- [x] Implement current-main failure/recovery issue updates, ignoring stale or unrelated runs; verify with failing then passing tests.
+- [x] Publish issue links, initial measurements, responsibilities and ordered dependencies.
+- [x] Record Claude's actual response and Codex's verification; publish a concise handoff on the relevant issue.
+- [x] Write the inquiry contract from checked source and review. Open questions must remain explicit and block only dependent implementation.
+- [x] Record every failure, fix, retest and reviewer outcome. Do not declare current operational acceptance counts without querying actual evidence.
 
 ### Task 4: Review and integrate
 
-- [ ] Obtain fresh review of the whole branch and Claude's scoped UX review.
-- [ ] Fix substantive findings with a reproducing test; rerun affected suites.
-- [ ] Push the feature branch, open PR, attach it to this chat, inspect exact-head CI.
-- [ ] Continue the next implementation stage only from the verified, reviewed result. Main merge/deployment follows the user's authorized release scope and repository policy.
+- [x] Obtain fresh review of the whole branch and Claude's scoped UX review.
+- [x] Fix substantive findings with a reproducing test; rerun affected suites.
+- [ ] Final exact-head CI and ready-for-review status for published, attached PR #30.
+- [ ] Main integration and next implementation stage follow verified CI, approved release scope and repository policy. Current automatic issue workflow is not active until main integration.
