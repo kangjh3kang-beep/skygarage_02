@@ -17,9 +17,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version-file: '.nvmrc'
           cache: npm
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -27,6 +28,10 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-ci.txt
       - run: npm ci
+      - name: Lint regression gate
+        env:
+          LINT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+        run: npm run lint:check
       - run: npm run inventory -- --check
       - run: node --test tests/*.test.mjs
       - name: Synthetic page and SQL-backed UI harness
@@ -58,3 +63,15 @@ jobs:
       - name: Record verification scope
         run: |
           echo 'Software contract and build checks passed. Hardware commissioning, authenticated browser acceptance, and field SAT are separate gates.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve software verification evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: software-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            artifacts/lint-current.json
+            artifacts/lint-gate.json
+            artifacts/ui-harness.json
+            artifacts/finance-ui-journey.json
+          if-no-files-found: warn
+          retention-days: 14
