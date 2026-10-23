@@ -41,3 +41,11 @@ SQL 원문: `supabase/sql/site-membership-exit.sql`. 기존 적용 마이그레�
 - `tests/membership-exit-database.test.mjs`: 익명·타인·만료/누락/불일치/삭제 세션·금지/삭제 계정·비활성 프로필 거부, 확인 문구·사유·CAS, 차량 처리 오류 전체 롤백, 두 현장 격리, 승인 이력·세대 보존, 잔여 신청 종료, 감사 중복 방지, 재가입 후 과거 영수증 무변경.
 - `tests/harness/membership-journey.mjs`: 실제 React → 폐기 가능한 SQL 연결로 확인·취소·세션 회수 오류·서버 성공 후 응답 유실·같은 요청 재시도·새 목록 및 부모 컨텍스트 갱신을 시험한다.
 - 로컬 WASM과 CI PostgreSQL 17에서 계약을 실행한다. Auth/SMS/전송은 명시적 가상 픽스처다. 실제 휴대전화·로그인·운영 담당자 화면 인수와 실장비 회수는 남아 있다.
+
+## 운영 반영 기록
+
+운영 DB 적용: `site_membership_exit`, 실제 서버 버전 `20261023211758`. 해당 버전의 마이그레이션은 검증 원문과 바이트 단위로 같다. 적용 후 세 함수 원문 해시가 로컬과 일치했고 빈 search_path·기존 공개 RPC의 익명/서비스 역할 실행 금지·비공개 도우미의 모든 클라이언트 실행 금지를 확인했다. 회원 소속 2건·차량 0건·신청 0건·업무 이력 0건으로 적용 전후 건수는 동일하다. 운영 계정·문자 인증 성공·가상 세션을 생성하지 않았다.
+
+1차 PR CI: run `40025438972`, job `120660330186` 성공. 계약 116/116, UI 26/26(95경로 × 3상태 포함), PostgreSQL 17 권한 58·금융 63·자체 ERP 66·Auth·회원/세대/해지 계약, Python 167/167, 제공자 타입 검사·빌드 통과. 실제 회원 로그인 화면 인수와 실장비 검증을 대신하지 않는다.
+
+보안 점검은 적용 전후 동일하다. [RLS 정책 없음 INFO](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) 156건은 비공개 기본 거부 테이블을 포함한다. [인증 역할의 SECURITY DEFINER 실행 WARN](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) 29건은 기존 서버 검사 RPC이며 이번 적용으로 증가하지 않았다. 경고 해소를 위해 업무 테이블을 개방하거나 서버 권한 검사를 제거하지 않는다.
