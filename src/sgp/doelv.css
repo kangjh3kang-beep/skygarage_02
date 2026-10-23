@@ -707,3 +707,14 @@
 .doelv-login .MuiButton-containedPrimary {
   box-shadow: 0 7px 18px #d2ab7626 !important;
 }
+
+.doelv-membership-row { flex-direction: column; align-items: stretch; overflow-wrap: anywhere; }
+.doelv-membership-row .doelv-secondary { margin-bottom: 0; }
+.doelv-membership-exit label { display: block; margin-top: 16px; }
+.doelv-membership-exit input, .doelv-membership-exit select {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 8px;
+  padding: 12px; border: 1px solid #cea87299; border-radius: 8px;
+  background: #122532; color: #f8f5f0; font: inherit; min-height: 44px;
+}
+.doelv-membership-exit :focus-visible { outline: 2px solid #efce9e; outline-offset: 3px; }
+.doelv-membership-exit button:disabled { opacity: .55; cursor: not-allowed; }

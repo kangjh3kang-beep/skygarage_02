@@ -18,7 +18,7 @@ function ProfileEditor({profile,save,busy,allowed}:{profile:SiteProfile;save:(p:
    <Button variant="outlined" disabled={!allowed||busy} onClick={()=>save(draft)}>운영 안내정보 저장</Button></Stack>
  </CardContent></Card>;
 }
-const actionLabels:Record<string,string>={profile:'운영 안내정보 변경',issue_invite:'초대코드 발급',revoke_invite:'초대코드 폐기',apply:'소속 신청',withdraw:'신청 철회',review:'신청 검토',revoke_member:'소속 회수',create_building:'건물 등록',create_unit:'세대 등록',set_building_active:'건물 사용 상태 변경',set_unit_active:'세대 사용 상태 변경',residence_policy:'세대 승인 방식 변경',link_member_unit:'기존 소속의 세대 연결'};
+const actionLabels:Record<string,string>={profile:'운영 안내정보 변경',issue_invite:'초대코드 발급',revoke_invite:'초대코드 폐기',apply:'소속 신청',withdraw:'신청 철회',review:'신청 검토',leave:'본인 소속 해지',revoke_member:'소속 회수',create_building:'건물 등록',create_unit:'세대 등록',set_building_active:'건물 사용 상태 변경',set_unit_active:'세대 사용 상태 변경',residence_policy:'세대 승인 방식 변경',link_member_unit:'기존 소속의 세대 연결'};
 function SiteWorkspace({userId,siteId,overview}:{userId:string;siteId:string;overview:boolean}){
  const [revision,refresh]=useState(0),[kind,setKind]=useState<MembershipKind>(overview?'history':'requests'),[status,setStatus]=useState(overview?'all':'pending'),[cursors,setCursors]=useState<(string|null)[]>([null]);
  const [dialog,setDialog]=useState<{row:MembershipRow;action:'approved'|'rejected'|'revoke'|'link'}|null>(null),[reason,setReason]=useState(''),[unitId,setUnitId]=useState<string|null>(null);

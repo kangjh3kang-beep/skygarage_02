@@ -117,3 +117,41 @@ test('registered unit workflow rejects a stale selection, recovers and links the
   assert.equal(state.calls.some(c=>c.kind==='table'&&c.mutation),false);
  }finally{cleanup();state.rpcExecutor=null;await db.close();}
 });
+test('member exit UI confirms one site, rejects revoked sessions and safely retries a lost response',async()=>{
+ reset();const db=await membershipDatabase();const {ids:i,pg,sessionIds}=db;state.actor=i.member;state.role='resident';state.aal='aal1';
+ const base=executor(db);state.rpcExecutor=base;let reloads=0;
+ try{
+  for(const [site,manager] of [[i.siteA,i.manager],[i.siteB,i.otherManager]]){
+   const invite=await db.command(manager,'issue_invite',{site_id:site,days:1,max_uses:5});
+   const app=await db.command(i.member,'apply',{code:invite.code,unit_label:'SYNTHETIC exit UI'});
+   await db.command(manager,'review',{site_id:site,id:app.id,expected_revision:1,decision:'approved',reason:'Synthetic UI qualification checked'});
+  }
+  const v=render(React.createElement(Enrollment,{key:i.member,userId:i.member,verified:true,onMembershipChange:()=>reloads++}));
+  const start=await v.findByRole('button',{name:'SYNTHETIC site A 소속 해지'});
+  fireEvent.click(start);let panel=v.getByRole('region',{name:'현장 소속 해지 확인'});
+  assert.equal(within(panel).getByRole('button',{name:'소속 해지 확정'}).disabled,true);
+  enter(v,'소속 해지 확인 문구','확인');assert.equal(within(panel).getByRole('button',{name:'소속 해지 확정'}).disabled,true);
+  fireEvent.click(within(panel).getByRole('button',{name:'해지 취소'}));
+  assert.ok(v.queryByRole('region',{name:'현장 소속 해지 확인'})===null);
+  assert.equal(state.calls.filter(c=>c.payload?.p_action==='leave').length,0);
+  fireEvent.click(start);enter(v,'소속 해지 확인 문구','소속 해지');
+  await pg.query('delete from auth.sessions where id=$1',[sessionIds[i.member]]);
+  fireEvent.click(v.getByRole('button',{name:'소속 해지 확정'}));await v.findByText(/로그인 세션을 확인할 수 없습니다/);
+  assert.equal((await db.call(i.member,'platform_my_memberships')).memberships.find(x=>x.site_id===i.siteA).status,'active');
+  // A new local synthetic session stands in for reauthentication; no hosted login is claimed.
+  await pg.query('insert into auth.sessions(id,user_id) values($1,$2)',[sessionIds[i.member],i.member]);
+  let lose=true;
+  state.rpcExecutor=async(name,args,actor)=>{
+   const result=await base(name,args,actor);
+   if(name==='platform_membership_command'&&args.p_action==='leave'&&!result.error&&lose){lose=false;return {data:null,error:{message:'synthetic lost response'}};}
+   return result;
+  };
+  fireEvent.click(v.getByRole('button',{name:'소속 해지 확정'}));await v.findByText(/처리 결과를 확인하지 못했습니다/);
+  fireEvent.click(v.getByRole('button',{name:'소속 해지 확정'}));await v.findByText(/선택한 현장의 소속과 등록 차량 권한을 해지했습니다/);
+  await waitFor(()=>assert.ok(v.queryByRole('button',{name:'SYNTHETIC site A 소속 해지'})===null));
+  assert.ok(v.getByRole('button',{name:'SYNTHETIC site B 소속 해지'}));assert.equal(reloads,1);
+  assert.ok(v.queryByRole('region',{name:'현장 소속 해지 확인'})===null);
+  const calls=state.calls.filter(c=>c.payload?.p_action==='leave');assert.equal(calls.length,3);assert.equal(new Set(calls.map(c=>c.payload.p_request_id)).size,1);
+  assert.equal((await pg.query("select count(*)::int n from platform_private.membership_events where action='leave'")).rows[0].n,1);
+ }finally{cleanup();state.rpcExecutor=null;await db.close();}
+});
