@@ -29,7 +29,7 @@ export function parseGovernanceDirectory(value:unknown):Directory {
  for(const raw of array(v.assignments)){const a=object(raw);check(uuid(a.site_id)&&uuid(a.user_id)&&['manager','reviewer','viewer'].includes(String(a.role))&&typeof a.active==='boolean'&&date(a.valid_until)&&count(a.revision));}
  for(const raw of array(v.organizations)){const o=object(raw);check(uuid(o.id)&&string(o.name));}
  const ids=new Set(array(v.organizations).map(o=>object(o).id));
- for(const raw of array(v.sites)){const s=object(raw);check(uuid(s.id)&&string(s.name)&&typeof s.phase==='string'&&s.phase in sitePhases&&ids.has(s.organization_id)&&(s.validation_scope_id===null||uuid(s.validation_scope_id)));}
+ for(const raw of array(v.sites)){const s=object(raw);check(uuid(s.id)&&string(s.name)&&typeof s.phase==='string'&&Object.hasOwn(sitePhases,s.phase)&&ids.has(s.organization_id)&&(s.validation_scope_id===null||uuid(s.validation_scope_id)));}
  return value as Directory;
 }
 export function parseGovernanceSnapshot(value:unknown):GovernanceSnapshot {
@@ -39,21 +39,23 @@ export function parseGovernanceSnapshot(value:unknown):GovernanceSnapshot {
  check(typeof p.write==='boolean'&&typeof p.review==='boolean'&&typeof r.configuration_current==='boolean');
  check(count(r.approved)&&count(r.covered)&&r.total===36&&count(r.blocking_defects));
  const rows=array(r.requirements).map(object);check(rows.length===36&&new Set(rows.map(x=>x.id)).size===36);
- for(const row of rows){check(knownRequirement(row.id)&&typeof row.accepted==='boolean'&&typeof row.evidence_complete==='boolean');check(array(row.required_kinds).includes('acceptance'));for(const k of array(row.required_kinds))check(typeof k==='string'&&k in testKinds);for(const d of array(row.dependencies))check(knownRequirement(d));}
+ for(const row of rows){check(knownRequirement(row.id)&&typeof row.accepted==='boolean'&&typeof row.evidence_complete==='boolean');check(array(row.required_kinds).includes('acceptance'));for(const k of array(row.required_kinds))check(typeof k==='string'&&Object.hasOwn(testKinds,k));for(const d of array(row.dependencies))check(knownRequirement(d));}
  const accepted=new Set(rows.filter(x=>x.accepted).map(x=>x.id));
  check(accepted.size===r.approved&&rows.filter(x=>x.evidence_complete).length===r.covered);
  for(const row of rows)if(row.accepted)check(row.evidence_complete&&array(row.dependencies).every(d=>accepted.has(d)));
  check(r.configuration_current||r.approved===0);
  check(count(v.evidence_total)&&count(v.improvements_total));
  const es=array(v.evidence);check(es.length<=Number(v.evidence_total));
- for(const raw of es){const e=object(raw);check(uuid(e.id)&&knownRequirement(e.requirement_id)&&typeof e.test_kind==='string'&&e.test_kind in testKinds&&typeof e.environment==='string'&&e.environment in environments);check(['pass','fail'].includes(String(e.result))&&uuid(e.submitted_by)&&string(e.summary)&&date(e.measured_at)&&date(e.expires_at)&&date(e.created_at));check(typeof e.artifact_uri==='string'&&safeEvidenceUrl(e.artifact_uri));if(e.review!==null){const review=object(e.review);check(['approved','rejected'].includes(String(review.decision))&&uuid(review.reviewer_id)&&review.reviewer_id!==e.submitted_by);}}
+ for(const raw of es){const e=object(raw);check(uuid(e.id)&&knownRequirement(e.requirement_id)&&typeof e.test_kind==='string'&&Object.hasOwn(testKinds,e.test_kind)&&typeof e.environment==='string'&&Object.hasOwn(environments,e.environment));check(['pass','fail'].includes(String(e.result))&&uuid(e.submitted_by)&&string(e.summary)&&date(e.measured_at)&&date(e.expires_at)&&date(e.created_at));check(typeof e.artifact_sha256==='string'&&/^[0-9a-f]{64}$/.test(e.artifact_sha256)&&string(e.procedure_version));check(typeof e.artifact_uri==='string'&&safeEvidenceUrl(e.artifact_uri));if(e.review!==null){const review=object(e.review);check(['approved','rejected'].includes(String(review.decision))&&uuid(review.reviewer_id)&&review.reviewer_id!==e.submitted_by&&string(review.note));}}
  const items=array(v.improvements);check(items.length<=Number(v.improvements_total));
- for(const raw of items){const i=object(raw);check(uuid(i.id)&&knownRequirement(i.requirement_id)&&typeof i.status==='string'&&i.status in improvementStates&&count(i.revision)&&Number(i.revision)>0&&string(i.title)&&string(i.description)&&uuid(i.created_by)&&date(i.created_at));}
+ for(const raw of items){const i=object(raw);check(uuid(i.id)&&knownRequirement(i.requirement_id)&&typeof i.status==='string'&&Object.hasOwn(improvementStates,i.status)&&count(i.revision)&&Number(i.revision)>0&&string(i.title)&&string(i.description)&&uuid(i.created_by)&&date(i.created_at)&&['defect','improvement'].includes(String(i.kind))&&['critical','high','normal'].includes(String(i.severity))&&(i.assigned_to===null||uuid(i.assigned_to))&&(i.resolution_evidence_id===null||uuid(i.resolution_evidence_id)));}
  for(const raw of array(v.provisioning)){const q=object(raw);check(uuid(q.id)&&['pending','processed','dead_letter'].includes(String(q.status))&&count(q.attempts));}
  for(const raw of array(v.modules)){const m=object(raw);check(['resident_profile','service_requests'].includes(String(m.module))&&m.state==='configured');}
  return value as GovernanceSnapshot;
 }
 const errors:Record<string,string>={
+ invalid_loop_filter:'조회 조건을 확인해 주세요.',invalid_loop_cursor:'조회 위치가 유효하지 않습니다. 루프를 새로 조회해 주세요.',
+ reauthentication_required:'로그인 세션을 확인할 수 없습니다. 다시 로그인한 뒤 새로 조회하세요.',headquarters_required:'본사 공통 요청은 최고관리자만 조회·처리할 수 있습니다.',request_scope_conflict:'요청의 현장 연결이 바뀌었습니다. 요청함을 새로 조회하세요.',
  mfa_required:'관리자 2단계 인증을 완료해 주세요.',super_admin_mfa_required:'최고관리자의 2단계 인증이 필요합니다.',site_access_denied:'이 현장의 권한이 없거나 회수되었습니다.',site_unavailable:'소속 조직이 확인된 현장을 선택해 주세요.',
  independent_reviewer_required:'제출자·개선 담당자와 다른 검수자가 확인해야 합니다.',version_conflict:'다른 작업으로 상태가 바뀌었습니다. 새로 조회해 주세요.',idempotency_conflict:'같은 요청 번호에 다른 내용이 있습니다. 내용을 확인해 주세요.',
  new_passing_evidence_required:'과제 등록 이후 생성한 같은 요구사항의 통과 증거가 필요합니다.',matching_retest_required:'실패 시험과 같은 종류·환경으로 더 나중에 수행한 재시험이 필요합니다.',reviewed_retest_required:'재시험 증거의 독립 검수를 먼저 완료해 주세요.',

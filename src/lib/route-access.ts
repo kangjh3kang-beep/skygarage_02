@@ -2,7 +2,7 @@
 export const adminAvailableRoutes = [
   '/admin', '/admin/templates', '/admin/implementation', '/admin/governance',
   '/admin/settlement', '/admin/erp', '/admin/validation', '/admin/start',
-  '/admin/complexes', '/admin/residents',
+  '/admin/complexes', '/admin/residents', '/admin/tickets',
 ] as const;
 
 export function normalizePath(path: string): string {

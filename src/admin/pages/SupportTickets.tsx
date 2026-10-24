@@ -1,506 +1,82 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import CircularProgress from '@mui/material/CircularProgress';
-import Chip from '@mui/material/Chip';
-import MenuItem from '@mui/material/MenuItem';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
-import Alert from '@mui/material/Alert';
-import Divider from '@mui/material/Divider';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { supabase } from '../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
-import { useDocumentTitle } from '../../hooks/useDocumentTitle';
-import { useToast } from '../contexts/ToastContext';
-import { useAuditLog } from '../../hooks/useAuditLog';
-
-interface SupportTicket {
-  id: string;
-  complex_id: string;
-  resident_id: string;
-  ticket_number: string;
-  channel: string;
-  priority: string;
-  category: string;
-  subject: string;
-  description: string;
-  status: string;
-  assigned_to: string;
-  sla_due_at: string;
-  first_response_at: string;
-  resolved_at: string;
-  satisfaction: number | null;
-  resolution_notes: string;
-  escalated: boolean;
-  feedback_score: number | null;
-  completeness_score: number;
-  created_at: string;
+import { useState } from 'react';
+import { Alert,Box,Button,Card,CardContent,Chip,Dialog,DialogActions,DialogContent,DialogTitle,FormControlLabel,Checkbox,MenuItem,Stack,TextField,Typography } from '@mui/material';
+import { Link,useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useGovernanceQuery } from '../hooks/useGovernanceQuery';
+import { parseGovernanceDirectory,type Directory } from '../../lib/governance';
+import { parseRequestSnapshot,parseRequestDetail,requestActionLabels,type RequestSnapshot } from '../../lib/service-requests';
+import { requestStatusLabels } from '../../sgp/request-labels';
+import { useServiceRequestCommand } from '../../hooks/useServiceRequestCommand';
+const localInput=(date:string|null)=>{if(!date)return '';const d=new Date(date);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
+const filters:Record<string,string>={open:'처리 중 전체',unassigned:'미배정',overdue:'기한 초과',submitted:'접수됨',reviewing:'검토 중',resolved:'답변 완료',rejected:'반려',all:'전체 이력'};
+function RequestEditor({userId,siteId,id,snapshot,sites,onComplete,onClose}:{userId:string;siteId:string|null;id:string;snapshot:RequestSnapshot;sites:Directory['sites'];onComplete:()=>void;onClose:()=>void}){
+ const [revision,refresh]=useState(0);const query=useGovernanceQuery('platform_service_request_detail',{p_id:id,p_site_id:siteId},`${userId}:${siteId}:${id}:${revision}`,parseRequestDetail);
+ const valid=query.data?.request.id===id&&query.data.request.site_id===siteId;
+ return <Dialog open onClose={onClose} fullWidth maxWidth="md"><DialogTitle>요청 상세·배정·답변</DialogTitle><DialogContent>
+  {query.loading&&<Typography role="status">요청 상세와 이력을 조회하고 있습니다.</Typography>}
+  {query.error&&<Alert severity="error">{query.error} 이전 상세는 표시하지 않습니다.</Alert>}
+  {query.data&&!valid&&<Alert severity="error">조회한 요청의 현장이 일치하지 않습니다. 요청함을 다시 조회하세요.</Alert>}
+  {valid&&query.data&&<RequestActions key={`${id}:${query.data.request.revision}`} detail={query.data} userId={userId} siteId={siteId} snapshot={snapshot} sites={sites} onComplete={onComplete} onClose={onClose}/>}
+ </DialogContent><DialogActions><Button onClick={()=>refresh(n=>n+1)}>요청 상세 새로 조회</Button><Button onClick={onClose}>상세 닫기</Button></DialogActions></Dialog>;
 }
-
-interface Complex {
-  id: string;
-  name: string;
-  mdm_code: string;
+function RequestActions({detail,userId,siteId,snapshot,sites,onComplete,onClose}:{detail:ReturnType<typeof parseRequestDetail>;userId:string;siteId:string|null;snapshot:RequestSnapshot;sites:Directory['sites'];onComplete:()=>void;onClose:()=>void}){
+ const row=detail.request;const [assignee,setAssignee]=useState(snapshot.assignees.some(a=>a.id===row.assigned_to)?row.assigned_to??'':''),[due,setDue]=useState(localInput(row.due_at)),[reason,setReason]=useState(''),[reply,setReply]=useState(row.response??''),[decision,setDecision]=useState(row.status==='submitted'?'reviewing':'resolved'),[target,setTarget]=useState(''),[confirmed,setConfirmed]=useState(false);
+ const command=useServiceRequestCommand(()=>{onComplete();onClose();});
+ const closed=['resolved','rejected'].includes(row.status),allowed=snapshot.can_manage&&!closed,blocked=command.busy||!allowed||reason.trim().length<5;
+ const base={id:row.id,site_id:siteId,expected_revision:row.revision,reason:reason.trim()};
+ function saveAssignment(){void command.run('assign',{...base,assignee_id:assignee||null,due_at:due?new Date(due).toISOString():null});}
+ return <Stack spacing={2} sx={{mt:1}}><Typography component="h2" variant="h6">{row.subject}</Typography><Chip label={requestStatusLabels[row.status]} sx={{alignSelf:'flex-start'}}/>
+  <Typography sx={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{row.description}</Typography>
+  {row.response&&<Alert severity="info">현재 회원에게 표시되는 답변: {row.response}</Alert>}
+  {closed&&<Alert severity="info">종료된 요청입니다. 이력은 보존되며 후속 문의는 새로 접수합니다.</Alert>}
+  {!snapshot.can_manage&&<Alert severity="info">이 계정은 조회 전용입니다.</Alert>}
+  {command.error&&<Alert severity="error">{command.error}</Alert>}
+  {allowed&&<>
+   <Typography variant="body2">사유·답변에 비밀번호·인증번호·주민등록번호나 불필요한 개인정보를 입력하지 마세요.</Typography>
+   <TextField label="변경 사유(5~500자)" multiline minRows={2} value={reason} disabled={command.busy} onChange={e=>setReason(e.target.value)} slotProps={{htmlInput:{maxLength:500}}}/>
+   <Typography component="h3" variant="h6">1. 담당자·목표 기한 설정</Typography><Typography variant="body2">현재 처리 권한이 유효한 담당자만 배정할 수 있습니다. 목표 기한은 현재 기기 시간 기준, 현재 이후 30일 이내로 설정합니다. 기한을 비우면 미설정이며 자동 알림이나 계약상 SLA는 제공하지 않습니다.</Typography>
+   {row.assigned_to&&!snapshot.assignees.some(a=>a.id===row.assigned_to)&&<Alert severity="warning">기존 담당자의 처리 권한이 만료됐습니다. 유효한 담당자로 재배정하세요.</Alert>}
+   <TextField select label="배정할 담당자" value={assignee} disabled={command.busy} onChange={e=>{setAssignee(e.target.value);if(!e.target.value)setDue('');}}><MenuItem value="">미배정</MenuItem>{snapshot.assignees.map(a=><MenuItem key={a.id} value={a.id}>{a.name}{a.id===userId?' (본인)':''}</MenuItem>)}</TextField>
+   <TextField label="운영 목표 기한(현재 기기 시간)" type="datetime-local" value={due} disabled={command.busy||!assignee} onChange={e=>setDue(e.target.value)} slotProps={{inputLabel:{shrink:true}}}/>
+   <Button variant="outlined" disabled={blocked||!!due&&(!Number.isFinite(Date.parse(due))||Date.parse(due)<=Date.now()||Date.parse(due)>Date.now()+30*86400000)} onClick={saveAssignment}>담당자·목표 기한 저장</Button>
+   <Typography component="h3" variant="h6">2. 배정된 담당자의 상태·답변 처리</Typography>
+   {row.assigned_to!==userId&&<Alert severity="info">배정된 담당자만 다음 단계를 처리할 수 있습니다. 본인이 처리하려면 먼저 본인에게 배정하고 다시 상세를 여세요.</Alert>}
+   <TextField select label="다음 처리 상태" value={decision} disabled={command.busy||row.assigned_to!==userId} onChange={e=>setDecision(e.target.value)}>{(row.status==='submitted'?['reviewing']:['resolved','rejected']).map(s=><MenuItem key={s} value={s}>{requestStatusLabels[s as keyof typeof requestStatusLabels]}</MenuItem>)}</TextField>
+   <TextField label="회원에게 표시할 답변(최대 2000자)" multiline minRows={3} value={reply} disabled={command.busy||row.assigned_to!==userId} onChange={e=>setReply(e.target.value)} slotProps={{htmlInput:{maxLength:2000}}}/>
+   <Button variant="contained" disabled={blocked||row.assigned_to!==userId||(decision!=='reviewing'&&reply.trim().length<2)} onClick={()=>void command.run('review',{...base,status:decision,response:reply.trim()||null})}>{row.status==='submitted'?'검토 시작 확정':'답변 처리 확정'}</Button>
+   {snapshot.headquarters&&siteId===null&&<><Typography component="h3" variant="h6">선택: 확인된 현장으로 연결</Typography><Alert severity="warning">요청자가 이용하려는 현장을 먼저 확인하세요. 해당 현장의 활성 소속이 있는 경우에만 연결되며 요청 내용이 현장 담당자에게 공개됩니다. 연결하면 기존 담당자와 목표 기한을 비우고 현장에서 다시 배정합니다. 연결 후 다른 현장으로 재이동할 수 없습니다.</Alert>
+    <TextField select label="연결할 현장" value={target} disabled={command.busy} onChange={e=>setTarget(e.target.value)}><MenuItem value="">현장을 선택하세요</MenuItem>{sites.map(s=><MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</TextField>
+    <FormControlLabel control={<Checkbox checked={confirmed} disabled={command.busy} onChange={e=>setConfirmed(e.target.checked)}/>} label="요청자의 이용 현장과 내용 공개 범위를 확인했습니다"/>
+    <Button disabled={blocked||!target||!confirmed} onClick={()=>void command.run('route',{...base,target_site_id:target,confirmed})}>확인한 현장에 요청 연결</Button></>}
+  </>}
+  <Typography component="h3" variant="h6">최근 변경 이력 30건</Typography>{!detail.history.length&&<Typography>이전 방식으로 접수된 요청입니다. 기존 접수·감사 기록은 유지됩니다.</Typography>}
+  {detail.history.map(h=><Box key={h.id} sx={{borderTop:1,borderColor:'divider',pt:1}}><Typography>{requestActionLabels[h.action]??h.action} · {new Date(h.created_at).toLocaleString('ko-KR')} · 변경 {h.details.revision}</Typography><Typography sx={{whiteSpace:'pre-wrap'}}>{h.reason}</Typography>{h.details.response&&<Typography sx={{whiteSpace:'pre-wrap'}}>당시 답변: {h.details.response}</Typography>}</Box>)}
+ </Stack>;
 }
-
-interface Resident {
-  id: string;
-  name: string;
-  registration_code: string;
-  unit_number: string;
+function RequestQueue({userId,siteId,sites}:{userId:string;siteId:string|null;sites:Directory['sites']}){
+ const [revision,refresh]=useState(0),[status,setStatus]=useState('open'),[cursors,setCursors]=useState<(string|null)[]>([null]),[selected,setSelected]=useState<string|null>(null),[notice,setNotice]=useState('');const after=cursors.at(-1)??null;
+ const query=useGovernanceQuery('platform_service_request_snapshot',{p_site_id:siteId,p_status:status,p_after:after},`${userId}:${siteId}:${status}:${after}:${revision}`,parseRequestSnapshot);
+ const data=query.data?.site_id===siteId?query.data:null;
+ return <Stack spacing={2}><Stack direction="row" spacing={1}><TextField select label="요청함 필터" value={status} onChange={e=>{setSelected(null);setStatus(e.target.value);setCursors([null]);}} sx={{minWidth:160}}>{Object.entries(filters).map(([k,v])=><MenuItem key={k} value={k}>{v}</MenuItem>)}</TextField><Button onClick={()=>{setSelected(null);setNotice('');refresh(n=>n+1);}}>요청함 새로 조회</Button></Stack>
+  {query.loading&&<Typography role="status">선택한 요청함을 조회하고 있습니다.</Typography>}{query.error&&<Alert severity="error">{query.error} 이전 요청 목록은 표시하지 않습니다.</Alert>}{query.data&&!data&&<Alert severity="error">조회 범위가 일치하지 않습니다. 다시 조회하세요.</Alert>}{notice&&<Alert severity="success">{notice}</Alert>}
+  {data&&<><Typography>{siteId===null?'본사 공통·무소속 요청':sites.find(s=>s.id===siteId)?.name} · {data.can_manage?'변경 가능':'조회 전용'}</Typography><Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:'wrap'}}><Chip label={`처리 중 ${data.counts.open}건`}/><Chip label={`미배정 ${data.counts.unassigned}건`}/><Chip label={`기한 초과 ${data.counts.overdue}건`} color={data.counts.overdue?'warning':'default'}/></Stack>
+   {!data.rows.length&&<Typography>선택한 조건의 요청이 없습니다.</Typography>}{data.rows.map(r=><Card key={r.id} variant="outlined"><CardContent><Stack spacing={1}><Typography component="h3" variant="h6">{r.subject}</Typography><Typography>{requestStatusLabels[r.status]} · 요청자 {r.requester} · {r.assigned_to?r.assignee_name:'미배정'}</Typography><Typography>목표 기한 {r.due_at?new Date(r.due_at).toLocaleString('ko-KR'):'미설정'}{r.overdue?' · 기한 초과':''}</Typography><Button onClick={()=>setSelected(r.id)} aria-label={`${r.subject} 상세·배정·답변`}>상세·배정·답변</Button></Stack></CardContent></Card>)}
+   <Stack direction="row" spacing={1}><Button disabled={cursors.length<2||query.loading} onClick={()=>{setSelected(null);setCursors(c=>c.slice(0,-1));}}>이전 50건</Button><Button disabled={!data.next_cursor||query.loading} onClick={()=>{setSelected(null);setCursors(c=>[...c,data.next_cursor]);}}>다음 50건</Button></Stack><Typography variant="caption">조회 시각 {new Date(data.observed_at).toLocaleString('ko-KR')} · 목록은 식별자 순서, 각 페이지 최대 50건입니다. 기한 초과 필터로 지연 요청을 확인하세요.</Typography>
+  </>}
+  {selected&&data&&<RequestEditor key={`${userId}:${siteId}:${selected}`} userId={userId} siteId={siteId} id={selected} snapshot={data} sites={sites} onClose={()=>setSelected(null)} onComplete={()=>{setNotice('처리했습니다. 최신 상태와 변경 이력을 다시 확인하세요.');refresh(n=>n+1);}}/>}
+ </Stack>;
 }
-
-interface FormData {
-  ticket_number: string;
-  complex_id: string;
-  resident_id: string;
-  channel: string;
-  priority: string;
-  category: string;
-  subject: string;
-  description: string;
-  status: string;
-  assigned_to: string;
-  sla_due_at: string;
-  resolution_notes: string;
-  escalated: boolean;
-}
-
-const emptyForm: FormData = {
-  ticket_number: '',
-  complex_id: '',
-  resident_id: '',
-  channel: 'web',
-  priority: 'medium',
-  category: '',
-  subject: '',
-  description: '',
-  status: 'open',
-  assigned_to: '',
-  sla_due_at: '',
-  resolution_notes: '',
-  escalated: false,
-};
-
-const priorityColors: Record<string, 'default' | 'info' | 'warning' | 'error'> = { low: 'default', medium: 'info', high: 'warning', urgent: 'error' };
-const priorityLabels: Record<string, string> = { low: '낮음', medium: '보통', high: '높음', urgent: '긴급' };
-const statusColors: Record<string, 'default' | 'primary' | 'warning' | 'success' | 'error'> = { open: 'primary', in_progress: 'warning', waiting: 'default', resolved: 'success', closed: 'error' };
-const statusLabels: Record<string, string> = { open: '접수', in_progress: '처리중', waiting: '대기', resolved: '해결', closed: '종료' };
-const channelLabels: Record<string, string> = { web: '웹', app: '앱', phone: '전화', email: '이메일', visit: '방문' };
-const ticketCategories = ['시설', '주차', '소음', '보안', '청소', '엘리베이터', '기타'];
-
-const steps = ['기본 정보', '상세 내용', '연동/배정', '확인'];
-
-function calcCompleteness(form: FormData): number {
-  const fields = [
-    form.subject,
-    form.description,
-    form.category,
-    form.channel,
-    form.priority,
-    form.complex_id,
-    form.resident_id,
-    form.assigned_to,
-    form.sla_due_at,
-    form.status,
-  ];
-  return Math.round((fields.filter(Boolean).length / fields.length) * 100);
-}
-
-export default function SupportTickets() {
-  useDocumentTitle('지원 티켓');
-  const { showToast } = useToast();
-  const { logAction } = useAuditLog();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [complexes, setComplexes] = useState<Complex[]>([]);
-  const [residents, setResidents] = useState<Resident[]>([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<SupportTicket | null>(null);
-  const [form, setForm] = useState<FormData>(emptyForm);
-  const [deleteTarget, setDeleteTarget] = useState<SupportTicket | null>(null);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [activeStep, setActiveStep] = useState(0);
-  const [generatedCode, setGeneratedCode] = useState('');
-
-  const loadData = useCallback(async () => {
-    const [ticketRes, cxRes, resRes] = await Promise.all([
-      (() => {
-        let q = supabase.from('support_tickets').select('*').order('created_at', { ascending: false });
-        if (statusFilter !== 'all') q = q.eq('status', statusFilter);
-        if (priorityFilter !== 'all') q = q.eq('priority', priorityFilter);
-        return q;
-      })(),
-      supabase.from('complexes').select('id, name, mdm_code').order('name'),
-      supabase.from('resident_accounts').select('id, name, registration_code, unit_number').order('name'),
-    ]);
-    if (ticketRes.data) setTickets(ticketRes.data);
-    if (cxRes.data) setComplexes(cxRes.data);
-    if (resRes.data) setResidents(resRes.data);
-    setLoading(false);
-  }, [statusFilter, priorityFilter]);
-
-  useEffect(() => { loadData(); }, [loadData]);
-
-  useEffect(() => {
-    const channel = supabase.channel('support-tickets-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => { loadData(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [loadData]);
-
-  const handleOpenAdd = async () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setActiveStep(0);
-    const { data } = await supabase.rpc('generate_entity_code', { prefix: 'TKT', entity_type: 'ticket' });
-    setGeneratedCode(data || '');
-    setDialogOpen(true);
-  };
-
-  const handleOpenEdit = (ticket: SupportTicket) => {
-    setEditing(ticket);
-    setGeneratedCode(ticket.ticket_number || '');
-    setForm({
-      ticket_number: ticket.ticket_number || '',
-      complex_id: ticket.complex_id || '',
-      resident_id: ticket.resident_id || '',
-      channel: ticket.channel || 'web',
-      priority: ticket.priority || 'medium',
-      category: ticket.category || '',
-      subject: ticket.subject || '',
-      description: ticket.description || '',
-      status: ticket.status || 'open',
-      assigned_to: ticket.assigned_to || '',
-      sla_due_at: ticket.sla_due_at ? ticket.sla_due_at.slice(0, 16) : '',
-      resolution_notes: ticket.resolution_notes || '',
-      escalated: ticket.escalated || false,
-    });
-    setActiveStep(0);
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    const completeness = calcCompleteness(form);
-    const payload = {
-      ticket_number: generatedCode || form.ticket_number,
-      complex_id: form.complex_id || null,
-      resident_id: form.resident_id || null,
-      channel: form.channel,
-      priority: form.priority,
-      category: form.category || null,
-      subject: form.subject,
-      description: form.description || null,
-      status: form.status,
-      assigned_to: form.assigned_to || null,
-      sla_due_at: form.sla_due_at || null,
-      resolution_notes: form.resolution_notes || null,
-      escalated: form.escalated,
-      completeness_score: completeness,
-    };
-    if (editing) {
-      const { error } = await supabase.from('support_tickets').update(payload).eq('id', editing.id);
-      if (error) { showToast('수정 실패: ' + error.message, 'error'); return; }
-      logAction('UPDATE', 'support_tickets', editing.id, { ticket_number: payload.ticket_number });
-      showToast('티켓이 수정되었습니다.', 'success');
-    } else {
-      const { error } = await supabase.from('support_tickets').insert(payload);
-      if (error) { showToast('등록 실패: ' + error.message, 'error'); return; }
-      logAction('CREATE', 'support_tickets', undefined, { ticket_number: payload.ticket_number });
-      showToast('티켓이 등록되었습니다.', 'success');
-    }
-    setDialogOpen(false);
-    loadData();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    const { error } = await supabase.from('support_tickets').delete().eq('id', deleteTarget.id);
-    if (error) { showToast('삭제 실패', 'error'); return; }
-    logAction('DELETE', 'support_tickets', deleteTarget.id, { ticket_number: deleteTarget.ticket_number });
-    showToast('삭제 완료', 'success');
-    setDeleteTarget(null);
-    loadData();
-  };
-
-  const totalTickets = tickets.length;
-  const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress' || t.status === 'waiting').length;
-  const overdueTickets = tickets.filter(t => t.sla_due_at && new Date(t.sla_due_at) < new Date() && t.status !== 'resolved' && t.status !== 'closed').length;
-  const avgSatisfaction = useMemo(() => {
-    const rated = tickets.filter(t => t.satisfaction != null);
-    if (rated.length === 0) return null;
-    return (rated.reduce((sum, t) => sum + (t.satisfaction ?? 0), 0) / rated.length).toFixed(1);
-  }, [tickets]);
-
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
-
-  return (
-    <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h1">지원 티켓</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/alerts')}>알림 센터</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/maintenance')}>정비 관리</Button>
-          <Button variant="outlined" size="small" onClick={() => navigate('/admin/residents')}>사용자</Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>티켓 등록</Button>
-        </Box>
-      </Box>
-
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 6, md: 3 }}>
-          <Card><CardContent sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">전체 티켓</Typography>
-            <Typography variant="h2">{totalTickets}</Typography>
-          </CardContent></Card>
-        </Grid>
-        <Grid size={{ xs: 6, md: 3 }}>
-          <Card><CardContent sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">미해결</Typography>
-            <Typography variant="h2" color="primary.main">{openTickets}</Typography>
-          </CardContent></Card>
-        </Grid>
-        <Grid size={{ xs: 6, md: 3 }}>
-          <Card><CardContent sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">SLA 초과</Typography>
-            <Typography variant="h2" color="error.main">{overdueTickets}</Typography>
-          </CardContent></Card>
-        </Grid>
-        <Grid size={{ xs: 6, md: 3 }}>
-          <Card><CardContent sx={{ textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">평균 만족도</Typography>
-            <Typography variant="h2" color="success.main">{avgSatisfaction ?? '-'}</Typography>
-          </CardContent></Card>
-        </Grid>
-      </Grid>
-
-      <Box sx={{ mb: 2, display: 'flex', gap: 1.5 }}>
-        <TextField select label="상태" size="small" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} sx={{ width: 160 }}>
-          <MenuItem value="all">전체</MenuItem>
-          <MenuItem value="open">접수</MenuItem>
-          <MenuItem value="in_progress">처리중</MenuItem>
-          <MenuItem value="waiting">대기</MenuItem>
-          <MenuItem value="resolved">해결</MenuItem>
-          <MenuItem value="closed">종료</MenuItem>
-        </TextField>
-        <TextField select label="우선순위" size="small" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} sx={{ width: 160 }}>
-          <MenuItem value="all">전체</MenuItem>
-          <MenuItem value="low">낮음</MenuItem>
-          <MenuItem value="medium">보통</MenuItem>
-          <MenuItem value="high">높음</MenuItem>
-          <MenuItem value="urgent">긴급</MenuItem>
-        </TextField>
-      </Box>
-
-      <Card>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>티켓번호</TableCell>
-                <TableCell>제목</TableCell>
-                <TableCell>카테고리</TableCell>
-                <TableCell>채널</TableCell>
-                <TableCell>우선순위</TableCell>
-                <TableCell>상태</TableCell>
-                <TableCell>단지</TableCell>
-                <TableCell>SLA 기한</TableCell>
-                <TableCell>완성도</TableCell>
-                <TableCell align="center">관리</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tickets.map(ticket => {
-                const slaOverdue = ticket.sla_due_at && new Date(ticket.sla_due_at) < new Date() && ticket.status !== 'resolved' && ticket.status !== 'closed';
-                const cx = complexes.find(c => c.id === ticket.complex_id);
-                return (
-                  <TableRow key={ticket.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace', color: 'primary.main' }}>
-                        {ticket.ticket_number}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{ticket.subject}</Typography>
-                      {ticket.escalated && <Chip label="에스컬레이션" size="small" color="error" sx={{ ml: 0.5, height: 18, fontSize: '0.625rem' }} />}
-                    </TableCell>
-                    <TableCell><Typography variant="body2" color="text.secondary">{ticket.category || '-'}</Typography></TableCell>
-                    <TableCell><Typography variant="body2" color="text.secondary">{channelLabels[ticket.channel] || ticket.channel || '-'}</Typography></TableCell>
-                    <TableCell><Chip label={priorityLabels[ticket.priority] || ticket.priority} size="small" color={priorityColors[ticket.priority] || 'default'} /></TableCell>
-                    <TableCell><Chip label={statusLabels[ticket.status] || ticket.status} size="small" color={statusColors[ticket.status] || 'default'} /></TableCell>
-                    <TableCell><Typography variant="caption" color="text.secondary">{cx?.name || '-'}</Typography></TableCell>
-                    <TableCell>
-                      <Typography variant="caption" color={slaOverdue ? 'error' : 'text.secondary'} sx={{ fontWeight: slaOverdue ? 700 : 400 }}>
-                        {ticket.sla_due_at ? new Date(ticket.sla_due_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={`${ticket.completeness_score || 0}%`} size="small" color={(ticket.completeness_score || 0) >= 80 ? 'success' : (ticket.completeness_score || 0) >= 50 ? 'warning' : 'error'} variant="outlined" />
-                    </TableCell>
-                    <TableCell align="center">
-                      <IconButton size="small" onClick={() => handleOpenEdit(ticket)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
-                      <IconButton size="small" onClick={() => setDeleteTarget(ticket)} sx={{ color: 'error.main' }}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {tickets.length === 0 && (
-                <TableRow><TableCell colSpan={10} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">등록된 티켓이 없습니다.</Typography>
-                </TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-
-      {/* Stepper Registration Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>{editing ? '티켓 수정' : '티켓 등록'}</DialogTitle>
-        <DialogContent>
-          <Stepper activeStep={activeStep} sx={{ my: 2 }}>
-            {steps.map(label => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
-          </Stepper>
-
-          {activeStep === 0 && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-              {generatedCode && (
-                <Alert severity="info" sx={{ mb: 1 }}>
-                  티켓 번호: <strong>{generatedCode}</strong>
-                </Alert>
-              )}
-              <TextField label="제목" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} fullWidth size="small" required />
-              <TextField label="카테고리" select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} fullWidth size="small">
-                {ticketCategories.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-              </TextField>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 6 }}>
-                  <TextField label="채널" select value={form.channel} onChange={e => setForm({ ...form, channel: e.target.value })} fullWidth size="small">
-                    <MenuItem value="web">웹</MenuItem>
-                    <MenuItem value="app">앱</MenuItem>
-                    <MenuItem value="phone">전화</MenuItem>
-                    <MenuItem value="email">이메일</MenuItem>
-                    <MenuItem value="visit">방문</MenuItem>
-                  </TextField>
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <TextField label="우선순위" select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} fullWidth size="small">
-                    <MenuItem value="low">낮음</MenuItem>
-                    <MenuItem value="medium">보통</MenuItem>
-                    <MenuItem value="high">높음</MenuItem>
-                    <MenuItem value="urgent">긴급</MenuItem>
-                  </TextField>
-                </Grid>
-              </Grid>
-              <TextField label="상태" select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} fullWidth size="small">
-                <MenuItem value="open">접수</MenuItem>
-                <MenuItem value="in_progress">처리중</MenuItem>
-                <MenuItem value="waiting">대기</MenuItem>
-                <MenuItem value="resolved">해결</MenuItem>
-                <MenuItem value="closed">종료</MenuItem>
-              </TextField>
-            </Box>
-          )}
-
-          {activeStep === 1 && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-              <TextField label="설명" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} fullWidth size="small" multiline rows={4} />
-              <TextField label="해결 노트" value={form.resolution_notes} onChange={e => setForm({ ...form, resolution_notes: e.target.value })} fullWidth size="small" multiline rows={2} />
-              <TextField label="SLA 기한" type="datetime-local" value={form.sla_due_at} onChange={e => setForm({ ...form, sla_due_at: e.target.value })} fullWidth size="small" slotProps={{ inputLabel: { shrink: true } }} />
-            </Box>
-          )}
-
-          {activeStep === 2 && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-              <TextField label="연결 단지" select value={form.complex_id} onChange={e => setForm({ ...form, complex_id: e.target.value })} fullWidth size="small">
-                <MenuItem value="">미지정</MenuItem>
-                {complexes.map(cx => (
-                  <MenuItem key={cx.id} value={cx.id}>
-                    {cx.mdm_code ? `[${cx.mdm_code}] ` : ''}{cx.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField label="연결 사용자" select value={form.resident_id} onChange={e => setForm({ ...form, resident_id: e.target.value })} fullWidth size="small">
-                <MenuItem value="">미지정</MenuItem>
-                {residents.map(r => (
-                  <MenuItem key={r.id} value={r.id}>
-                    {r.registration_code ? `[${r.registration_code}] ` : ''}{r.name} {r.unit_number ? `(${r.unit_number})` : ''}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField label="담당자" value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })} fullWidth size="small" />
-              <Alert severity="info">
-                단지/사용자을 연결하면 이력 관리 및 AI 자동 분류가 활성화됩니다.
-              </Alert>
-            </Box>
-          )}
-
-          {activeStep === 3 && (
-            <Box sx={{ mt: 2 }}>
-              <Alert severity="success" sx={{ mb: 2 }}>
-                데이터 완성도: <strong>{calcCompleteness(form)}%</strong>
-              </Alert>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-                <Typography variant="body2"><strong>티켓번호:</strong> {generatedCode}</Typography>
-                <Typography variant="body2"><strong>상태:</strong> {statusLabels[form.status] || form.status}</Typography>
-                <Typography variant="body2"><strong>제목:</strong> {form.subject}</Typography>
-                <Typography variant="body2"><strong>카테고리:</strong> {form.category || '-'}</Typography>
-                <Typography variant="body2"><strong>우선순위:</strong> {priorityLabels[form.priority]}</Typography>
-                <Typography variant="body2"><strong>채널:</strong> {channelLabels[form.channel]}</Typography>
-                <Typography variant="body2"><strong>담당자:</strong> {form.assigned_to || '미배정'}</Typography>
-                <Typography variant="body2"><strong>SLA 기한:</strong> {form.sla_due_at || '-'}</Typography>
-              </Box>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body2"><strong>단지:</strong> {complexes.find(cx => cx.id === form.complex_id)?.name || '미지정'}</Typography>
-              <Typography variant="body2"><strong>사용자:</strong> {residents.find(r => r.id === form.resident_id)?.name || '미지정'}</Typography>
-              {form.description && <Typography variant="body2" sx={{ mt: 1 }}><strong>설명:</strong> {form.description}</Typography>}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDialogOpen(false)}>취소</Button>
-          <Box sx={{ flex: 1 }} />
-          {activeStep > 0 && <Button onClick={() => setActiveStep(s => s - 1)}>이전</Button>}
-          {activeStep < steps.length - 1 && (
-            <Button variant="contained" onClick={() => setActiveStep(s => s + 1)} disabled={activeStep === 0 && !form.subject}>
-              다음
-            </Button>
-          )}
-          {activeStep === steps.length - 1 && (
-            <Button variant="contained" onClick={handleSave} disabled={!form.subject}>
-              {editing ? '수정' : '등록'}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Confirmation */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs">
-        <DialogTitle>티켓 삭제</DialogTitle>
-        <DialogContent><Typography>"{deleteTarget?.ticket_number}" 티켓을 삭제하시겠습니까?</Typography></DialogContent>
-        <DialogActions><Button onClick={() => setDeleteTarget(null)}>취소</Button><Button variant="contained" color="error" onClick={handleDelete}>삭제</Button></DialogActions>
-      </Dialog>
-    </Box>
-  );
+export default function SupportTickets({embedded=false}:{embedded?:boolean}){
+ const {user,role}=useAuth();const [params,setParams]=useSearchParams();const [revision,refresh]=useState(0);
+ const directory=useGovernanceQuery('platform_governance_directory',{},`${user?.id}:${role}:${revision}`,parseGovernanceDirectory,!!user);
+ const selected=params.get('site')??(directory.data?.headquarters?'headquarters':'');
+ const site=directory.data?.sites.find(s=>s.id===selected);const headquarters=selected==='headquarters'&&directory.data?.headquarters;
+ return <Box sx={{maxWidth:1200,mx:'auto',pb:4}}><Typography component={embedded?'h2':'h1'} variant={embedded?'h5':'h4'} sx={{mb:2}}>요청 배정·처리</Typography>
+  <Alert severity="info" sx={{mb:2}}>요청함 선택 → 상세 확인 → 담당자·목표 기한 저장 → 배정된 담당자의 검토 시작 → 답변 완료·반려 순서입니다. 요청 처리만으로 회원 승인·차량 등록·출입·결제가 실행되지는 않습니다.</Alert>
+  <Stack direction="row" spacing={1} useFlexGap sx={{mb:2,flexWrap:'wrap'}}><Button component={Link} to="/admin/governance">현장 담당 권한 설정</Button><Button component={Link} to="/admin/residents">회원 소속 확인</Button><Button disabled={directory.loading} onClick={()=>refresh(n=>n+1)}>요청함 목록 새로 조회</Button></Stack>
+  {directory.loading&&<Typography role="status">접근 가능한 요청함을 확인하고 있습니다.</Typography>}{directory.error&&<Alert severity="error">{directory.error}</Alert>}
+  {directory.data&&<TextField select fullWidth label="관리할 요청함" value={site?selected:headquarters?'headquarters':''} onChange={e=>setParams(e.target.value&&e.target.value!=='headquarters'?{site:e.target.value}:{})} sx={{mb:2}}><MenuItem value="">요청함을 선택하세요</MenuItem>{directory.data.headquarters&&<MenuItem value="headquarters">본사 공통·무소속 요청</MenuItem>}{directory.data.sites.map(s=><MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}</TextField>}
+  {!directory.loading&&directory.data&&!site&&!headquarters&&<Typography>담당 현장을 선택하세요. 담당 권한이 없다면 최고관리자에게 현장 배정을 요청하세요.</Typography>}
+  {directory.data&&user&&(site||headquarters)&&<RequestQueue key={`${user.id}:${selected}:${revision}`} userId={user.id} siteId={headquarters?null:site!.id} sites={directory.data.sites}/>}
+ </Box>;
 }

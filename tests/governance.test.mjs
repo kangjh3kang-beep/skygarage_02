@@ -39,6 +39,6 @@ test('catalog preserves all 36 IDs, dependencies and acceptance criteria',()=>{
 });
 test('review package migration exactly matches reviewed SQL sources',()=>{
  const parts=['platform-governance.sql','platform-governance-catalog.sql','platform-governance-scheduler.sql'].map(n=>readFileSync(new URL('../supabase/sql/'+n,import.meta.url),'utf8'));
- const migration=readFileSync(new URL('../supabase/migrations/20261018230357_add_platform_feedback_governance.sql',import.meta.url),'utf8');
+ const migration=readFileSync(new URL('../supabase/migrations/20261019033655_add_platform_feedback_governance.sql',import.meta.url),'utf8');
  assert.equal(migration,parts.join('\n'));
 });

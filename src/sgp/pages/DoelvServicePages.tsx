@@ -117,11 +117,13 @@ export function AccessPage() {
   );
 }
 export function RequestsPage() {
-  const { requests, loading, error } = useResidentData();
+  const { requests, loading, error, reload } = useResidentData();
   return (
     <><PhotoHero photo="requests" /><div className="doelv-content">
       <p className="doelv-eyebrow">YOUR SERVICE HISTORY</p>
       <h1>내 요청 내역</h1>
+      <p className="doelv-muted">최근 요청 30건을 표시합니다. 이전 요청은 접수번호를 적어 운영센터에 문의하세요. 목표 기한은 운영상 안내이며 자동 알림·계약상 SLA와 별개입니다.</p>
+      <button type="button" className="doelv-secondary" disabled={loading} onClick={reload}>내 요청 새로 조회</button>
       <DataState />
       {!loading && !error && !requests.length && (
         <p className="doelv-notice">아직 접수한 요청이 없습니다.</p>
@@ -130,6 +132,7 @@ export function RequestsPage() {
         <article className="doelv-card" key={r.id}>
           <span className="doelv-badge">{requestStatusLabels[r.status]}</span>
           <h2>{r.subject}</h2>
+          <p>{r.site_name??'본사 공통 문의'} · 목표 기한 {r.due_at?new Date(r.due_at).toLocaleString('ko-KR'):'미설정'}{r.overdue?' · 기한 초과':''}</p>
           <p className="doelv-preline">{r.description}</p>
           <small>
             {new Date(r.created_at).toLocaleString("ko-KR")} ·{" "}

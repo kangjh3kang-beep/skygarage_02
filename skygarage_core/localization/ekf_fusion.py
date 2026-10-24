@@ -1,6 +1,6 @@
 """
 SkyGarage ATR 확장 칼만 필터(EKF) 기반 센서 퓨전 로컬라이제이션 모듈
-특허 컴포넌트 식별 부호: 슬루링 메커니즘 [310]
+특허 컴포넌트 식별 부호: 슬루링 유닛 [280]
 
 GPS 음영 구역(지하 주차장, 차량 엘리베이터)에서의 밀리미터급 초고정밀 자율주행 위치 추정.
 
@@ -14,7 +14,7 @@ GPS 음영 구역(지하 주차장, 차량 엘리베이터)에서의 밀리미�
   - 6-DOF 위치 벡터 [X, Y, Z, Roll, Pitch, Yaw]
   - 0.001초 타임싱크 패킷 → skygarage.atr.localization 토픽 퍼블리싱
 
-슬루링[310] 보정:
+슬루링[280] 보정:
   - 제자리 스핀 턴 시 각속도 급증 현상 수학적 보정
   - 동적 프로세스 노이즈 + 적응형 게인 튜닝
 """
@@ -32,7 +32,9 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-SLEWING_RING_PATENT_ID = "[310]"
+from skygarage_core.component_references import FILED_APPLICATION, SLEWING_COMPONENT_ID, require_patent_reference
+
+SLEWING_RING_PATENT_ID = require_patent_reference(SLEWING_COMPONENT_ID, edition=FILED_APPLICATION)
 LOCALIZATION_TOPIC = "skygarage.atr.localization"
 
 STATE_DIM = 9  # [x, y, z, roll, pitch, yaw, vx, vy, omega_z]
@@ -131,12 +133,14 @@ class LocalizationPacket:
             "spin_turn_active": self.spin_turn_active,
             "topic": self.topic,
             "patent_id": self.patent_id,
+            "component_id": SLEWING_COMPONENT_ID,
+            "reference_edition": FILED_APPLICATION,
         }
 
 
 class SlewingRingCompensator:
     """
-    슬루링 메커니즘[310] 스핀 턴 보정기.
+    슬루링 유닛[280] 스핀 턴 보정기.
     제자리 회전 시 위치 추정 발산을 방지하기 위한 동적 게인 튜닝.
     """
 
@@ -230,7 +234,7 @@ class EKFLocalization:
     """
     확장 칼만 필터(EKF) 센서 퓨전 로컬라이제이션.
     상태 벡터: [x, y, z, roll, pitch, yaw, vx, vy, omega_z]
-    슬루링[310] 보정 및 UWB 드롭아웃 이중 백업 지원.
+    슬루링[280] 보정 및 UWB 드롭아웃 이중 백업 지원.
 
     핵심 설계:
     - predict(): 속도→위치 전파 + 프로세스 노이즈
@@ -295,7 +299,7 @@ class EKFLocalization:
         return float(np.sqrt(self._P[0, 0] + self._P[1, 1] + self._P[2, 2]))
 
     def predict(self, dt: float) -> None:
-        """상태 예측: 속도→위치 전파 + 슬루링[310] 상태 관리."""
+        """상태 예측: 속도→위치 전파 + 슬루링[280] 상태 관리."""
         if dt <= 0:
             return
 

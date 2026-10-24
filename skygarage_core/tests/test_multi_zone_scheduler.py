@@ -449,7 +449,7 @@ class TestSafetyInterlock:
         assert PATENT_SAFETY_FLAG in event.interlock_sequence[0]
         assert PATENT_MOTOR_STO in event.interlock_sequence[1]
         assert PATENT_BATTERY_RELAY in event.interlock_sequence[2]
-        assert PATENT_EMERGENCY_BRAKE in event.interlock_sequence[3]
+        assert "sg.safety.emergency_brake" in event.interlock_sequence[3]
 
     def test_tag_mismatch_triggers_interlock(self):
         """인식표 미스매칭 → 즉시 인터록."""
@@ -480,7 +480,9 @@ class TestSafetyInterlock:
         assert steps[0]["patent_id"] == PATENT_SAFETY_FLAG
         assert steps[1]["patent_id"] == PATENT_MOTOR_STO
         assert steps[2]["patent_id"] == PATENT_BATTERY_RELAY
-        assert steps[3]["patent_id"] == PATENT_EMERGENCY_BRAKE
+        assert steps[3]["patent_id"] is None
+        assert steps[3]["component_id"] == "sg.safety.emergency_brake"
+        assert steps[3]["reference_edition"] == "filed-10-2026-0016187"
 
     def test_interlock_blocks_vehicle_processing(self):
         """인터록 활성 중 차량 처리 차단."""

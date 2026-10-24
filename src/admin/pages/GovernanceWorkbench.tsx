@@ -4,9 +4,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { requirements } from '../../lib/implementation-plan';
-import { environments, governanceError, improvementStates, parseGovernanceDirectory, parseGovernanceSnapshot, safeEvidenceUrl, sitePhases, testKinds, type EvidenceKind, type EvidenceEnvironment, type GovernanceSnapshot } from '../../lib/governance';
+import { environments, governanceError, parseGovernanceDirectory, parseGovernanceSnapshot, sitePhases, testKinds, type EvidenceKind, type EvidenceEnvironment, type GovernanceSnapshot } from '../../lib/governance';
 import { useGovernanceQuery } from '../hooks/useGovernanceQuery';
 import { findOnboardingCase, onboardingAcceptance, onboardingProcedureVersion, parseDeploymentRelease, type OnboardingCase } from '../../lib/onboarding';
+import GrowthLoopPanel from '../components/GrowthLoopPanel';
 import EvidenceDigestInput from '../components/EvidenceDigestInput';
 
 const grid={display:'grid',gridTemplateColumns:{xs:'1fr',md:'1fr 1fr'},gap:2};
@@ -132,7 +133,6 @@ function ScopeContent({data,userId,busy,mutate,selectedCase}:{data:GovernanceSna
  const [procedure,setProcedure]=useState(selectedCase?onboardingProcedureVersion(selectedCase):''),[uri,setUri]=useState(''),[hash,setHash]=useState(''),[summary,setSummary]=useState('');
  const [measured,setMeasured]=useState(localDate(new Date())),[expires,setExpires]=useState(localDate(new Date(Date.now()+30*86400000)));
  const [itemReq,setItemReq]=useState('F01'),[itemKind,setItemKind]=useState('improvement'),[severity,setSeverity]=useState('normal'),[title,setTitle]=useState(''),[description,setDescription]=useState('');
- const [reviewNotes,setReviewNotes]=useState<Record<string,string>>({}),[retests,setRetests]=useState<Record<string,string>>({});
  const [hashBusy,setHashBusy]=useState(false),[evidenceFormRevision,setEvidenceFormRevision]=useState(0);
  const readiness=data.readiness;
  return <>
@@ -163,19 +163,7 @@ function ScopeContent({data,userId,busy,mutate,selectedCase}:{data:GovernanceSna
     <Alert severity="info" sx={{mt:3}}>접수 → 개선 중 → 새 통과 증거 연결 → 독립 검수 → 완료. 실패 시험으로 생성된 과제는 같은 종류·환경의 재시험이 필요합니다.</Alert>
    </CardContent></Card>
   </Box>
-  <Typography component="h2" variant="h6" sx={{mt:4,mb:2}}>개선 진행 · 표시 {data.improvements.length} / 전체 {data.improvements_total}건</Typography>
-  {!data.improvements.length&&<Typography color="text.secondary">등록된 과제가 없습니다.</Typography>}
-  {data.improvements.map(i=><Card key={i.id} variant="outlined" sx={{mb:2}}><CardContent><Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:'wrap'}}><Chip size="small" label={improvementStates[i.status]}/><Chip size="small" label={`${i.requirement_id} · ${i.kind==='defect'?'결함':'개선'}`} color={i.kind==='defect'?'warning':'info'}/><Typography sx={{fontWeight:700}}>{i.title}</Typography></Stack><Typography sx={{my:2,whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{i.description}</Typography>
-   <Stack direction={{xs:'column',sm:'row'}} spacing={1}>
-    {i.status==='open'&&<Button disabled={busy||!data.permissions.write} onClick={()=>void mutate('platform_transition_improvement',{p_id:i.id,p_expected_revision:i.revision,p_status:'in_progress'},'개선을 시작했습니다.')}>개선 시작</Button>}
-    {i.status==='in_progress'&&<><TextField select fullWidth size="small" label="등록 이후의 같은 요구사항 통과 증거" value={retests[i.id]??''} onChange={e=>setRetests(v=>({...v,[i.id]:e.target.value}))}><MenuItem value="">통과 증거 선택</MenuItem>{data.evidence.filter(e=>e.requirement_id===i.requirement_id&&e.result==='pass'&&Date.parse(e.created_at)>Date.parse(i.created_at)).map(e=><MenuItem key={e.id} value={e.id}>{testKinds[e.test_kind]} · {e.summary.slice(0,45)}</MenuItem>)}</TextField><Button disabled={busy||!data.permissions.write||!retests[i.id]} onClick={()=>void mutate('platform_transition_improvement',{p_id:i.id,p_expected_revision:i.revision,p_status:'verification',p_evidence_id:retests[i.id]},'재검증 증거를 연결했습니다. 독립 검수를 진행해 주세요.')}>검수 요청</Button></>}
-    {i.status==='verification'&&<><Button disabled={busy||!data.permissions.write} onClick={()=>void mutate('platform_transition_improvement',{p_id:i.id,p_expected_revision:i.revision,p_status:'in_progress'},'추가 개선 단계로 되돌렸습니다.')}>보완 진행</Button><Button disabled={busy||!data.permissions.review||[i.created_by,i.assigned_to].includes(userId)} onClick={()=>void mutate('platform_transition_improvement',{p_id:i.id,p_expected_revision:i.revision,p_status:'closed'},'재검증·독립 검수를 완료했습니다.')}>독립 검수 후 완료</Button></>}
-   </Stack>
-  </CardContent></Card>)}
-  <Typography component="h2" variant="h6" sx={{mt:4,mb:2}}>검증 증거 · 최근 {data.evidence.length} / 전체 {data.evidence_total}건</Typography>
-  {!data.evidence.length&&<Typography color="text.secondary">등록된 증거가 없습니다.</Typography>}
-  {data.evidence.map(e=><Card key={e.id} variant="outlined" sx={{mb:2}}><CardContent><Stack direction="row" spacing={1} useFlexGap sx={{flexWrap:'wrap'}}><Chip size="small" label={`${e.requirement_id} · ${testKinds[e.test_kind]}`}/><Chip size="small" label={e.result==='pass'?'시험 통과':'시험 실패'} color={e.result==='pass'?'info':'error'}/><Chip size="small" label={e.review?(e.review.decision==='approved'?'검수 승인':'검수 반려'):'검수 대기'}/><Chip size="small" label={environments[e.environment]}/></Stack><Typography sx={{my:2,whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{e.summary}</Typography><Typography variant="body2" color="text.secondary">절차 {e.procedure_version} · 측정 {new Date(e.measured_at).toLocaleString('ko-KR')} · 만료 {new Date(e.expires_at).toLocaleString('ko-KR')}</Typography><Button component="a" href={safeEvidenceUrl(e.artifact_uri)??undefined} target="_blank" rel="noopener noreferrer">증거 열기</Button><Typography variant="caption" sx={{display:"block",overflowWrap:'anywhere'}}>SHA-256 {e.artifact_sha256}</Typography>
-   {e.review?<Typography variant="body2" sx={{mt:2}}>검수 의견: {e.review.note}</Typography>:<Box sx={{mt:2}}><TextField fullWidth size="small" label="독립 검수 의견 · 링크·해시·전체 조건 대조" value={reviewNotes[e.id]??''} onChange={event=>setReviewNotes(v=>({...v,[e.id]:event.target.value}))} disabled={busy||!data.permissions.review||e.submitted_by===userId}/><Stack direction="row" spacing={1} sx={{mt:1}}>{['approved','rejected'].map(decision=><Button key={decision} disabled={busy||!data.permissions.review||e.submitted_by===userId||(reviewNotes[e.id]??'').trim().length<5||(decision==='approved'&&(e.result!=='pass'||Date.parse(e.expires_at)<=Date.now()))} onClick={()=>void mutate('platform_review_evidence',{p_evidence_id:e.id,p_decision:decision,p_note:reviewNotes[e.id]},'독립 검수를 기록했습니다.')}>{decision==='approved'?'검수 승인':'반려'}</Button>)}</Stack>{e.submitted_by===userId&&<Typography variant="caption">본인이 제출한 증거는 다른 검수자가 확인합니다.</Typography>}</Box>}
-  </CardContent></Card>)}
+  <GrowthLoopPanel scopeId={data.scope.id} siteId={data.scope.site_id} userId={userId} busy={busy} mutate={mutate}/>
+
  </>;
 }
