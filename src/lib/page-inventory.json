@@ -45,20 +45,14 @@
       "tables": [
         "complexes",
         "parking_sessions",
-        "platform_resident_vehicles",
-        "platform_site_members",
-        "platform_sites",
         "resident_accounts",
-        "sgp_coin_wallets",
-        "sgp_service_requests",
-        "sgp_users",
         "system_alerts",
         "user_roles"
       ],
-      "rpcs": [],
-      "functions": [
-        "sms-verify"
+      "rpcs": [
+        "platform_service_request_command"
       ],
+      "functions": [],
       "links": [
         "/",
         "/admin",
@@ -108,7 +102,7 @@
         "/admin/validation",
         "/admin/workflows"
       ],
-      "actions": 21,
+      "actions": 30,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -1496,7 +1490,7 @@
         "/admin/validation",
         "/admin/workflows"
       ],
-      "actions": 34,
+      "actions": 44,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -3450,13 +3444,11 @@
         "complexes",
         "parking_sessions",
         "resident_accounts",
-        "security_audit_logs",
-        "support_tickets",
         "system_alerts",
         "user_roles"
       ],
       "rpcs": [
-        "generate_entity_code"
+        "platform_service_request_command"
       ],
       "functions": [],
       "links": [
@@ -3508,10 +3500,10 @@
         "/admin/validation",
         "/admin/workflows"
       ],
-      "actions": 29,
+      "actions": 27,
       "actionReview": [],
-      "mode": "commissioning",
-      "note": "상위 화면에서 실행 차단 · 서버/현장 인수 필요"
+      "mode": "available",
+      "note": "화면 연결 · 업무별 실사용 인수는 별도"
     },
     {
       "path": "/admin/users",
@@ -3889,10 +3881,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -3908,7 +3900,7 @@
         "/app/profile",
         "/app/requests"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -3923,10 +3915,11 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
-      "rpcs": [],
+      "rpcs": [
+        "platform_my_service_requests"
+      ],
       "functions": [
         "sms-verify"
       ],
@@ -3954,10 +3947,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -3972,7 +3965,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "limited",
       "note": "안내·요청만 제공 · 실제 결제/장비/출입 미연결"
@@ -3987,10 +3980,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4005,7 +3998,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "limited",
       "note": "안내·요청만 제공 · 실제 결제/장비/출입 미연결"
@@ -4020,10 +4013,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4038,7 +4031,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -4053,10 +4046,11 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
-      "rpcs": [],
+      "rpcs": [
+        "platform_my_service_requests"
+      ],
       "functions": [
         "sms-verify"
       ],
@@ -4084,10 +4078,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4102,7 +4096,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -4117,10 +4111,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4135,7 +4129,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -4150,10 +4144,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4168,7 +4162,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "limited",
       "note": "안내·요청만 제공 · 실제 결제/장비/출입 미연결"
@@ -4183,12 +4177,12 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users",
         "user_roles"
       ],
       "rpcs": [
         "platform_membership_command",
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4222,10 +4216,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4240,7 +4234,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -4255,10 +4249,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4273,7 +4267,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "available",
       "note": "화면 연결 · 업무별 실사용 인수는 별도"
@@ -4288,10 +4282,10 @@
         "platform_resident_vehicles",
         "platform_site_members",
         "sgp_coin_wallets",
-        "sgp_service_requests",
         "sgp_users"
       ],
       "rpcs": [
+        "platform_my_service_requests",
         "sgp_submit_service_request"
       ],
       "functions": [
@@ -4306,7 +4300,7 @@
         "/app/login?mode=register",
         "/app/profile"
       ],
-      "actions": 18,
+      "actions": 19,
       "actionReview": [],
       "mode": "limited",
       "note": "안내·요청만 제공 · 실제 결제/장비/출입 미연결"
@@ -5149,5 +5143,5 @@
     "src/sgp/pages/SgpWalletPage.tsx",
     "src/sgp/pages/SgpWelcomePage.tsx"
   ],
-  "sourceFiles": 242
+  "sourceFiles": 246
 }

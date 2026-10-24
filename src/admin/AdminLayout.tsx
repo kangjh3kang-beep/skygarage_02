@@ -62,7 +62,7 @@ const routeTitles: Record<string, string> = {
   '/admin/revenue': '매출',
   '/admin/crm': 'CRM',
   '/admin/inquiries': '문의',
-  '/admin/tickets': '지원 티켓',
+  '/admin/tickets': '요청 배정·처리',
   '/admin/patents': '특허',
   '/admin/licenses': '라이선스',
   '/admin/analytics': '분석',

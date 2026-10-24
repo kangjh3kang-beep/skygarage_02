@@ -4,10 +4,10 @@ Multi-Zone Underground Pickup Zone Scheduler Engine
 
 특허 컴포넌트 참조:
   [132] 안전 체인 플래그 활성화
-  [270] 비상 브레이크 물리 잠금
+  [설계 ID] 비상 브레이크 물리 잠금
   [271] 모터 STO(Safe Torque Off) 차단
   [272] 배터리 릴레이 차단
-  [310] 슬루링 메커니즘 (±90° 제자리 회전)
+  [280] 슬루링 메커니즘 (±90° 제자리 회전)
   [660] 거버넌스 레지스트리 - Complex MDM
 
 서브시스템 구성:
@@ -28,11 +28,14 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from skygarage_core.component_references import (FILED_APPLICATION, SLEWING_COMPONENT_ID, EMERGENCY_BRAKE_COMPONENT_ID, patent_reference, require_patent_reference)
+
 PATENT_SAFETY_FLAG = "[132]"
-PATENT_EMERGENCY_BRAKE = "[270]"
+# Compatibility name; no verified patent symbol exists for this engineering component.
+PATENT_EMERGENCY_BRAKE = patent_reference(EMERGENCY_BRAKE_COMPONENT_ID, edition=FILED_APPLICATION)
 PATENT_MOTOR_STO = "[271]"
 PATENT_BATTERY_RELAY = "[272]"
-PATENT_SLEWING_RING = "[310]"
+PATENT_SLEWING_RING = require_patent_reference(SLEWING_COMPONENT_ID, edition=FILED_APPLICATION)
 PATENT_GOVERNANCE_MDM = "[660]"
 
 
@@ -218,7 +221,7 @@ class InflowAssignmentEngine:
     """
     입차 차량을 COMMON_VALET 또는 DIRECT_UNIT_ACCESS로 분류하고,
     최적 존 배정 및 ATR 군집 FMS 명령 하달.
-    슬루링[310] 각속도 벡터만을 이동 연산에 활용.
+    슬루링[280] 각속도 벡터만을 이동 연산에 활용.
     """
 
     def __init__(self, zones: list[PickupZone] | None = None) -> None:
@@ -267,7 +270,7 @@ class InflowAssignmentEngine:
         return entry
 
     def dispatch_atr(self, entry: VehicleEntry) -> ATRCommand | None:
-        """ATR 군집 FMS에 이송 명령 하달. 슬루링[310] 각속도 기반."""
+        """ATR 군집 FMS에 이송 명령 하달. 슬루링[280] 각속도 기반."""
         with self._lock:
             source_zone = self._zones.get(entry.zone_id)
             dest_zone = self._zones.get(entry.assigned_destination)
@@ -370,11 +373,11 @@ class InflowAssignmentEngine:
         return abs(from_zone.carlift_distance_m - to_zone.carlift_distance_m) + 20.0
 
     def _calculate_slewing_angle(self, from_zone: PickupZone, to_zone: PickupZone) -> float:
-        # ±90° 슬루링[310] 제한 내 최적 회전각
+        # ±90° 슬루링[280] 제한 내 최적 회전각
         return min(90.0, abs(hash(from_zone.zone_id + to_zone.zone_id) % 90))
 
     def _slewing_angular_velocity(self, angle_deg: float) -> float:
-        # 슬루링[310] 최대 각속도 2*pi rad/s, 각도 비례
+        # 슬루링[280] 최대 각속도 2*pi rad/s, 각도 비례
         max_omega = 2 * math.pi
         return max_omega * min(angle_deg / 90.0, 1.0)
 
@@ -525,7 +528,7 @@ class SafetyInterlockController:
       1. [132] 안전 체인 플래그 활성화
       2. [271] 모터 STO(Safe Torque Off) 차단
       3. [272] 배터리 릴레이 차단
-      4. [270] 비상 브레이크 물리 잠금
+      4. [설계 ID] 비상 브레이크 물리 잠금
 
     센서 장애, 인식표 미스매칭, 보행자 무단 침입 등
     폴트 수신 즉시 무조건 제어 중단.
@@ -595,7 +598,7 @@ class SafetyInterlockController:
         step3 = self._battery_relay_cutoff(event)
         sequence.append(step3)
 
-        # Step 4: [270] 비상 브레이크 물리 잠금
+        # Step 4: [설계 ID] 비상 브레이크 물리 잠금
         step4 = self._emergency_brake_lock(event)
         sequence.append(step4)
 
@@ -644,13 +647,15 @@ class SafetyInterlockController:
         step = {
             "step": 4,
             "patent_id": PATENT_EMERGENCY_BRAKE,
+            "component_id": EMERGENCY_BRAKE_COMPONENT_ID,
+            "reference_edition": FILED_APPLICATION,
             "action": "emergency_brake_physical_lock",
             "timestamp": time.time(),
             "zone_id": event.zone_id,
             "status": "executed",
         }
         self._interlock_steps.append(step)
-        return f"{PATENT_EMERGENCY_BRAKE} Emergency brake physical lock engaged"
+        return f"{EMERGENCY_BRAKE_COMPONENT_ID} Emergency brake physical lock engaged"
 
     def reset(self) -> bool:
         """수동 리셋 (안전 확인 후)."""

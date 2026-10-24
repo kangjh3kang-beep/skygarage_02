@@ -15,9 +15,10 @@ const el = React.createElement;
 const theme = createTheme();
 const snapshot = (scopeId = id) => ({ schema_version: 1, observed_at: '2026-10-20T00:00:00Z', scope: { id: scopeId, site_id: scopeId, plan_version: '2026.10-v1', release_sha: 'a'.repeat(40), configuration_digest: 'b'.repeat(64) }, permissions: { write: true, review: true }, readiness: { approved: 0, covered: 0, total: 36, blocking_defects: 0, configuration_current: true, requirements: requirements.map(r => ({ id: r.id, phase: r.phase, title: r.title, required_kinds: ['integration', 'acceptance'], dependencies: r.dependsOn, accepted: false, evidence_complete: false })) }, evidence_total: 0, evidence: [], improvements_total: 0, improvements: [], provisioning: [], modules: [] });
 const directory = () => ({ schema_version: 1, observed_at: '2026-10-20T00:00:00Z', headquarters: true, operators: [], assignments: [], organizations: [{ id, name: '가상 검증 조직' }], sites: [id, other].map((siteId, i) => ({ id: siteId, name: `가상 현장 ${i + 1}`, organization_id: id, phase: 'sandbox', validation_scope_id: siteId })) });
+const loopSnapshot = (scopeId=id) => ({...snapshot(scopeId),counts:{active:0,critical:0,unassigned:0,verification:0,closed:0,pending_reviews:0,expired:0,expiring:0},blockers:requirements.map(r=>({id:r.id,missing_kinds:['integration','acceptance'],open_defects:0})),next_improvement:null,next_evidence:null});
 function setup(executor) {
   reset();
-  state.rpcExecutor = async (name, payload, actor) => name === 'platform_governance_directory' ? { data: directory(), error: null } : name === 'platform_governance_snapshot' ? { data: snapshot(payload.p_scope_id), error: null } : executor ? executor(name, payload, actor) : { data: null, error: { message: 'unexpected_write' } };
+  state.rpcExecutor = async (name, payload, actor) => name === 'platform_governance_directory' ? { data: directory(), error: null } : name === 'platform_growth_loop_snapshot' ? {data:loopSnapshot(payload.p_scope_id),error:null} : name === 'platform_governance_snapshot' ? { data: snapshot(payload.p_scope_id), error: null } : executor ? executor(name, payload, actor) : { data: null, error: { message: 'unexpected_write' } };
 }
 function Ready() { const auth=useAuth(); return auth.loading?null:el(Workbench); }
 function open(path = '/admin/governance?case=G0-01') { return render(el(MemoryRouter, { initialEntries: [path] }, el(ThemeProvider, { theme }, el(AuthProvider, null, el(Ready))))); }
@@ -39,7 +40,7 @@ test('G0 selection binds the correct partial procedure and requires an explicit 
   assert.equal(v.getByRole('button', { name: '검증 증거 등록' }).disabled, true);
   assert.equal(v.getAllByRole('combobox', { name: '연결 요구사항' })[0].getAttribute('aria-disabled'), 'true');
   assert.match(v.container.textContent, /F06 · g0\/G0-04\/v1/);
-  assert.equal(state.calls.some(c => !['platform_governance_directory', 'platform_governance_snapshot', 'user_roles'].includes(c.name)), false);
+  assert.equal(state.calls.some(c => !['platform_governance_directory', 'platform_governance_snapshot', 'platform_growth_loop_snapshot', 'user_roles'].includes(c.name)), false);
 });
 
 test('failed evidence save retains input and retry uses one idempotency key', async () => {
@@ -121,7 +122,7 @@ test('manual hash input cancels a pending file result without uploading the file
 test('a mismatched site snapshot cannot display evidence or offer a write form', async () => {
   setup();
   const original = state.rpcExecutor;
-  state.rpcExecutor = (name, payload, actor) => name === 'platform_governance_snapshot' ? Promise.resolve({ data: snapshot(other), error: null }) : original(name, payload, actor);
+  state.rpcExecutor = (name, payload, actor) => name === 'platform_growth_loop_snapshot' ? {data:loopSnapshot(payload.p_scope_id),error:null} : name === 'platform_governance_snapshot' ? Promise.resolve({ data: snapshot(other), error: null }) : original(name, payload, actor);
   const v = open(); await select(v, '검증할 현장', /가상 현장 1/);
   await v.findByText(/선택한 현장과 증거의 검증 범위가 일치하지 않습니다/);
   assert.ok(!v.queryByRole('button', { name: '검증 증거 등록' }));

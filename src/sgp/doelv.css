@@ -718,3 +718,5 @@
 }
 .doelv-membership-exit :focus-visible { outline: 2px solid #efce9e; outline-offset: 3px; }
 .doelv-membership-exit button:disabled { opacity: .55; cursor: not-allowed; }
+
+.doelv-form select { display:block; width:100%; box-sizing:border-box; margin-top:8px; padding:12px; min-height:44px; border:1px solid #cea87299; border-radius:8px; background:#122532; color:#f8f5f0; font:inherit; }

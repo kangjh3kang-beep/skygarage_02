@@ -118,7 +118,7 @@ const menuGroups: MenuGroup[] = [
       { label: '매출', icon: <AttachMoneyIcon />, path: '/admin/revenue', minScope: 'global' },
       { label: 'CRM', icon: <SupportAgentIcon />, path: '/admin/crm', minScope: 'region' },
       { label: '문의', icon: <InboxIcon />, path: '/admin/inquiries' },
-      { label: '지원 티켓', icon: <ConfirmationNumberIcon />, path: '/admin/tickets' },
+      { label: '요청 배정·처리', icon: <ConfirmationNumberIcon />, path: '/admin/tickets' },
       { label: '특허', icon: <GavelIcon />, path: '/admin/patents', minScope: 'global' },
       { label: '라이선스', icon: <WorkspacePremiumIcon />, path: '/admin/licenses', minScope: 'global' },
     ],

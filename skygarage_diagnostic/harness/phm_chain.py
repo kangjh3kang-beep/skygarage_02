@@ -4,7 +4,7 @@ Harness Prognostics & Health Management Chain Kernel
 
 특허 컴포넌트 참조:
   [132] 인터록 즉시 트리거 플래그 - 비상 제어 플래그
-  [270] 비상 전기 기계식 브레이크 - 최종 물리 정지
+  [설계 ID] 비상 전기 기계식 브레이크 - 최종 물리 정지
   [271] 주행 구동 모터 STO(Safe Torque Off) - 토크 물리 차단
   [272] 안전 릴레이 회로 차단 - 고전압 배터리/도크 릴레이 드롭아웃
   [660] 거버넌스 레지스트리 - 중앙 정책 데이터베이스 장애 로그 기록
@@ -41,7 +41,10 @@ from typing import Callable, Optional
 # ─────────────────────────────────────────────
 
 PATENT_INTERLOCK_FLAG = "[132]"
-PATENT_EMERGENCY_BRAKE = "[270]"
+from skygarage_core.component_references import FILED_APPLICATION, EMERGENCY_BRAKE_COMPONENT_ID, patent_reference
+
+# Compatibility alias: an unverified symbol is absent, never the control-unit number.
+PATENT_EMERGENCY_BRAKE = patent_reference(EMERGENCY_BRAKE_COMPONENT_ID, edition=FILED_APPLICATION)
 PATENT_MOTOR_STO = "[271]"
 PATENT_BATTERY_RELAY = "[272]"
 PATENT_GOVERNANCE_MDM = "[660]"
@@ -123,7 +126,9 @@ class FaultEvent:
 @dataclass
 class InterlockRecord:
     stage: InterlockStage = InterlockStage.IDLE
-    patent_component: str = ""
+    patent_component: str | None = ""
+    component_id: str = ""
+    reference_edition: str | None = None
     executed_at_ms: float = 0.0
     success: bool = False
     detail: str = ""
@@ -292,7 +297,7 @@ class SafetyChainExecutor:
       Stage 1: [132] 인터록 플래그 메모리 최상위 Set
       Stage 2: [271] 모터 STO(Safe Torque Off) 토크 차단
       Stage 3: [272] 고전압 배터리[720][721] + 충전 도크[710] 릴레이 드롭아웃
-      Stage 4: [270] 비상 전기 기계식 브레이크 락
+      Stage 4: [설계 ID] 비상 전기 기계식 브레이크 락
     """
 
     def __init__(self) -> None:
@@ -377,7 +382,7 @@ class SafetyChainExecutor:
                 ),
             ))
 
-            # Stage 4: [270] 비상 기계식 브레이크 잠금
+            # Stage 4: [설계 ID] 비상 기계식 브레이크 잠금
             self._current_stage = InterlockStage.STAGE_4_BRAKE
             stage4_time = time.perf_counter_ns()
             success_4 = self._hw_brake_270()
@@ -385,9 +390,11 @@ class SafetyChainExecutor:
             self._records.append(InterlockRecord(
                 stage=InterlockStage.STAGE_4_BRAKE,
                 patent_component=PATENT_EMERGENCY_BRAKE,
+                component_id=EMERGENCY_BRAKE_COMPONENT_ID,
+                reference_edition=FILED_APPLICATION,
                 executed_at_ms=(stage4_time - chain_start) / 1_000_000,
                 success=success_4,
-                detail=f"{PATENT_EMERGENCY_BRAKE} Emergency mechanical brake LOCKED",
+                detail=f"{EMERGENCY_BRAKE_COMPONENT_ID} Emergency mechanical brake LOCKED",
             ))
 
             self._current_stage = InterlockStage.COMPLETED
