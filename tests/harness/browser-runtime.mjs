@@ -14,6 +14,8 @@ class Observer { observe(){} unobserve(){} disconnect(){} }
 globalThis.IntersectionObserver=Observer;globalThis.ResizeObserver=Observer;
 window.matchMedia=()=>({matches:false,addListener(){},removeListener(){},addEventListener(){},removeEventListener(){},dispatchEvent(){return true;}});
 window.scrollTo=()=>{};
+// jsdom has no layout/scroll implementation; route rendering does not verify scrolling.
+HTMLElement.prototype.scrollIntoView=()=>{};
 const id='11111111-1111-4111-8111-111111111111';
 const error={code:'42501',message:'HARNESS permission denied'};
 const authListeners = new Set();

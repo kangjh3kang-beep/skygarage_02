@@ -17,7 +17,9 @@
     "test:erp:wasm": "node scripts/test-erp-database.mjs --wasm",
     "inventory": "node scripts/page-inventory.mjs",
     "test:ui": "node --test --test-concurrency=1 tests/harness/ui-scenarios.mjs tests/harness/finance-journey.mjs tests/harness/onboarding-guidance.mjs tests/harness/evidence-workflow.mjs tests/harness/live-auth-ui.mjs tests/harness/membership-journey.mjs",
-    "test:harness": "npm run inventory -- --check && npm run test:contracts && npm run test:ui && npm run test:database:wasm && npm run test:finance:wasm && npm run test:erp:wasm"
+    "test:harness": "npm run inventory -- --check && npm run test:contracts && npm run test:ui && npm run test:database:wasm && npm run test:finance:wasm && npm run test:erp:wasm",
+    "lint:check": "node scripts/lint-baseline.mjs",
+    "lint:baseline": "node scripts/lint-baseline.mjs --write-baseline"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -50,5 +52,8 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"
+  },
+  "engines": {
+    "node": ">=24.22.1 <25"
   }
 }

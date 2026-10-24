@@ -30,7 +30,7 @@ import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import type { InquiryStatus, Inquiry, InquiryNote, StatusHistoryEntry } from '../../lib/types';
-import { projectTypeLabels } from '../../lib/types';
+import { getProjectTypeLabel } from '../../lib/types';
 import { supabase } from '../../lib/supabase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 
@@ -218,7 +218,7 @@ export default function InquiryDetail() {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <InfoRow icon={<EmailIcon sx={{ fontSize: 18 }} />} label="이메일" value={inquiry.email} />
-                  <InfoRow icon={<CategoryIcon sx={{ fontSize: 18 }} />} label="문의 유형" value={projectTypeLabels[inquiry.project_type]} />
+                  <InfoRow icon={<CategoryIcon sx={{ fontSize: 18 }} />} label="문의 유형" value={getProjectTypeLabel(inquiry.project_type)} />
                   <InfoRow icon={<AccessTimeIcon sx={{ fontSize: 18 }} />} label="접수일시" value={formatDateTime(inquiry.created_at)} />
                 </Grid>
               </Grid>
