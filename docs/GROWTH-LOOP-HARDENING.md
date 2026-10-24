@@ -74,7 +74,7 @@
 
 Python은 현재 실행환경의 기존 로컬 의존성 경로를 사용했으며 CI의 고정 requirements와 구분한다. 로컬 Auth·문자·계정은 폐기 DB의 명시적인 가상 fixture다. 운영 프로젝트에 fixture를 넣지 않았다. PostgreSQL 17 원격 CI·운영 적용·공식 배포 결과는 별도 확인 후 기록한다.
 
-### 확정된 반영 상태
+### 공개 반영 전 상태 이력 · 아래 운영 반영 기록으로 갱신됨
 
 - 구현 커밋 `5ef1095` · 브랜치 `feat/feedback-loop-hardening-20261024`. 이전 요청관리 구현 `cdb1301`과 함께 공식 운영 기준 `1bd30918e1088c1485c1614c39ad5410b163c966` 대비 46개 파일의 검토 가능한 변경이다.
 - 공개 GitHub push를 시도했으나 자동 승인 검토가 거부했다. 명시 사유: 새 28개 파일·약 900줄을 공개 저장소에 지속 게시하는데 이번 사용자 메시지에 공개 업로드의 명시적 승인이 없다는 판단이다. 다른 도구나 경로로 우회하지 않았다.
@@ -83,3 +83,23 @@ Python은 현재 실행환경의 기존 로컬 의존성 경로를 사용했으�
 - 운영 보안 사전 점검: ERROR 항목 없음, 직접 접근을 기본 거부하는 RLS 정책 없음 INFO 156건, 인증 역할 실행 가능 SECURITY DEFINER WARN 29건. 각 경고는 개별 RPC 내부 권한 검사와 함께 해석하며 보안 전체 완료를 뜻하지 않는다. [RLS 경고 안내](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy), [함수 실행 권한 경고 안내](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
 
 다음 승인 대상은 위 46개 파일을 공개 저장소의 검토 브랜치에 게시하고, PostgreSQL 17 CI 통과 후 이번 두 SQL 변경을 운영 DB에 적용·대조한 뒤 병합·배포하는 과정이다. 첨부 원문·비밀번호·인증키·운영 개인정보는 게시 대상에 포함하지 않는다. 이 승인이 실장비 구동·실결제 개통·현장 인수 승인까지 대신하지 않는다.
+
+
+### 운영 반영 기록 · 2026-10-24 KST
+
+사용자가 앞서 명시한 공개 GitHub 업로드·원격 검증 후 운영 DB 반영·배포를 진행하도록 승인했다. 명령줄 Git의 인증 부재는 연결된 GitHub 도구로 처리했다. 업로드 트리 `19bac809d85be2b7537c2e08d9f99610339eca99`가 로컬 검증 트리와 정확히 일치한다. [PR #33](https://github.com/kangjh3kang-beep/skygarage_02/pull/33)의 구현 커밋은 `e1b05e9ab5f4da5b0aebfd6aae1fcc7c596c3826`이다.
+
+[1차 원격 CI 40072533329](https://github.com/kangjh3kang-beep/skygarage_02/actions/runs/40072533329), job `120808868352`가 성공했다. 계약 121개, 화면 31개, native PostgreSQL 17 권한 58·금융 63·ERP 66개 검사, Auth provisioning·회원·세대·해지·요청·성장 루프 DB 계약, 제공자 타입, 고정 CI 의존성의 Python 169개와 최종 빌드가 통과했다. 이 중 Auth provisioning 계약은 SQL fixture이며 실제 회원의 문자 수신·브라우저 로그인 인수와 구분한다.
+
+| 운영 마이그레이션 | 서버가 기록한 버전 | 원문 SHA-256 |
+|---|---|---|
+| service_request_operations | 20261024070557 | eb011d9f81157696c36728d0ae7a7bbe081ba99d53582fdfe4fccec8e9474305 |
+| governance_loop_hardening | 20261024070609 | 797b4899674323b87da0e456b0fb238318d9f9b03793315fa04c2ff3b1bec8f3 |
+
+두 마이그레이션을 운영에 적용하고 SQL 원문 MD5를 저장소와 대조했다. Supabase CLI 2.122.0으로 생성한 파일을 서버에서 반환한 실제 버전명에 맞추고 검증 원문을 바이트 단위로 저장했다. 변경 전 거버넌스 함수 13개가 검토한 기준과 일치했고, 반영 후 관련 함수 30개 모두 원문 해시·빈 search_path·예정된 실행 권한이 일치했다. 익명 호출은 permission denied, MFA 미충족 호출은 mfa_required로 실제 DB에서 거부됐다.
+
+새 테이블 3개의 RLS와 anon/authenticated/service_role 직접 접근 차단, 요청 테이블 및 과거 컬럼별 접근 권한 회수를 확인했다. 현장 6·회원 소속 2·증거 8·개선 과제 2·요청 0건으로 적용 전후 건수가 같다. 운영에 가상 계정·가상 세션·시험 요청을 만들지 않았다.
+
+보안 advisor ERROR 0. RLS 기본 거부 INFO는 새 비공개 테이블로 156→159, 제한된 공개 RPC 실행 WARN은 29→38이다. 30개 함수의 실제 권한 대조에서 예상하지 않은 GRANT는 0건이다. 경고를 없애려고 비공개 테이블을 개방하지 않았다. 전체 보안 인수와 외부 침투 시험 완료를 뜻하지 않는다.
+
+최종 저장 이력의 CI와 main 병합·공식 웹 배포 SHA 확인은 PR #33에 기록한다. 현재 문서의 과거 차단 상태는 위 승인·반영으로 해소됐으며, 실제 운영자·문자·결제·장비·LLM·현장 인수 조건은 여전히 별도다.
