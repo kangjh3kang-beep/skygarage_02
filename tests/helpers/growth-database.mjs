@@ -5,6 +5,7 @@ import { parseGrowthLoopSnapshot } from '../../src/lib/growth-loop.ts';
 
 export async function growthDatabase(){
  const db=await membershipDatabase();
+ await db.pg.exec(await readFile(new URL('../../supabase/sql/service-request-operations.sql',import.meta.url),'utf8'));
  await db.pg.exec(await readFile(new URL('../../supabase/sql/governance-loop-hardening.sql',import.meta.url),'utf8'));
  const scope=await db.call(db.ids.manager,'platform_open_validation_scope',{p_request_id:randomUUID(),p_site_id:db.ids.siteA,p_release_sha:'a'.repeat(40)});
  await db.call(db.ids.hq,'platform_set_site_staff',{p_site_id:db.ids.siteA,p_user_id:db.ids.otherManager,p_role:'reviewer',p_active:true,p_valid_until:new Date(Date.now()+86400000).toISOString(),p_expected_revision:0});
